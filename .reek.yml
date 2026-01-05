@@ -1,0 +1,61 @@
+---
+detectors:
+  IrresponsibleModule:
+    enabled: false  # We use YARD for documentation, not inline comments
+
+  TooManyStatements:
+    max_statements: 12  # Allow slightly larger methods for CLI rendering
+
+  TooManyInstanceVariables:
+    max_instance_variables: 10  # Prompt classes need state
+
+  TooManyConstants:
+    enabled: false  # Symbols module is intentionally constant-heavy
+
+  UncommunicativeParameterName:
+    accept:
+      - n  # Standard for counts
+      - x  # Standard for coordinates
+      - y  # Standard for coordinates
+
+  UncommunicativeVariableName:
+    accept:
+      - o  # Used in lambda definitions
+      - s  # Spinner variable
+      - v  # Value in lambda
+
+  DataClump:
+    enabled: false  # Common parameters like message/output are intentional
+
+  ControlParameter:
+    enabled: false  # Control flow based on params is normal for prompts
+
+  DuplicateMethodCall:
+    max_calls: 5  # Allow duplication for clarity in pattern-matching scenarios
+
+  UtilityFunction:
+    enabled: false  # Helper methods in classes are fine
+
+  InstanceVariableAssumption:
+    enabled: false  # Subclass patterns are acceptable
+
+  NilCheck:
+    enabled: false  # Nil checks are sometimes clearer than safe navigation
+
+  UnusedParameters:
+    enabled: false  # Base class defines interface for subclasses
+
+  BooleanParameter:
+    enabled: false  # Boolean params are idiomatic for options
+
+  LongParameterList:
+    enabled: false  # CLI prompt initializers legitimately need many parameters
+
+  RepeatedConditional:
+    max_ifs: 4
+
+  TooManyMethods:
+    max_methods: 25
+
+exclude_paths:
+  - spec
