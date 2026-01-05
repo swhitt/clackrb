@@ -1,0 +1,15 @@
+pre-commit:
+  parallel: true
+  commands:
+    standard:
+      glob: "*.rb"
+      run: bundle exec standardrb --fix {staged_files}
+      stage_fixed: true
+    reek:
+      glob: "*.rb"
+      run: bundle exec reek {staged_files}
+
+pre-push:
+  commands:
+    tests:
+      run: bundle exec rspec

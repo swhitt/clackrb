@@ -1,0 +1,9 @@
+ruby_version: 3.1
+
+plugins:
+  - standard-custom
+
+format: progress
+
+ignore:
+  - 'vendor/**/*'
