@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 RSpec.describe Clack::Group do
   let(:output) { StringIO.new }
 
@@ -100,8 +102,8 @@ RSpec.describe Clack::Group do
         g.prompt(:name) { Clack.text(message: "Name?", output: output) }
         g.prompt(:password) { Clack.password(message: "Password?", output: output) }
         g.prompt(:confirm) { Clack.confirm(message: "Continue?", output: output) }
-        g.prompt(:framework) { Clack.select(message: "Pick:", options: ["a", "b"], output: output) }
-        g.prompt(:features) { Clack.multiselect(message: "Choose:", options: ["x", "y"], output: output) }
+        g.prompt(:framework) { Clack.select(message: "Pick:", options: %w[a b], output: output) }
+        g.prompt(:features) { Clack.multiselect(message: "Choose:", options: %w[x y], output: output) }
       end
 
       expect(result[:name]).to eq("Alice")

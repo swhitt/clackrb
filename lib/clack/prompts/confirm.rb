@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Clack
   module Prompts
     class Confirm < Core::Prompt

@@ -1,7 +1,11 @@
+# frozen_string_literal: true
+
 RSpec.describe Clack::Prompts::Autocomplete do
   let(:output) { StringIO.new }
   let(:input) { StringIO.new }
-  subject { described_class.new(message: "Pick a fruit", options: %w[apple banana cherry], input: input, output: output) }
+  subject do
+    described_class.new(message: "Pick a fruit", options: %w[apple banana cherry], input: input, output: output)
+  end
 
   def create_prompt(options: %w[apple banana cherry], **opts)
     described_class.new(

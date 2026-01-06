@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require_relative "clack/version"
 require_relative "clack/symbols"
 require_relative "clack/colors"
@@ -6,6 +8,7 @@ require_relative "clack/core/settings"
 require_relative "clack/core/key_reader"
 require_relative "clack/core/prompt"
 require_relative "clack/core/options_helper"
+require_relative "clack/core/text_input_helper"
 require_relative "clack/prompts/text"
 require_relative "clack/prompts/password"
 require_relative "clack/prompts/confirm"
@@ -13,6 +16,7 @@ require_relative "clack/prompts/select"
 require_relative "clack/prompts/multiselect"
 require_relative "clack/prompts/spinner"
 require_relative "clack/prompts/autocomplete"
+require_relative "clack/prompts/autocomplete_multiselect"
 require_relative "clack/prompts/path"
 require_relative "clack/prompts/progress"
 require_relative "clack/prompts/select_key"
@@ -20,8 +24,10 @@ require_relative "clack/prompts/tasks"
 require_relative "clack/prompts/group_multiselect"
 require_relative "clack/log"
 require_relative "clack/note"
+require_relative "clack/box"
 require_relative "clack/group"
 require_relative "clack/stream"
+require_relative "clack/task_log"
 
 # Clack - Beautiful CLI prompts for Ruby
 #
@@ -158,6 +164,18 @@ module Clack
       Prompts::Autocomplete.new(message:, options: options, **opts).run
     end
 
+    # Prompt with type-to-filter autocomplete and multiselect.
+    #
+    # @param message [String] the prompt message
+    # @param options [Array<Hash, String>] list of options to filter
+    # @param placeholder [String, nil] placeholder text
+    # @param required [Boolean] require at least one selection (default: true)
+    # @param initial_values [Array, nil] initially selected values
+    # @return [Array, CANCEL] selected values or CANCEL if cancelled
+    def autocomplete_multiselect(message:, options:, **opts)
+      Prompts::AutocompleteMultiselect.new(message:, options: options, **opts).run
+    end
+
     # Prompt for file/directory path with filesystem navigation.
     #
     # @param message [String] the prompt message
@@ -228,6 +246,29 @@ module Clack
       Note.render(message, title: title, **opts)
     end
 
+    # Display content in a customizable box
+    # @param message [String] the box content
+    # @param title [String] optional title
+    # @param content_align [:left, :center, :right] content alignment
+    # @param title_align [:left, :center, :right] title alignment
+    # @param width [Integer, :auto] box width
+    # @param rounded [Boolean] use rounded corners
+    # @return [void]
+    def box(message = "", title: "", **opts)
+      Box.render(message, title: title, **opts)
+    end
+
+    # Create a streaming task log that clears on success, shows on error.
+    # Useful for build output, npm install style streaming, etc.
+    #
+    # @param title [String] title displayed at the top
+    # @param limit [Integer, nil] max lines to show (older lines scroll out)
+    # @param retain_log [Boolean] keep full log history for display on error
+    # @return [TaskLog] task log instance
+    def task_log(title:, **opts)
+      TaskLog.new(title: title, **opts)
+    end
+
     # :nocov:
     # :reek:TooManyStatements :reek:NestedIterators :reek:UncommunicativeVariableName
     # Demo - showcases all Clack features (interactive, tested manually)
@@ -279,7 +320,7 @@ module Clack
               {value: "docker", label: "Docker", hint: "containerization"},
               {value: "ci", label: "GitHub Actions", hint: "CI/CD pipeline"}
             ],
-            initial_values: ["eslint", "prettier"],
+            initial_values: %w[eslint prettier],
             required: false
           )
         end
@@ -407,6 +448,7 @@ module Clack
     # :nocov:
     def cancelled?(value)
       return false unless cancel?(value)
+
       cancel("Cancelled")
       true
     end

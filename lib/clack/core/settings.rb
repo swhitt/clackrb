@@ -47,7 +47,7 @@ module Clack
 
         # Check if a key is a backspace/delete
         def backspace?(key)
-          key == KEY_BACKSPACE || key == KEY_DELETE
+          [KEY_BACKSPACE, KEY_DELETE].include?(key)
         end
       end
     end

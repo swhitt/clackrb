@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Clack
   module Prompts
     class SelectKey < Core::Prompt
@@ -19,7 +21,7 @@ module Clack
           @state = :cancel
         else
           # Check if key matches any option
-          opt = @options.find { |o| o[:key].downcase == key&.downcase }
+          opt = @options.find { |o| o[:key]&.downcase == key&.downcase }
           if opt
             @value = opt[:value]
             @state = :submit

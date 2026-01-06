@@ -1,6 +1,10 @@
+# frozen_string_literal: true
+
 module Clack
   module Prompts
     class Path < Core::Prompt
+      include Core::TextInputHelper
+
       def initialize(message:, root: ".", only_directories: false, max_items: 5, **opts)
         super(message:, **opts)
         @root = File.expand_path(root)
@@ -42,17 +46,7 @@ module Clack
       end
 
       def handle_text_input(key)
-        return unless Core::Settings.printable?(key)
-
-        if Core::Settings.backspace?(key)
-          return if @cursor == 0
-
-          @value = @value[0...(@cursor - 1)] + @value[@cursor..]
-          @cursor -= 1
-        else
-          @value = @value[0...@cursor] + key + @value[@cursor..]
-          @cursor += 1
-        end
+        return unless super
 
         @selected_index = 0
         @scroll_offset = 0
@@ -96,9 +90,7 @@ module Clack
 
         lines << "#{bar_end}\n"
 
-        if @state == :error
-          lines[-1] = "#{Colors.yellow(Symbols::S_BAR_END)}  #{Colors.yellow(@error_message)}\n"
-        end
+        lines[-1] = "#{Colors.yellow(Symbols::S_BAR_END)}  #{Colors.yellow(@error_message)}\n" if @state == :error
 
         lines.join
       end
@@ -130,9 +122,9 @@ module Clack
         return [] unless File.directory?(dir)
 
         entries = Dir.entries(dir) - [".", ".."]
-        entries = entries.select { |e| File.directory?(File.join(dir, e)) } if @only_directories
-        entries = entries.select { |e| e.downcase.start_with?(prefix) } unless prefix.empty?
-        entries.sort.first(@max_items * 2).map { |e| format_entry(dir, e) }
+        entries = entries.select { |entry| File.directory?(File.join(dir, entry)) } if @only_directories
+        entries = entries.select { |entry| entry.downcase.start_with?(prefix) } unless prefix.empty?
+        entries.sort.first(@max_items * 2).map { |entry| format_entry(dir, entry) }
       end
 
       def format_entry(dir, entry)
@@ -177,25 +169,13 @@ module Clack
         end
       end
 
-      def input_display
-        return placeholder_display if @value.empty?
-
-        value_with_cursor
-      end
-
+      # Override to use @root as placeholder
       def placeholder_display
+        return "" if @root.empty?
+
         first = Colors.inverse(@root[0])
         rest = Colors.dim(@root[1..])
         "#{first}#{rest}"
-      end
-
-      def value_with_cursor
-        return "#{@value}#{cursor_block}" if @cursor >= @value.length
-
-        before = @value[0...@cursor]
-        current = Colors.inverse(@value[@cursor])
-        after = @value[(@cursor + 1)..]
-        "#{before}#{current}#{after}"
       end
 
       def suggestion_display(path, active)

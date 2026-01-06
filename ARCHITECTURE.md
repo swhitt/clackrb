@@ -16,6 +16,7 @@ lib/
     ├── core/
     │   ├── prompt.rb        # Base prompt class (state machine, rendering)
     │   ├── options_helper.rb # Shared logic for Select/Multiselect
+    │   ├── text_input_helper.rb # Shared cursor/placeholder for text inputs
     │   ├── cursor.rb        # ANSI cursor control sequences
     │   ├── key_reader.rb    # Raw terminal input handling
     │   └── settings.rb      # Key mappings and constants
@@ -23,14 +24,22 @@ lib/
     │   ├── text.rb          # Text input with cursor navigation
     │   ├── password.rb      # Masked input
     │   ├── confirm.rb       # Yes/No toggle
-    │   ├── select.rb        # Single choice
+    │   ├── select.rb        # Single choice from list
+    │   ├── select_key.rb    # Single choice via key press
     │   ├── multiselect.rb   # Multiple choice with toggle/invert
-    │   └── spinner.rb       # Threaded animation
+    │   ├── group_multiselect.rb # Grouped multiple choice
+    │   ├── autocomplete.rb  # Type-to-filter single select
+    │   ├── autocomplete_multiselect.rb # Type-to-filter multi select
+    │   ├── path.rb          # File/directory path input
+    │   ├── spinner.rb       # Threaded animation
+    │   ├── progress.rb      # Progress bar
+    │   └── tasks.rb         # Sequential task runner
     ├── group.rb             # Prompt orchestration
-    ├── log.rb               # Styled logging
+    ├── log.rb               # Styled logging (info, warn, error, etc.)
     ├── note.rb              # Boxed messages
-    ├── intro.rb             # Session start
-    └── outro.rb             # Session end
+    ├── box.rb               # Customizable box rendering
+    ├── stream.rb            # Streaming output with symbols
+    └── task_log.rb          # Build-style streaming log
 ```
 
 ## Core Concepts

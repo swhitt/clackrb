@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Clack
   module Prompts
     class Multiselect < Core::Prompt
@@ -68,9 +70,7 @@ module Clack
 
         lines << "#{bar_end}\n"
 
-        if @state == :error
-          lines[-1] = "#{Colors.yellow(Symbols::S_BAR_END)}  #{Colors.yellow(@error_message)}\n"
-        end
+        lines[-1] = "#{Colors.yellow(Symbols::S_BAR_END)}  #{Colors.yellow(@error_message)}\n" if @state == :error
 
         lines.join
       end
@@ -115,6 +115,7 @@ module Clack
       def invert_selection
         @options.each do |opt|
           next if opt[:disabled]
+
           if @selected.include?(opt[:value])
             @selected.delete(opt[:value])
           else
@@ -137,7 +138,10 @@ module Clack
       end
 
       def option_parts(opt, active, selected)
-        return [Colors.dim(Symbols::S_CHECKBOX_INACTIVE), Colors.strikethrough(Colors.dim(opt[:label]))] if opt[:disabled]
+        if opt[:disabled]
+          return [Colors.dim(Symbols::S_CHECKBOX_INACTIVE),
+            Colors.strikethrough(Colors.dim(opt[:label]))]
+        end
         return [Colors.green(Symbols::S_CHECKBOX_SELECTED), opt[:label]] if active && selected
         return [Colors.cyan(Symbols::S_CHECKBOX_ACTIVE), opt[:label]] if active
         return [Colors.green(Symbols::S_CHECKBOX_SELECTED), Colors.dim(opt[:label])] if selected

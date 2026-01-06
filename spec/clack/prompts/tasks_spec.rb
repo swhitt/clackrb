@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 RSpec.describe Clack::Prompts::Tasks do
   let(:output) { StringIO.new }
 

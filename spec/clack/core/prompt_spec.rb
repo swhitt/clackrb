@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 RSpec.describe Clack::Core::Prompt do
   # Use a concrete subclass for testing since Prompt is abstract
   let(:test_class) do
@@ -99,7 +101,7 @@ RSpec.describe Clack::Core::Prompt do
 
       prompt = test_class.new(
         message: "Input",
-        validate: ->(_val) {
+        validate: lambda { |_val|
           call_count += 1
           "Error" if call_count == 1
         },
@@ -187,7 +189,7 @@ RSpec.describe Clack::Core::Prompt do
   end
 
   describe "#symbol_for_state" do
-    # Note: Colors are disabled in tests since stdout is not a TTY
+    # NOTE: Colors are disabled in tests since stdout is not a TTY
     # So we just verify the symbols are present
 
     it "includes active symbol during active state" do

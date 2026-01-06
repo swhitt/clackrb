@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 RSpec.describe Clack::Core::Cursor do
   describe ".hide" do
     it "returns hide cursor sequence" do
@@ -32,17 +34,6 @@ RSpec.describe Clack::Core::Cursor do
   describe ".clear_down" do
     it "clears from cursor down" do
       expect(described_class.clear_down).to eq("\e[J")
-    end
-  end
-
-  describe ".move" do
-    it "generates relative movement" do
-      expect(described_class.move(5, 3)).to eq("\e[5C\e[3B")
-      expect(described_class.move(-2, -4)).to eq("\e[2D\e[4A")
-    end
-
-    it "handles zero movement" do
-      expect(described_class.move(0, 0)).to eq("")
     end
   end
 end

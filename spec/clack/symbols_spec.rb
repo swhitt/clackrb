@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 RSpec.describe Clack::Symbols do
   describe "step indicators" do
     it "has step symbols defined" do

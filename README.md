@@ -184,6 +184,22 @@ color = Clack.autocomplete(
 )
 ```
 
+### Autocomplete Multiselect
+
+Type to filter with multi-selection support.
+
+```ruby
+colors = Clack.autocomplete_multiselect(
+  message: "Pick colors",
+  options: %w[red orange yellow green blue indigo violet],
+  placeholder: "Type to filter...",
+  required: true,              # At least one selection required
+  initial_values: ["red"]      # Pre-selected values
+)
+```
+
+**Shortcuts:** `Space` toggle | `a` toggle all | `i` invert | `Enter` confirm
+
 ### Path
 
 File/directory path selector with filesystem navigation.
@@ -346,6 +362,41 @@ Clack.note(<<~MSG, title: "Next Steps")
   bundle install
   bin/rails server
 MSG
+```
+
+### Box
+
+Render a customizable bordered box.
+
+```ruby
+Clack.box("Hello, World!", title: "Greeting")
+
+# With options
+Clack.box(
+  "Centered content",
+  title: "My Box",
+  content_align: :center,    # :left, :center, :right
+  title_align: :center,
+  width: 40,                 # or :auto to fit content
+  rounded: true              # rounded or square corners
+)
+```
+
+### Task Log
+
+Streaming log that clears on success and shows full output on failure. Useful for build output.
+
+```ruby
+tl = Clack.task_log(title: "Building...", limit: 10)
+
+tl.message("Compiling file 1...")
+tl.message("Compiling file 2...")
+
+# On success: clears the log
+tl.success("Build complete!")
+
+# On error: keeps the log visible
+# tl.error("Build failed!")
 ```
 
 ## Session Markers

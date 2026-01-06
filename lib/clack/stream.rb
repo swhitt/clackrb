@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "English"
 require "stringio"
 
 module Clack
@@ -38,10 +39,10 @@ module Clack
       # Usage: Clack.stream.command("npm install", type: :info)
       # Returns true on success, false on failure or if command cannot be executed
       def command(cmd, type: :info, output: $stdout)
-        IO.popen(cmd, err: [:child, :out]) do |io|
+        IO.popen(cmd, err: %i[child out]) do |io|
           send(type, io, output: output)
         end
-        $?.success?
+        $CHILD_STATUS.success?
       rescue Errno::ENOENT
         false
       end
