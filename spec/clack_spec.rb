@@ -39,9 +39,11 @@ RSpec.describe Clack do
       expect(output.string).to include(Clack::Symbols::S_BAR_START)
     end
 
-    it "outputs bar on second line" do
+    it "outputs only start symbol and title" do
       Clack.intro("test", output: output)
-      expect(output.string).to include(Clack::Symbols::S_BAR)
+      lines = output.string.lines
+      expect(lines.length).to eq(1)
+      expect(lines[0]).to include(Clack::Symbols::S_BAR_START)
     end
 
     it "works without title" do

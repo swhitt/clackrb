@@ -61,7 +61,6 @@ module Clack
     # @return [void]
     def intro(title = nil, output: $stdout)
       output.puts "#{Colors.gray(Symbols::S_BAR_START)}  #{title}"
-      output.puts Colors.gray(Symbols::S_BAR)
     end
 
     # Display an outro banner at the end of a CLI session.

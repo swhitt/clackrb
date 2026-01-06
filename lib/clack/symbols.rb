@@ -1,6 +1,8 @@
 module Clack
   module Symbols
-    UNICODE = $stdout.tty? && ENV["TERM"] != "dumb" && !ENV["NO_COLOR"]
+    # FORCE_COLOR or CLACK_UNICODE=1 forces unicode output even without TTY
+    UNICODE = ENV["FORCE_COLOR"] || ENV["CLACK_UNICODE"] ||
+              ($stdout.tty? && ENV["TERM"] != "dumb" && !ENV["NO_COLOR"])
 
     def self.unicode? = UNICODE
 

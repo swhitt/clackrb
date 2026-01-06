@@ -28,6 +28,9 @@ Clack.outro "Nice to meet you, #{name}!"
 ```ruby
 # Gemfile
 gem "clack"
+
+# Or from GitHub
+gem "clack", github: "swhitt/clackrb"
 ```
 
 ```bash
