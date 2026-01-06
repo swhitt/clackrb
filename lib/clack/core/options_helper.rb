@@ -10,7 +10,10 @@ module Clack
       #
       # @param options [Array] Raw options in various formats
       # @return [Array<Hash>] Normalized option hashes
+      # @raise [ArgumentError] if options is empty
       def normalize_options(options)
+        raise ArgumentError, "options cannot be empty" if options.nil? || options.empty?
+
         options.map do |opt|
           case opt
           when Hash

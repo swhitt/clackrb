@@ -4,7 +4,13 @@ detectors:
     enabled: false  # We use YARD for documentation, not inline comments
 
   TooManyStatements:
-    max_statements: 15  # Render methods building UI are inherently sequential
+    max_statements: 18  # Render methods building UI are inherently sequential
+
+  ManualDispatch:
+    enabled: false  # respond_to? checks on IO objects are defensive Ruby practice
+
+  Attribute:
+    enabled: false  # Writable attributes for config are intentional
 
   TooManyInstanceVariables:
     max_instance_variables: 14  # Complex prompt classes need state for cursor, scroll, selection, etc.
@@ -23,6 +29,7 @@ detectors:
 
   UncommunicativeVariableName:
     accept:
+      - _  # Ruby convention for ignored values
       - o  # Used in lambda definitions
       - s  # Spinner variable
       - v  # Value in lambda

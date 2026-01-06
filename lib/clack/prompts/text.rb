@@ -2,15 +2,43 @@
 
 module Clack
   module Prompts
+    # Single-line text input prompt with cursor navigation.
+    #
+    # Features:
+    # - Arrow key cursor movement (left/right)
+    # - Backspace/delete support
+    # - Placeholder text (shown when empty)
+    # - Default value (used if submitted empty)
+    # - Initial value (pre-filled, editable)
+    # - Validation support
+    #
+    # @example Basic usage
+    #   name = Clack.text(message: "What is your name?")
+    #
+    # @example With all options
+    #   name = Clack.text(
+    #     message: "Project name?",
+    #     placeholder: "my-project",
+    #     default_value: "untitled",
+    #     initial_value: "hello",
+    #     validate: ->(v) { "Required!" if v.empty? }
+    #   )
+    #
     class Text < Core::Prompt
       include Core::TextInputHelper
 
+      # @param message [String] the prompt message
+      # @param placeholder [String, nil] dim text shown when input is empty
+      # @param default_value [String, nil] value used if submitted empty
+      # @param initial_value [String, nil] pre-filled editable text
+      # @param validate [Proc, nil] validation proc returning error string or nil
+      # @param opts [Hash] additional options passed to {Core::Prompt}
       def initialize(message:, placeholder: nil, default_value: nil, initial_value: nil, **opts)
         super(message:, **opts)
         @placeholder = placeholder
         @default_value = default_value
         @value = initial_value || ""
-        @cursor = @value.length
+        @cursor = @value.grapheme_clusters.length
       end
 
       protected
@@ -19,12 +47,13 @@ module Clack
         # Only use arrow key actions for actual arrow keys, not vim h/l keys
         # which should be treated as text input
         if key&.start_with?("\e[")
+          max_cursor = @value.grapheme_clusters.length
           case action
           when :left
             @cursor = [@cursor - 1, 0].max
             return
           when :right
-            @cursor = [@cursor + 1, @value.length].min
+            @cursor = [@cursor + 1, max_cursor].min
             return
           end
         end

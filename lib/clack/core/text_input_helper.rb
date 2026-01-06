@@ -30,36 +30,46 @@ module Clack
       end
 
       def format_placeholder_with_cursor(text)
-        "#{Colors.inverse(text[0])}#{Colors.dim(text[1..])}"
+        chars = text.grapheme_clusters
+        first = chars.first || ""
+        rest = chars[1..].join
+        "#{Colors.inverse(first)}#{Colors.dim(rest)}"
       end
 
       # Display value with inverse cursor at current position.
+      # Uses grapheme clusters for proper Unicode handling (e.g., emoji).
       #
       # @return [String] Value with cursor
       def value_with_cursor
-        return "#{@value}#{cursor_block}" if @cursor >= @value.length
+        chars = @value.grapheme_clusters
+        return "#{@value}#{cursor_block}" if @cursor >= chars.length
 
-        before = @value[0...@cursor]
-        current = Colors.inverse(@value[@cursor])
-        after = @value[(@cursor + 1)..]
+        before = chars[0...@cursor].join
+        current = Colors.inverse(chars[@cursor])
+        after = chars[(@cursor + 1)..].join
         "#{before}#{current}#{after}"
       end
 
       # Handle text input key (backspace or printable character).
       # Requires @value and @cursor instance variables.
+      # Uses grapheme clusters for proper Unicode handling.
       #
       # @param key [String] The key pressed
       # @return [Boolean] true if input was handled
       def handle_text_input(key)
         return false unless Core::Settings.printable?(key)
 
+        chars = @value.grapheme_clusters
+
         if Core::Settings.backspace?(key)
           return false if @cursor.zero?
 
-          @value = @value[0...(@cursor - 1)] + @value[@cursor..]
+          chars.delete_at(@cursor - 1)
+          @value = chars.join
           @cursor -= 1
         else
-          @value = @value[0...@cursor] + key + @value[@cursor..]
+          chars.insert(@cursor, key)
+          @value = chars.join
           @cursor += 1
         end
 

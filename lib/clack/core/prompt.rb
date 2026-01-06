@@ -4,9 +4,40 @@ require "io/console"
 
 module Clack
   module Core
+    # Base class for all interactive prompts.
+    #
+    # Implements a state machine with states: :initial, :active, :error, :submit, :cancel.
+    # Subclasses override {#handle_input}, {#build_frame}, and {#build_final_frame}
+    # to customize behavior and rendering.
+    #
+    # The prompt loop:
+    # 1. Renders the initial frame
+    # 2. Reads keyboard input via {KeyReader}
+    # 3. Handles input and transitions state
+    # 4. Re-renders the frame
+    # 5. Repeats until a terminal state (:submit or :cancel)
+    #
+    # @abstract Subclass and override {#build_frame} to implement a prompt.
+    #
+    # @example Creating a custom prompt
+    #   class MyPrompt < Clack::Core::Prompt
+    #     def build_frame
+    #       "#{bar}\n#{symbol_for_state}  #{@message}\n"
+    #     end
+    #   end
+    #
     class Prompt
-      attr_reader :state, :value, :error_message
+      # @return [Symbol] current state (:initial, :active, :error, :submit, :cancel)
+      attr_reader :state
+      # @return [Object] the current/final value
+      attr_reader :value
+      # @return [String, nil] validation error message, if any
+      attr_reader :error_message
 
+      # @param message [String] the prompt message to display
+      # @param validate [Proc, nil] optional validation proc; returns error string or nil
+      # @param input [IO] input stream (default: $stdin)
+      # @param output [IO] output stream (default: $stdout)
       def initialize(message:, validate: nil, input: $stdin, output: $stdout)
         @message = message
         @validate = validate
@@ -19,6 +50,12 @@ module Clack
         @cursor = 0
       end
 
+      # Run the prompt interaction loop.
+      #
+      # Sets up the terminal, renders frames, and processes input until the user
+      # submits or cancels. Returns the final value or {Clack::CANCEL}.
+      #
+      # @return [Object, Clack::CANCEL] the submitted value or CANCEL sentinel
       def run
         setup_terminal
         render
@@ -40,6 +77,10 @@ module Clack
 
       protected
 
+      # Process a keypress and update state accordingly.
+      # Delegates to {#handle_input} for prompt-specific behavior.
+      #
+      # @param key [String] the key code from {KeyReader}
       def handle_key(key)
         return if terminal_state?
 
@@ -57,10 +98,16 @@ module Clack
         end
       end
 
+      # Handle prompt-specific input. Override in subclasses.
+      #
+      # @param key [String] the raw key code
+      # @param action [Symbol, nil] the mapped action (:up, :down, etc.) or nil
       def handle_input(key, action)
         # Override in subclasses
       end
 
+      # Validate and submit the current value.
+      # Sets state to :error if validation fails, :submit otherwise.
       def submit
         if @validate
           result = @validate.call(@value)
@@ -73,6 +120,8 @@ module Clack
         @state = :submit
       end
 
+      # Render the current frame using differential rendering.
+      # Only redraws if the frame content has changed.
       def render
         frame = build_frame
         return if frame == @prev_frame
@@ -88,21 +137,33 @@ module Clack
         @prev_frame = frame
       end
 
+      # Build the frame string for the current state.
+      # Override in subclasses to customize display.
+      #
+      # @return [String] the frame content to render
       def build_frame
         # Override in subclasses
         ""
       end
 
+      # Render the final frame after submit/cancel.
       def finalize
         restore_cursor
         @output.print Cursor.clear_down
         @output.print build_final_frame
       end
 
+      # Build the final frame shown after interaction ends.
+      # Override to show a different view for completed prompts.
+      #
+      # @return [String] the final frame content
       def build_final_frame
         build_frame
       end
 
+      # Check if prompt has reached a terminal state.
+      #
+      # @return [Boolean] true if state is :submit or :cancel
       def terminal_state?
         %i[submit cancel].include?(@state)
       end

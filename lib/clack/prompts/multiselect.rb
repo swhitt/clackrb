@@ -2,9 +2,41 @@
 
 module Clack
   module Prompts
+    # Multiple-selection prompt from a list of options.
+    #
+    # Navigate with arrow keys or j/k. Toggle selection with Space.
+    # Supports shortcuts: 'a' to toggle all, 'i' to invert selection.
+    #
+    # Options format is the same as {Select}.
+    #
+    # @example Basic usage
+    #   features = Clack.multiselect(
+    #     message: "Select features",
+    #     options: %w[api auth admin]
+    #   )
+    #
+    # @example With options and validation
+    #   features = Clack.multiselect(
+    #     message: "Select features",
+    #     options: [
+    #       { value: "api", label: "API Mode" },
+    #       { value: "auth", label: "Authentication" }
+    #     ],
+    #     initial_values: ["api"],
+    #     required: true,
+    #     max_items: 5
+    #   )
+    #
     class Multiselect < Core::Prompt
       include Core::OptionsHelper
 
+      # @param message [String] the prompt message
+      # @param options [Array<Hash, String>] list of options
+      # @param initial_values [Array] values to pre-select
+      # @param required [Boolean] require at least one selection (default: true)
+      # @param max_items [Integer, nil] max visible items (enables scrolling)
+      # @param cursor_at [Object, nil] value to position cursor at initially
+      # @param opts [Hash] additional options passed to {Core::Prompt}
       def initialize(message:, options:, initial_values: [], required: true, max_items: nil, cursor_at: nil, **opts)
         super(message:, **opts)
         @options = normalize_options(options)

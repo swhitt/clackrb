@@ -7,8 +7,12 @@ module Clack
     module KeyReader
       class << self
         def read
-          IO.console.raw do |io|
+          console = IO.console
+          raise IOError, "No console available (not a TTY?)" unless console
+
+          console.raw do |io|
             char = io.getc
+            return char if char.nil? # EOF
             return char unless char == "\e"
 
             # Check for escape sequence
@@ -21,6 +25,9 @@ module Clack
             seq += io.getc.to_s while IO.select([io], nil, nil, 0.01)
             "\e[#{seq[1..]}"
           end
+        rescue Errno::EIO, Errno::EBADF, IOError
+          # Terminal disconnected or closed - treat as cancel
+          "\u0003" # Ctrl+C
         end
       end
     end

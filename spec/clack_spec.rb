@@ -34,6 +34,32 @@ RSpec.describe Clack do
     end
   end
 
+  describe ".cancelled?" do
+    it "is an alias for cancel?" do
+      expect(Clack.cancelled?(Clack::CANCEL)).to be true
+      expect(Clack.cancelled?("hello")).to be false
+    end
+  end
+
+  describe ".handle_cancel" do
+    it "returns false and does nothing for non-cancelled values" do
+      result = Clack.handle_cancel("hello", output: output)
+      expect(result).to be false
+      expect(output.string).to be_empty
+    end
+
+    it "returns true and shows cancel message for CANCEL" do
+      result = Clack.handle_cancel(Clack::CANCEL, output: output)
+      expect(result).to be true
+      expect(output.string).to include("Cancelled")
+    end
+
+    it "accepts custom message" do
+      Clack.handle_cancel(Clack::CANCEL, "Aborted", output: output)
+      expect(output.string).to include("Aborted")
+    end
+  end
+
   describe ".intro" do
     it "outputs intro with title" do
       Clack.intro("test-app", output: output)
@@ -160,6 +186,40 @@ RSpec.describe Clack do
     end
   end
 
+  describe ".spin" do
+    it "runs block with spinner and returns result" do
+      result = Clack.spin("Working...", output: output) { 42 }
+      expect(result).to eq(42)
+    end
+
+    it "shows success message on completion" do
+      Clack.spin("Working...", success: "Done!", output: output) { true }
+      expect(output.string).to include("Done!")
+    end
+
+    it "shows error message on exception" do
+      expect do
+        Clack.spin("Working...", output: output) { raise "Boom" }
+      end.to raise_error("Boom")
+      expect(output.string).to include("Boom")
+    end
+
+    it "uses custom error message" do
+      expect do
+        Clack.spin("Working...", error: "Failed!", output: output) { raise "Boom" }
+      end.to raise_error("Boom")
+      expect(output.string).to include("Failed!")
+    end
+
+    it "yields spinner to block for message updates" do
+      Clack.spin("Step 1...", output: output) do |s|
+        s.message "Step 2..."
+        sleep 0.05  # Let spinner render
+      end
+      expect(output.string).to include("Step 2")
+    end
+  end
+
   describe ".log" do
     it "returns the Log module" do
       expect(Clack.log).to eq(Clack::Log)
@@ -176,6 +236,70 @@ RSpec.describe Clack do
       Clack.note("Hello", title: "Info", output: output)
       expect(output.string).to include("Info")
       expect(output.string).to include("Hello")
+    end
+  end
+
+  describe ".settings" do
+    after { Clack::Core::Settings.reset! }
+
+    it "returns current settings" do
+      settings = Clack.settings
+      expect(settings).to be_a(Hash)
+      expect(settings).to have_key(:aliases)
+      expect(settings).to have_key(:with_guide)
+    end
+  end
+
+  describe ".update_settings" do
+    after { Clack::Core::Settings.reset! }
+
+    it "updates settings" do
+      Clack.update_settings(with_guide: false)
+      expect(Clack::Core::Settings.with_guide?).to be false
+    end
+
+    it "merges alias customizations" do
+      Clack.update_settings(aliases: {"y" => :enter})
+      expect(Clack::Core::Settings.action?("y")).to eq(:enter)
+    end
+  end
+
+  describe ".ci?" do
+    it "returns boolean" do
+      expect([true, false]).to include(Clack.ci?)
+    end
+  end
+
+  describe ".windows?" do
+    it "returns boolean or nil" do
+      expect([true, false, nil]).to include(Clack.windows?)
+    end
+  end
+
+  describe ".tty?" do
+    it "returns false for StringIO" do
+      expect(Clack.tty?(output)).to be false
+    end
+
+    it "returns true for TTY-like output" do
+      tty = double("tty", tty?: true)
+      expect(Clack.tty?(tty)).to be true
+    end
+  end
+
+  describe ".columns" do
+    it "returns default for non-TTY" do
+      expect(Clack.columns(output)).to eq(80)
+    end
+
+    it "accepts custom default" do
+      expect(Clack.columns(output, default: 100)).to eq(100)
+    end
+  end
+
+  describe ".rows" do
+    it "returns default for non-TTY" do
+      expect(Clack.rows(output)).to eq(24)
     end
   end
 end

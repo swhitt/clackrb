@@ -2,9 +2,41 @@
 
 module Clack
   module Prompts
+    # Single-selection prompt from a list of options.
+    #
+    # Navigate with arrow keys or j/k (vim-style). Press Enter to confirm.
+    # Supports disabled options, hints, and scrolling for long lists.
+    #
+    # Options can be:
+    # - Strings: `["a", "b", "c"]` (value and label are the same)
+    # - Hashes: `[{value: "a", label: "Option A", hint: "details", disabled: false}]`
+    #
+    # @example Basic usage
+    #   choice = Clack.select(
+    #     message: "Pick a color",
+    #     options: %w[red green blue]
+    #   )
+    #
+    # @example With rich options
+    #   db = Clack.select(
+    #     message: "Choose database",
+    #     options: [
+    #       { value: "pg", label: "PostgreSQL", hint: "recommended" },
+    #       { value: "mysql", label: "MySQL" },
+    #       { value: "sqlite", label: "SQLite", disabled: true }
+    #     ],
+    #     initial_value: "pg",
+    #     max_items: 5
+    #   )
+    #
     class Select < Core::Prompt
       include Core::OptionsHelper
 
+      # @param message [String] the prompt message
+      # @param options [Array<Hash, String>] list of options (see class docs)
+      # @param initial_value [Object, nil] value of initially selected option
+      # @param max_items [Integer, nil] max visible items (enables scrolling)
+      # @param opts [Hash] additional options passed to {Core::Prompt}
       def initialize(message:, options:, initial_value: nil, max_items: nil, **opts)
         super(message:, **opts)
         @options = normalize_options(options)

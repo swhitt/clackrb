@@ -2,9 +2,37 @@
 
 module Clack
   module Prompts
+    # File/directory path selector with filesystem navigation.
+    #
+    # Type to filter suggestions from the current directory.
+    # Press Tab to autocomplete the selected suggestion.
+    # Navigate suggestions with arrow keys.
+    #
+    # Supports:
+    # - Absolute paths (starting with /)
+    # - Home directory expansion (~/...)
+    # - Relative paths (from root directory)
+    # - Directory-only filtering
+    #
+    # @example Basic usage
+    #   path = Clack.path(message: "Select a file")
+    #
+    # @example Directory picker
+    #   dir = Clack.path(
+    #     message: "Choose project directory",
+    #     only_directories: true,
+    #     root: "~/projects"
+    #   )
+    #
     class Path < Core::Prompt
       include Core::TextInputHelper
 
+      # @param message [String] the prompt message
+      # @param root [String] starting/base directory (default: ".")
+      # @param only_directories [Boolean] only show directories (default: false)
+      # @param max_items [Integer] max visible suggestions (default: 5)
+      # @param validate [Proc, nil] validation proc for the final path
+      # @param opts [Hash] additional options passed to {Core::Prompt}
       def initialize(message:, root: ".", only_directories: false, max_items: 5, **opts)
         super(message:, **opts)
         @root = File.expand_path(root)

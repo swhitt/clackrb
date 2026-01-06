@@ -51,8 +51,15 @@ module Clack
     S_FOLDER = unicode? ? "📁" : "[D]"
     S_FILE = unicode? ? "📄" : "[F]"
 
-    # Spinner frames
+    # Spinner frames - quarter circle rotation pattern
     SPINNER_FRAMES = unicode? ? %w[◒ ◐ ◓ ◑] : %w[• o O 0]
     SPINNER_DELAY = unicode? ? 0.08 : 0.12
+
+    # Progress bar characters
+    S_PROGRESS_FILLED = unicode? ? "█" : "#"
+    S_PROGRESS_EMPTY = unicode? ? "░" : "-"
+
+    # Alternative progress bar (smoother gradient)
+    S_PROGRESS_BLOCKS = unicode? ? %w[░ ▒ ▓ █] : %w[- = # #]
   end
 end

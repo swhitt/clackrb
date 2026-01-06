@@ -84,4 +84,13 @@ end
 
 RSpec.configure do |config|
   config.include TestHelpers
+
+  # Enable cursor escape sequences for testing
+  config.before(:each) do
+    Clack::Core::Cursor.enabled = true
+  end
+
+  config.after(:each) do
+    Clack::Core::Cursor.enabled = nil
+  end
 end
