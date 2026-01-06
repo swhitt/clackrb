@@ -10,7 +10,6 @@ A faithful Ruby port of [@clack/prompts](https://github.com/bombshell-dev/clack)
 
 ## Why Clack?
 
-- **Zero dependencies** - Pure Ruby, stdlib only
 - **Beautiful by default** - Thoughtfully designed prompts that just look right
 - **Vim-friendly** - Navigate with `hjkl` or arrow keys
 - **Accessible** - Graceful ASCII fallbacks for limited terminals
