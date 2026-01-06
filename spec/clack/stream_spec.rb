@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 RSpec.describe Clack::Stream do
   let(:output) { StringIO.new }
 
@@ -22,9 +24,9 @@ RSpec.describe Clack::Stream do
 
     it "yields each line when block given" do
       lines = []
-      described_class.info(["a", "b"]) { |line| lines << line }
+      described_class.info(%w[a b]) { |line| lines << line }
 
-      expect(lines).to eq(["a", "b"])
+      expect(lines).to eq(%w[a b])
     end
   end
 
@@ -78,7 +80,7 @@ RSpec.describe Clack::Stream do
 
   describe "source types" do
     it "handles array source" do
-      described_class.info(["a", "b", "c"], output: output)
+      described_class.info(%w[a b c], output: output)
 
       expect(output.string).to include("a")
       expect(output.string).to include("b")

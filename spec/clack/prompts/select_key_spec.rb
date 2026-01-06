@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 RSpec.describe Clack::Prompts::SelectKey do
   let(:output) { StringIO.new }
   let(:input) { StringIO.new }

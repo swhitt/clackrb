@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 RSpec.describe Clack do
   let(:output) { StringIO.new }
 
@@ -79,7 +81,7 @@ RSpec.describe Clack do
     it "outputs cancel message" do
       Clack.cancel("Cancelled", output: output)
       expect(output.string).to include("Cancelled")
-      # Note: Colors are disabled in tests since stdout is not a TTY
+      # NOTE: Colors are disabled in tests since stdout is not a TTY
     end
 
     it "outputs bar before message" do
@@ -132,7 +134,7 @@ RSpec.describe Clack do
   describe ".select" do
     it "creates and runs a Select prompt" do
       stub_keys(:enter)
-      result = Clack.select(message: "Choose:", options: ["a", "b"], output: output)
+      result = Clack.select(message: "Choose:", options: %w[a b], output: output)
       expect(result).to eq("a")
     end
   end
@@ -140,13 +142,13 @@ RSpec.describe Clack do
   describe ".multiselect" do
     it "creates and runs a Multiselect prompt" do
       stub_keys(:space, :enter)
-      result = Clack.multiselect(message: "Choose:", options: ["a", "b"], output: output)
+      result = Clack.multiselect(message: "Choose:", options: %w[a b], output: output)
       expect(result).to eq(["a"])
     end
 
     it "passes required option" do
       stub_keys(:enter)
-      result = Clack.multiselect(message: "Choose:", options: ["a", "b"], required: false, output: output)
+      result = Clack.multiselect(message: "Choose:", options: %w[a b], required: false, output: output)
       expect(result).to eq([])
     end
   end

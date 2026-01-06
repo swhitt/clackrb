@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 RSpec.describe Clack::Prompts::GroupMultiselect do
   let(:output) { StringIO.new }
   let(:options) do
@@ -103,7 +105,7 @@ RSpec.describe Clack::Prompts::GroupMultiselect do
       prompt = described_class.new(
         message: "Select:",
         options: options,
-        initial_values: ["vue", "rails"],
+        initial_values: %w[vue rails],
         output: output
       )
       result = prompt.run
@@ -115,7 +117,7 @@ RSpec.describe Clack::Prompts::GroupMultiselect do
       simple_options = [
         {
           label: "Colors",
-          options: ["red", "blue", "green"]
+          options: %w[red blue green]
         }
       ]
       stub_keys(:space, :enter)
@@ -256,6 +258,82 @@ RSpec.describe Clack::Prompts::GroupMultiselect do
       prompt.run
 
       expect(output.string).to include("Select features:")
+    end
+
+    describe "cursor_at option" do
+      it "starts cursor at specified value" do
+        stub_keys(:space, :enter)
+        prompt = described_class.new(
+          message: "Select:",
+          options: options,
+          cursor_at: "rails",
+          output: output
+        )
+        result = prompt.run
+
+        expect(result).to eq(["rails"])
+      end
+    end
+
+    describe "selectable_groups option" do
+      it "allows toggling entire groups when true" do
+        stub_keys(:space, :enter)
+        prompt = described_class.new(
+          message: "Select:",
+          options: options,
+          selectable_groups: true,
+          output: output
+        )
+        result = prompt.run
+
+        # Toggling the Frontend group should select both react and vue
+        expect(result).to contain_exactly("react", "vue")
+      end
+
+      it "skips group headers when navigating when false" do
+        stub_keys(:down, :space, :enter)
+        prompt = described_class.new(
+          message: "Select:",
+          options: options,
+          selectable_groups: false,
+          output: output
+        )
+        result = prompt.run
+
+        # First down should go to vue (second option)
+        expect(result).to eq(["vue"])
+      end
+
+      it "shows checkbox on groups when selectable" do
+        stub_keys(:space, :enter)
+        prompt = described_class.new(
+          message: "Select:",
+          options: options,
+          selectable_groups: true,
+          output: output
+        )
+        prompt.run
+
+        # Group line should have checkbox symbol
+        expect(output.string).to include(Clack::Symbols::S_CHECKBOX_SELECTED)
+      end
+    end
+
+    describe "group_spacing option" do
+      it "adds spacing between groups" do
+        stub_keys(:space, :enter)
+        prompt = described_class.new(
+          message: "Select:",
+          options: options,
+          group_spacing: 1,
+          output: output
+        )
+        prompt.run
+
+        # Should have extra bar lines for spacing
+        bar_count = output.string.scan(/#{Regexp.escape(Clack::Symbols::S_BAR)}/o).length
+        expect(bar_count).to be > 6 # More than without spacing
+      end
     end
   end
 end

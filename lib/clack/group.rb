@@ -47,7 +47,7 @@ module Clack
         block = prompt_def[:block]
 
         # Pass previous results to the block if it accepts an argument
-        result = if block.arity == 0
+        result = if block.arity.zero?
           block.call
         else
           block.call(@results.dup.freeze)

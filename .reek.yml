@@ -4,10 +4,13 @@ detectors:
     enabled: false  # We use YARD for documentation, not inline comments
 
   TooManyStatements:
-    max_statements: 12  # Allow slightly larger methods for CLI rendering
+    max_statements: 15  # Render methods building UI are inherently sequential
 
   TooManyInstanceVariables:
-    max_instance_variables: 10  # Prompt classes need state
+    max_instance_variables: 14  # Complex prompt classes need state for cursor, scroll, selection, etc.
+
+  FeatureEnvy:
+    enabled: false  # Transformation/formatting methods naturally reference their input more than self
 
   TooManyConstants:
     enabled: false  # Symbols module is intentionally constant-heavy

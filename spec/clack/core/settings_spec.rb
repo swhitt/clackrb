@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 RSpec.describe Clack::Core::Settings do
   describe ".action?" do
     it "recognizes arrow keys" do

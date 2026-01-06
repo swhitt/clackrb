@@ -7,7 +7,7 @@ module Clack
       TaskResult = Struct.new(:title, :status, :error, keyword_init: true)
 
       def initialize(tasks:, output: $stdout)
-        @tasks = tasks.map { |t| Task.new(title: t[:title], task: t[:task]) }
+        @tasks = tasks.map { |task_data| Task.new(title: task_data[:title], task: task_data[:task]) }
         @output = output
         @results = []
         @current_index = 0
@@ -34,9 +34,9 @@ module Clack
           task.task.call
           @results << TaskResult.new(title: task.title, status: :success, error: nil)
           render_success(task.title)
-        rescue => e
-          @results << TaskResult.new(title: task.title, status: :error, error: e.message)
-          render_error(task.title, e.message)
+        rescue => exception
+          @results << TaskResult.new(title: task.title, status: :error, error: exception.message)
+          render_error(task.title, exception.message)
         end
       end
 

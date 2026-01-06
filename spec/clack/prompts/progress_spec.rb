@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 RSpec.describe Clack::Prompts::Progress do
   let(:output) { StringIO.new }
 

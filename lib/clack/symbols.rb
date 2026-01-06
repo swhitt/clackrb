@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Clack
   module Symbols
     # FORCE_COLOR or CLACK_UNICODE=1 forces unicode output even without TTY
@@ -34,6 +36,10 @@ module Clack
     S_CORNER_BOTTOM_RIGHT = unicode? ? "╯" : "+"
     S_CORNER_BOTTOM_LEFT = unicode? ? "╰" : "+"
     S_CONNECT_LEFT = unicode? ? "├" : "+"
+
+    # Square corners (for box with rounded: false)
+    S_BAR_START_RIGHT = unicode? ? "┐" : "+"
+    S_BAR_END_RIGHT = unicode? ? "┘" : "+"
 
     # Log symbols
     S_INFO = unicode? ? "●" : "*"

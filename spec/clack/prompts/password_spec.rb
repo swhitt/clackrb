@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 RSpec.describe Clack::Prompts::Password do
   let(:output) { StringIO.new }
   subject { described_class.new(message: "Password:", output: output) }

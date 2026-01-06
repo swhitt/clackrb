@@ -38,6 +38,7 @@ module Clack
 
         max.times do
           return idx unless @options[idx][:disabled]
+
           idx = (idx + delta) % max
         end
 
@@ -57,6 +58,7 @@ module Clack
       # @return [Array<Hash>] Visible options
       def visible_options
         return @options unless @max_items && @options.length > @max_items
+
         @options[@scroll_offset, @max_items]
       end
 

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 RSpec.describe Clack::Note do
   let(:output) { StringIO.new }
 

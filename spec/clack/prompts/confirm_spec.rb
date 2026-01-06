@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 RSpec.describe Clack::Prompts::Confirm do
   let(:output) { StringIO.new }
   subject { described_class.new(message: "Continue?", output: output) }
@@ -134,7 +136,7 @@ RSpec.describe Clack::Prompts::Confirm do
       prompt = described_class.new(message: "Continue?", output: output)
       result = prompt.run
 
-      expect(result).to be true  # Default unchanged
+      expect(result).to be true # Default unchanged
     end
 
     it "handles nil key gracefully" do

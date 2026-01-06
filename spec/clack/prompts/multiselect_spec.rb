@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 RSpec.describe Clack::Prompts::Multiselect do
   let(:output) { StringIO.new }
   let(:options) do
@@ -132,7 +134,7 @@ RSpec.describe Clack::Prompts::Multiselect do
       prompt = described_class.new(
         message: "Choose:",
         options: options,
-        initial_values: ["b", "c"],
+        initial_values: %w[b c],
         output: output
       )
       result = prompt.run
@@ -144,7 +146,7 @@ RSpec.describe Clack::Prompts::Multiselect do
       stub_keys(:space, :enter)
       prompt = described_class.new(
         message: "Choose:",
-        options: ["one", "two", "three"],
+        options: %w[one two three],
         output: output
       )
       result = prompt.run
@@ -176,7 +178,7 @@ RSpec.describe Clack::Prompts::Multiselect do
       prompt = described_class.new(message: "Choose:", options: opts, output: output)
       result = prompt.run
 
-      expect(result).to contain_exactly("a", "c")  # b is skipped
+      expect(result).to contain_exactly("a", "c") # b is skipped
     end
 
     it "toggle all ignores disabled options" do

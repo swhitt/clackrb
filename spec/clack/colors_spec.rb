@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 RSpec.describe Clack::Colors do
   describe "color methods" do
     it "wraps text in ANSI codes when enabled" do

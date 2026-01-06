@@ -7,37 +7,44 @@ module Clack
     module Cursor
       class << self
         # Visibility
-        def hide = "\e[?25l"  # DECTCEM: Hide cursor
-        def show = "\e[?25h"  # DECTCEM: Show cursor
+        # DECTCEM: Hide cursor
+        def hide = "\e[?25l"
+        # DECTCEM: Show cursor
+        def show = "\e[?25h"
 
         # Movement (CSI sequences)
-        def up(n = 1) = "\e[#{n}A"      # CUU: Cursor Up
-        def down(n = 1) = "\e[#{n}B"    # CUD: Cursor Down
-        def forward(n = 1) = "\e[#{n}C" # CUF: Cursor Forward
-        def back(n = 1) = "\e[#{n}D"    # CUB: Cursor Back
-
-        # Relative movement
-        def move(x, y)
-          result = []
-          result << (x.positive? ? forward(x) : back(-x)) unless x.zero?
-          result << (y.positive? ? down(y) : up(-y)) unless y.zero?
-          result.join
-        end
+        # CUU: Cursor Up
+        def up(n = 1) = "\e[#{n}A"
+        # CUD: Cursor Down
+        def down(n = 1) = "\e[#{n}B"
+        # CUF: Cursor Forward
+        def forward(n = 1) = "\e[#{n}C"
+        # CUB: Cursor Back
+        def back(n = 1) = "\e[#{n}D"
 
         # Absolute positioning
-        def to(x, y) = "\e[#{y};#{x}H" # CUP: Cursor Position
-        def column(n) = "\e[#{n}G"     # CHA: Cursor Horizontal Absolute
-        def home = "\e[H"              # CUP: Home position (1,1)
+        # CUP: Cursor Position
+        def to(x, y) = "\e[#{y};#{x}H"
+        # CHA: Cursor Horizontal Absolute
+        def column(n) = "\e[#{n}G"
+        # CUP: Home position (1,1)
+        def home = "\e[H"
 
         # Save/restore
-        def save = "\e7"    # DECSC: Save Cursor Position
-        def restore = "\e8" # DECRC: Restore Cursor Position
+        # DECSC: Save Cursor Position
+        def save = "\e7"
+        # DECRC: Restore Cursor Position
+        def restore = "\e8"
 
         # Erasing
-        def clear_line = "\e[2K"    # EL: Erase entire line
-        def clear_to_end = "\e[K"   # EL: Erase to end of line
-        def clear_down = "\e[J"     # ED: Erase below cursor
-        def clear_screen = "\e[2J"  # ED: Erase entire screen
+        # EL: Erase entire line
+        def clear_line = "\e[2K"
+        # EL: Erase to end of line
+        def clear_to_end = "\e[K"
+        # ED: Erase below cursor
+        def clear_down = "\e[J"
+        # ED: Erase entire screen
+        def clear_screen = "\e[2J"
       end
     end
   end

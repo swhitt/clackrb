@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Clack
   module Colors
     ENABLED = $stdout.tty? && !ENV["NO_COLOR"]
@@ -22,6 +24,7 @@ module Clack
 
       def wrap(text, code)
         return text.to_s unless enabled?
+
         "\e[#{code}m#{text}\e[0m"
       end
     end

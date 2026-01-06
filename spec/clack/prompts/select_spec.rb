@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 RSpec.describe Clack::Prompts::Select do
   let(:output) { StringIO.new }
   let(:options) do
@@ -103,7 +105,7 @@ RSpec.describe Clack::Prompts::Select do
       stub_keys(:down, :enter)
       prompt = described_class.new(
         message: "Choose:",
-        options: ["one", "two", "three"],
+        options: %w[one two three],
         output: output
       )
       result = prompt.run
@@ -166,7 +168,7 @@ RSpec.describe Clack::Prompts::Select do
       )
       result = prompt.run
 
-      expect(result).to eq("b")  # Falls back to first enabled
+      expect(result).to eq("b") # Falls back to first enabled
     end
 
     it "supports max_items for scrolling" do

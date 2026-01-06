@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Clack
   module Prompts
     class Password < Core::Prompt
@@ -26,9 +28,7 @@ module Clack
         lines << "#{active_bar}  #{masked_display}\n"
         lines << "#{bar_end}\n"
 
-        if @state == :error
-          lines[-1] = "#{Colors.yellow(Symbols::S_BAR_END)}  #{Colors.yellow(@error_message)}\n"
-        end
+        lines[-1] = "#{Colors.yellow(Symbols::S_BAR_END)}  #{Colors.yellow(@error_message)}\n" if @state == :error
 
         lines.join
       end

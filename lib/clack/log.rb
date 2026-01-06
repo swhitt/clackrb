@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Clack
   module Log
     class << self
@@ -9,7 +11,7 @@ module Clack
           output.puts symbol
         else
           lines.each_with_index do |line, idx|
-            prefix = (idx == 0) ? symbol : Colors.gray(Symbols::S_BAR)
+            prefix = idx.zero? ? symbol : Colors.gray(Symbols::S_BAR)
             output.puts "#{prefix}  #{line.chomp}"
           end
         end

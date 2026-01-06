@@ -1,4 +1,6 @@
 #!/usr/bin/env ruby
+# frozen_string_literal: true
+
 require_relative "../lib/clack"
 
 Clack.intro "validation-demo"
@@ -23,6 +25,7 @@ email = Clack.text(
   validate: lambda { |v|
     return "Email is required" if v.to_s.strip.empty?
     return "Invalid email format" unless v.to_s.include?("@")
+
     nil
   }
 )
@@ -36,7 +39,7 @@ features = Clack.multiselect(
     {value: "b", label: "Feature B"},
     {value: "c", label: "Feature C"}
   ],
-  required: true  # Built-in validation
+  required: true # Built-in validation
 )
 exit 0 if Clack.cancel?(features)
 

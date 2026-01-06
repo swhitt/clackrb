@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "io/console"
 
 module Clack
@@ -119,7 +121,7 @@ module Clack
         return unless @prev_frame
 
         lines = @prev_frame.count("\n")
-        @output.print Cursor.up(lines) if lines > 0
+        @output.print Cursor.up(lines) if lines.positive?
         @output.print Cursor.column(1)
       end
 

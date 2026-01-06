@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # Shared examples for cancellable prompts
 RSpec.shared_examples "a cancellable prompt" do
   it "can cancel with escape" do
@@ -42,10 +44,10 @@ module TestHelpers
         if key.start_with?("\e") || key.length <= 1
           key
         else
-          key.chars  # Split multi-char string into array of single chars
+          key.chars # Split multi-char string into array of single chars
         end
       when NilClass
-        ""  # Convert nil to empty string
+        "" # Convert nil to empty string
       else
         raise "Invalid key type: #{key.class}"
       end
@@ -64,6 +66,7 @@ module TestHelpers
     allow(Clack::Core::KeyReader).to receive(:read) do
       read_count += 1
       raise "Too many key reads (#{read_count}) - possible infinite loop" if read_count > MAX_READS
+
       queue.shift || KEYS[:enter]
     end
   end
