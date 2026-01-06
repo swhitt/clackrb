@@ -157,7 +157,14 @@ module Clack
 
       def format_entry(dir, entry)
         full_path = File.join(dir, entry)
-        path = full_path.start_with?(@root) ? full_path.sub(@root, ".") : full_path
+        if full_path.start_with?(@root)
+          # Show relative path without leading ./
+          path = full_path[@root.length..]
+          path = path.sub(%r{^/}, "") # Remove leading slash
+          path = entry if path.empty?
+        else
+          path = full_path
+        end
         path += "/" if File.directory?(full_path)
         path
       end

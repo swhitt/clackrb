@@ -2,11 +2,30 @@
 
 module Clack
   module Symbols
-    # FORCE_COLOR or CLACK_UNICODE=1 forces unicode output even without TTY
-    UNICODE = ENV["FORCE_COLOR"] || ENV["CLACK_UNICODE"] ||
-      ($stdout.tty? && ENV["TERM"] != "dumb" && !ENV["NO_COLOR"])
+    class << self
+      # Check if unicode output is enabled.
+      # CLACK_UNICODE=1 forces unicode, CLACK_UNICODE=0 forces ASCII.
+      # Otherwise auto-detects from TTY and TERM.
+      def unicode?
+        return @unicode if defined?(@unicode)
 
-    def self.unicode? = UNICODE
+        @unicode = compute_unicode_support
+      end
+
+      def reset!
+        remove_instance_variable(:@unicode) if defined?(@unicode)
+      end
+
+      private
+
+      def compute_unicode_support
+        # Explicit override
+        return ENV["CLACK_UNICODE"] == "1" if ENV["CLACK_UNICODE"]
+
+        # Default: TTY and not dumb terminal
+        $stdout.tty? && ENV["TERM"] != "dumb" && !ENV["NO_COLOR"]
+      end
+    end
 
     # Step indicators
     S_STEP_ACTIVE = unicode? ? "◆" : "*"

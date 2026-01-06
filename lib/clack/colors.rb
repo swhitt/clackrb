@@ -5,11 +5,15 @@ module Clack
   # Colors are automatically disabled when:
   # - Output is not a TTY (piped/redirected)
   # - NO_COLOR environment variable is set
+  # - FORCE_COLOR environment variable forces colors on
   module Colors
-    ENABLED = $stdout.tty? && !ENV["NO_COLOR"]
-
     class << self
-      def enabled? = ENABLED
+      def enabled?
+        return true if ENV["FORCE_COLOR"] && ENV["FORCE_COLOR"] != "0"
+        return false if ENV["NO_COLOR"]
+
+        $stdout.tty?
+      end
 
       # Foreground colors (standard)
       def gray(text) = wrap(text, "90")

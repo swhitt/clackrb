@@ -2,18 +2,11 @@
 
 **Effortlessly beautiful CLI prompts for Ruby.**
 
-A faithful Ruby port of [@clack/prompts](https://github.com/bombshell-dev/clack) - bringing that delightful terminal aesthetic to your Ruby projects.
+A faithful Ruby port of [@clack/prompts](https://github.com/bombshell-dev/clack).
 
-```ruby
-require "clack"
-
-Clack.intro "Welcome to my-app"
-
-name = Clack.text(message: "What's your name?")
-exit if Clack.cancel?(name)
-
-Clack.outro "Nice to meet you, #{name}!"
-```
+<p align="center">
+  <img src="examples/demo.gif" width="640" alt="Clack demo">
+</p>
 
 ## Why Clack?
 
@@ -78,9 +71,7 @@ Clack.outro "You're all set!"
 Try it yourself:
 
 ```bash
-ruby examples/demo.rb
-# or
-clack-demo
+ruby examples/full_demo.rb
 ```
 
 <details>
@@ -284,15 +275,15 @@ features = Clack.group_multiselect(
     {
       label: "Frontend",
       options: [
-        { value: "react", label: "React" },
-        { value: "vue", label: "Vue" }
+        { value: "hotwire", label: "Hotwire" },
+        { value: "stimulus", label: "Stimulus" }
       ]
     },
     {
-      label: "Backend",
+      label: "Background",
       options: [
-        { value: "api", label: "REST API" },
-        { value: "graphql", label: "GraphQL" }
+        { value: "sidekiq", label: "Sidekiq" },
+        { value: "solid_queue", label: "Solid Queue" }
       ]
     }
   ]
