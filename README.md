@@ -2,18 +2,7 @@
 
 **Effortlessly beautiful CLI prompts for Ruby.**
 
-A faithful Ruby port of [@clack/prompts](https://github.com/bombshell-dev/clack) - bringing that delightful terminal aesthetic to your Ruby projects.
-
-```ruby
-require "clack"
-
-Clack.intro "Welcome to my-app"
-
-name = Clack.text(message: "What's your name?")
-exit if Clack.cancel?(name)
-
-Clack.outro "Nice to meet you, #{name}!"
-```
+A faithful Ruby port of [@clack/prompts](https://github.com/bombshell-dev/clack).
 
 <p align="center">
   <img src="examples/demo.gif" width="640" alt="Clack demo">
