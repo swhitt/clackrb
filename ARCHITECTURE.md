@@ -1,84 +1,93 @@
-# Clack-Ruby Architecture
+# Architecture
 
-Port of [Clack](https://github.com/bombshell-dev/clack) to idiomatic Ruby.
+> How Clack-Ruby works under the hood.
 
-## Package Structure
+This is a Ruby port of [Clack](https://github.com/bombshell-dev/clack), designed to be idiomatic Ruby while preserving the original's elegant UX.
+
+## Project Structure
 
 ```
 lib/
-├── clack.rb              # Main entry point, public API
+├── clack.rb                 # Public API - all user-facing methods
 └── clack/
-    ├── version.rb        # VERSION constant
+    ├── version.rb           # Gem version
+    ├── colors.rb            # ANSI color helpers
+    ├── symbols.rb           # Unicode/ASCII symbols
     ├── core/
-    │   ├── prompt.rb     # Base prompt class (state machine, events, rendering)
-    │   ├── cursor.rb     # Cursor navigation utilities
-    │   └── settings.rb   # Global settings, key aliases
+    │   ├── prompt.rb        # Base prompt class (state machine, rendering)
+    │   ├── options_helper.rb # Shared logic for Select/Multiselect
+    │   ├── cursor.rb        # ANSI cursor control sequences
+    │   ├── key_reader.rb    # Raw terminal input handling
+    │   └── settings.rb      # Key mappings and constants
     ├── prompts/
-    │   ├── text.rb       # Text input
-    │   ├── password.rb   # Masked input
-    │   ├── confirm.rb    # Yes/No
-    │   ├── select.rb     # Single choice
-    │   ├── multiselect.rb # Multiple choice
-    │   └── spinner.rb    # Animated loading
-    ├── log.rb            # log.info, log.warn, etc.
-    ├── note.rb           # Boxed note
-    ├── intro.rb          # Session start
-    ├── outro.rb          # Session end
-    └── symbols.rb        # Unicode symbols with ASCII fallbacks
+    │   ├── text.rb          # Text input with cursor navigation
+    │   ├── password.rb      # Masked input
+    │   ├── confirm.rb       # Yes/No toggle
+    │   ├── select.rb        # Single choice
+    │   ├── multiselect.rb   # Multiple choice with toggle/invert
+    │   └── spinner.rb       # Threaded animation
+    ├── group.rb             # Prompt orchestration
+    ├── log.rb               # Styled logging
+    ├── note.rb              # Boxed messages
+    ├── intro.rb             # Session start
+    └── outro.rb             # Session end
 ```
 
 ## Core Concepts
 
-### 1. State Machine
+### State Machine
 
-States: `initial` → `active` → `submit` | `cancel` | `error`
+Every prompt follows this state flow:
 
-```ruby
-module Clack::Core
-  STATES = %i[initial active cancel submit error].freeze
-end
+```
+initial → active → submit
+                 ↘ cancel
+         ↖ error ↙
 ```
 
-Transitions:
-- `initial` → `active`: After first render
-- `active` → `submit`: Enter pressed + validation passes
-- `active` → `error`: Validation fails (returns to `active` on next input)
-- `active` → `cancel`: Ctrl+C or Escape pressed
+- **initial**: First render, cursor hidden
+- **active**: Accepting user input
+- **error**: Validation failed (returns to active on next input)
+- **submit**: User confirmed, value captured
+- **cancel**: User pressed Escape/Ctrl+C
 
-### 2. Rendering Model
+### Rendering
 
-**Differential updates** - only redraw changed lines:
+Prompts use **differential rendering** - only redrawing when the frame changes:
 
 ```ruby
 def render
   frame = build_frame
-  return if frame == @prev_frame
+  return if frame == @prev_frame  # Skip if unchanged
 
-  restore_cursor          # Move up by number of previous lines
-  clear_below             # Erase from cursor to end
+  restore_cursor   # Move up to overwrite previous frame
+  clear_below      # Erase stale content
   print frame
   @prev_frame = frame
 end
+```
 
+The cursor restoration calculates line count from the previous frame:
+
+```ruby
 def restore_cursor
-  lines = @prev_frame.to_s.lines.count
-  print "\e[#{lines}A" if lines > 0
+  lines = @prev_frame.to_s.count("\n")
+  print Cursor.up(lines) if lines > 0
+  print Cursor.column(1)
 end
 ```
 
-### 3. Key Handling
+### Input Handling
 
-Use `io/console` for raw input (no external deps):
+Uses Ruby's `io/console` for raw terminal input (no dependencies):
 
 ```ruby
-require 'io/console'
-
 def read_key
   IO.console.raw do |io|
     char = io.getc
     return char unless char == "\e"
 
-    # Read escape sequence
+    # Handle escape sequences (arrow keys, etc.)
     return char unless IO.select([io], nil, nil, 0.05)
     char += io.getc.to_s
     char += io.getc.to_s if char == "\e["
@@ -87,17 +96,21 @@ def read_key
 end
 ```
 
-Key mappings:
-- `\e[A` / `k` → up
-- `\e[B` / `j` → down
-- `\e[C` / `l` → right
-- `\e[D` / `h` → left
-- `\r` → enter/submit
-- `\e` / `\x03` → cancel
+**Key mappings** (defined in `Settings`):
 
-### 4. Cancellation Pattern
+| Key | Action |
+|-----|--------|
+| `↑` `k` | up |
+| `↓` `j` | down |
+| `←` `h` | left |
+| `→` `l` | right |
+| `Enter` | submit |
+| `Escape` `Ctrl+C` | cancel |
+| `Space` | toggle (multiselect) |
 
-Use a unique symbol (like JS Clack):
+### Cancellation
+
+Uses a frozen sentinel object (not `nil` or `false`):
 
 ```ruby
 module Clack
@@ -109,118 +122,116 @@ module Clack
 end
 ```
 
-## Visual Language
+This lets prompts return `nil` or `false` as valid values.
 
-### Symbols (with ASCII fallbacks)
+## Visual Design
+
+### Symbols
+
+Unicode with ASCII fallbacks for limited terminals:
 
 ```ruby
-module Clack::Symbols
+module Symbols
   UNICODE = $stdout.tty? && ENV['TERM'] != 'dumb'
 
-  S_STEP_ACTIVE   = UNICODE ? '◆' : '*'
-  S_STEP_CANCEL   = UNICODE ? '■' : 'x'
-  S_STEP_ERROR    = UNICODE ? '▲' : 'x'
-  S_STEP_SUBMIT   = UNICODE ? '◇' : 'o'
-
-  S_RADIO_ACTIVE   = UNICODE ? '●' : '>'
-  S_RADIO_INACTIVE = UNICODE ? '○' : ' '
-
-  S_CHECKBOX_ACTIVE   = UNICODE ? '◻' : '[•]'
-  S_CHECKBOX_SELECTED = UNICODE ? '◼' : '[+]'
-  S_CHECKBOX_INACTIVE = UNICODE ? '◻' : '[ ]'
-
-  S_BAR       = UNICODE ? '│' : '|'
-  S_BAR_START = UNICODE ? '┌' : 'T'
-  S_BAR_END   = UNICODE ? '└' : '-'
-
-  S_INFO    = UNICODE ? '●' : '•'
-  S_SUCCESS = UNICODE ? '◆' : '*'
-  S_WARN    = UNICODE ? '▲' : '!'
-  S_ERROR   = UNICODE ? '■' : 'x'
-
-  # Spinner frames
-  SPINNER_FRAMES = UNICODE ? %w[◒ ◐ ◓ ◑] : %w[• o O 0]
+  S_STEP_ACTIVE = UNICODE ? "◆" : "*"
+  S_STEP_SUBMIT = UNICODE ? "◇" : "o"
+  S_STEP_CANCEL = UNICODE ? "■" : "x"
+  S_BAR         = UNICODE ? "│" : "|"
+  # ...
 end
 ```
 
-### Colors (ANSI codes)
+### Colors
+
+ANSI escape codes with automatic disabling for non-TTY:
 
 ```ruby
-module Clack::Colors
-  def self.gray(text)   = "\e[90m#{text}\e[0m"
-  def self.cyan(text)   = "\e[36m#{text}\e[0m"
-  def self.green(text)  = "\e[32m#{text}\e[0m"
-  def self.yellow(text) = "\e[33m#{text}\e[0m"
-  def self.red(text)    = "\e[31m#{text}\e[0m"
-  def self.blue(text)   = "\e[34m#{text}\e[0m"
-  def self.dim(text)    = "\e[2m#{text}\e[0m"
-  def self.bold(text)   = "\e[1m#{text}\e[0m"
-  def self.inverse(text) = "\e[7m#{text}\e[0m"
-  def self.strikethrough(text) = "\e[9m#{text}\e[0m"
-  def self.hidden(text) = "\e[8m#{text}\e[0m"
+module Colors
+  ENABLED = $stdout.tty? && !ENV["NO_COLOR"]
+
+  def self.cyan(text)
+    return text.to_s unless ENABLED
+    "\e[36m#{text}\e[0m"
+  end
 end
 ```
 
-### State → Symbol/Color Mapping
+### State Indicators
 
 | State | Symbol | Color |
 |-------|--------|-------|
-| initial/active | ◆ | cyan |
+| active | ◆ | cyan |
 | submit | ◇ | green |
 | cancel | ■ | red |
 | error | ▲ | yellow |
 
-## Spinner Threading
+## Shared Components
 
-Use Ruby `Thread` (proven pattern from tty-spinner, cli-ui):
+### OptionsHelper
+
+`Select` and `Multiselect` share common functionality via a mixin:
+
+```ruby
+module Core::OptionsHelper
+  def normalize_options(options)   # Convert strings to hashes
+  def find_next_enabled(from, delta)  # Skip disabled options
+  def move_cursor(delta)           # Navigation with wrapping
+  def visible_options              # Scrolling support
+  def update_scroll                # Keep cursor in view
+  def find_initial_cursor(value)   # Initial selection
+end
+```
+
+### Spinner Threading
+
+The spinner runs in a background thread:
 
 ```ruby
 class Spinner
-  def start(message = nil)
-    @message = message
+  def start(message)
     @running = true
-    @thread = Thread.new { spin_loop }
+    @thread = Thread.new { animation_loop }
   end
 
-  def stop(message = nil)
+  def stop(message)
     @running = false
-    @thread&.join
+    @thread.join
     render_final(:success, message)
   end
 
   private
 
-  def spin_loop
-    frame_idx = 0
+  def animation_loop
+    idx = 0
     while @running
-      render_frame(SPINNER_FRAMES[frame_idx])
-      frame_idx = (frame_idx + 1) % SPINNER_FRAMES.size
+      render_frame(FRAMES[idx])
+      idx = (idx + 1) % FRAMES.size
       sleep 0.08
     end
   end
 end
 ```
 
-## Terminal Cleanup
+## Terminal Safety
 
-Always restore terminal state on exit:
+Always restore terminal state, even on interrupts:
 
 ```ruby
-at_exit do
-  print "\e[?25h"  # Show cursor
-  IO.console&.cooked!
+def run
+  setup_terminal    # Hide cursor, raw mode
+  # ... prompt loop ...
+ensure
+  cleanup_terminal  # Show cursor, cooked mode
 end
 
-trap('INT') do
-  print "\e[?25h"
-  IO.console&.cooked!
-  exit 130
-end
+# Global safety net
+at_exit { print "\e[?25h" }  # Show cursor
 ```
 
-## API Design
+## API Surface
 
-All prompts accessible via module methods:
+All functionality exposed through module methods:
 
 ```ruby
 module Clack
@@ -228,22 +239,20 @@ module Clack
     Prompts::Text.new(message:, **opts).run
   end
 
-  def self.select(message:, options:, **opts)
-    Prompts::Select.new(message:, options:, **opts).run
-  end
-
-  def self.spinner
-    Prompts::Spinner.new
+  def self.group(on_cancel: nil, &block)
+    Group.new(on_cancel:).run(&block)
   end
 
   # ... etc
 end
 ```
 
+This provides a clean, discoverable API without requiring users to know the class hierarchy.
+
 ## Dependencies
 
 **Zero runtime dependencies** - stdlib only:
-- `io/console` - raw terminal input
-- `stringio` - output buffering (if needed)
+- `io/console` - Raw terminal input
+- `thread` - Spinner animation
 
-Dev dependencies for testing/quality only.
+Dev dependencies are for testing and code quality only.

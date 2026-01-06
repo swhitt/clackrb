@@ -1,20 +1,37 @@
 # Clack
 
-Beautiful, minimal CLI prompts for Ruby.
+**Effortlessly beautiful CLI prompts for Ruby.**
 
-A Ruby port of [Clack](https://github.com/bombshell-dev/clack) by [Nate Moore](https://github.com/natemoo-re) and contributors.
+A faithful Ruby port of [@clack/prompts](https://github.com/bombshell-dev/clack) - bringing that delightful terminal aesthetic to your Ruby projects.
+
+```ruby
+require "clack"
+
+Clack.intro "Welcome to my-app"
+
+name = Clack.text(message: "What's your name?")
+exit if Clack.cancel?(name)
+
+Clack.outro "Nice to meet you, #{name}!"
+```
+
+## Why Clack?
+
+- **Zero dependencies** - Pure Ruby, stdlib only
+- **Beautiful by default** - Thoughtfully designed prompts that just look right
+- **Vim-friendly** - Navigate with `hjkl` or arrow keys
+- **Accessible** - Graceful ASCII fallbacks for limited terminals
+- **Composable** - Group prompts together with `Clack.group`
 
 ## Installation
 
-Add to your Gemfile:
-
 ```ruby
+# Gemfile
 gem "clack"
 ```
 
-Or install directly:
-
 ```bash
+# Or install directly
 gem install clack
 ```
 
@@ -23,177 +40,340 @@ gem install clack
 ```ruby
 require "clack"
 
-Clack.intro "my-app"
+Clack.intro "project-setup"
 
-name = Clack.text(message: "What is your name?", placeholder: "Anonymous")
-exit 0 if Clack.cancel?(name)
+result = Clack.group do |g|
+  g.prompt(:name) { Clack.text(message: "Project name?", placeholder: "my-app") }
+  g.prompt(:framework) do
+    Clack.select(
+      message: "Pick a framework",
+      options: [
+        { value: "rails", label: "Ruby on Rails", hint: "recommended" },
+        { value: "sinatra", label: "Sinatra" },
+        { value: "roda", label: "Roda" }
+      ]
+    )
+  end
+  g.prompt(:features) do
+    Clack.multiselect(
+      message: "Select features",
+      options: %w[api auth admin websockets]
+    )
+  end
+end
 
-framework = Clack.select(
-  message: "Pick a framework",
-  options: [
-    { value: "rails", label: "Ruby on Rails", hint: "recommended" },
-    { value: "sinatra", label: "Sinatra" }
-  ]
-)
+if Clack.cancel?(result)
+  Clack.cancel("Setup cancelled")
+  exit 1
+end
 
 Clack.outro "You're all set!"
 ```
 
 ## Demo
 
-Run the interactive demo:
+Try it yourself:
 
 ```bash
+ruby examples/demo.rb
+# or
 clack-demo
 ```
 
-Or from code:
+<details>
+<summary>Recording the demo GIF</summary>
+
+Install [VHS](https://github.com/charmbracelet/vhs) and run:
+
+```bash
+vhs examples/demo.tape
+```
+</details>
+
+## Prompts
+
+All prompts return the user's input, or `Clack::CANCEL` if they pressed Escape/Ctrl+C.
 
 ```ruby
-require "clack"
-Clack.demo
+# Always check for cancellation
+result = Clack.text(message: "Name?")
+exit 1 if Clack.cancel?(result)
 ```
 
-## API Reference
-
-### Session Markers
-
-```ruby
-Clack.intro("App Title")   # Start session with ┌
-Clack.outro("Done!")       # End session with └
-Clack.cancel("Cancelled")  # End with red message
-```
-
-### Prompts
-
-All prompts return the value or `Clack::CANCEL` if the user pressed Ctrl+C.
-
-```ruby
-# Check for cancellation
-if Clack.cancel?(result)
-  puts "User cancelled"
-  exit 1
-end
-```
-
-#### Text Input
+### Text
 
 ```ruby
 name = Clack.text(
-  message: "Project name?",
-  placeholder: "my-app",          # Shown when empty
-  default_value: "untitled",      # Used if submitted empty
-  initial_value: "hello",         # Pre-filled value
-  validate: ->(v) { "Required" if v.empty? }
+  message: "What is your project named?",
+  placeholder: "my-project",       # Shown when empty (dim)
+  default_value: "untitled",       # Used if submitted empty
+  initial_value: "hello-world",    # Pre-filled, editable
+  validate: ->(v) { "Required!" if v.empty? }
 )
 ```
 
-#### Password
+### Password
 
 ```ruby
 secret = Clack.password(
-  message: "Enter password",
-  mask: "*"  # Character to show (default: ▪)
+  message: "Enter your API key",
+  mask: "*"  # Default: "▪"
 )
 ```
 
-#### Confirm
+### Confirm
 
 ```ruby
-confirmed = Clack.confirm(
-  message: "Continue?",
-  active: "Yes",        # Text for true (default: "Yes")
-  inactive: "No",       # Text for false (default: "No")
-  initial_value: true   # Default selection
+proceed = Clack.confirm(
+  message: "Deploy to production?",
+  active: "Yes, ship it!",
+  inactive: "No, abort",
+  initial_value: false
 )
 ```
 
-#### Select
+### Select
+
+Single selection with keyboard navigation.
 
 ```ruby
-choice = Clack.select(
-  message: "Pick a framework",
+db = Clack.select(
+  message: "Choose a database",
   options: [
-    { value: "rails", label: "Ruby on Rails", hint: "recommended" },
-    { value: "sinatra", label: "Sinatra" },
-    { value: "disabled", label: "Coming Soon", disabled: true }
+    { value: "pg", label: "PostgreSQL", hint: "recommended" },
+    { value: "mysql", label: "MySQL" },
+    { value: "sqlite", label: "SQLite", disabled: true }
   ],
-  initial_value: "rails",  # Pre-selected value
-  max_items: 5             # Scroll if more options
+  initial_value: "pg",
+  max_items: 5  # Enable scrolling
 )
 ```
 
-#### Multiselect
+### Multiselect
+
+Multiple selections with toggle controls.
 
 ```ruby
 features = Clack.multiselect(
-  message: "Select features",
+  message: "Select features to install",
   options: [
     { value: "api", label: "API Mode" },
     { value: "auth", label: "Authentication" },
-    { value: "admin", label: "Admin Panel" }
+    { value: "jobs", label: "Background Jobs" }
   ],
-  initial_values: ["api"],  # Pre-selected values
-  required: true,           # Must select at least one (default: true)
-  max_items: 5              # Scroll if more options
+  initial_values: ["api"],
+  required: true,     # Must select at least one
+  max_items: 5        # Enable scrolling
 )
 ```
 
-**Keyboard shortcuts:**
-- `Space` - Toggle selection
-- `a` - Select/deselect all
-- `i` - Invert selection
+**Shortcuts:** `Space` toggle | `a` all | `i` invert
 
-#### Spinner
+### Autocomplete
+
+Type to filter from a list of options.
 
 ```ruby
-s = Clack.spinner
-s.start("Installing...")
-# Do work...
-s.message("Configuring...")  # Update message
-# Do more work...
-s.stop("Done!")              # Success
-# Or: s.error("Failed!")     # Error
-# Or: s.cancel("Cancelled")  # Cancelled
+color = Clack.autocomplete(
+  message: "Pick a color",
+  options: %w[red orange yellow green blue indigo violet],
+  placeholder: "Type to search..."
+)
 ```
 
-### Logging
+### Path
+
+File/directory path selector with filesystem navigation.
 
 ```ruby
-Clack.log.info("Information")
-Clack.log.success("Success!")
-Clack.log.step("Step completed")
-Clack.log.warn("Warning")
-Clack.log.error("Error")
+project_dir = Clack.path(
+  message: "Where should we create your project?",
+  only_directories: true,  # Only show directories
+  root: "."               # Starting directory
+)
+```
+
+**Navigation:** Type to filter | `Tab` to autocomplete | `↑↓` to select
+
+### Select Key
+
+Quick selection using keyboard shortcuts.
+
+```ruby
+action = Clack.select_key(
+  message: "What would you like to do?",
+  options: [
+    { value: "create", label: "Create new project", key: "c" },
+    { value: "open", label: "Open existing", key: "o" },
+    { value: "quit", label: "Quit", key: "q" }
+  ]
+)
+```
+
+### Spinner
+
+Non-blocking animated indicator for async work.
+
+```ruby
+spinner = Clack.spinner
+spinner.start("Installing dependencies...")
+
+# Do your work...
+sleep 2
+
+spinner.stop("Dependencies installed!")
+# Or: spinner.error("Installation failed")
+# Or: spinner.cancel("Cancelled")
+```
+
+### Progress
+
+Visual progress bar for measurable operations.
+
+```ruby
+progress = Clack.progress(total: 100, message: "Downloading...")
+progress.start
+
+files.each_with_index do |file, i|
+  download(file)
+  progress.update(i + 1)
+end
+
+progress.stop("Download complete!")
+```
+
+### Tasks
+
+Run multiple tasks with status indicators.
+
+```ruby
+results = Clack.tasks(tasks: [
+  { title: "Checking dependencies", task: -> { check_deps } },
+  { title: "Building project", task: -> { build } },
+  { title: "Running tests", task: -> { run_tests } }
+])
+```
+
+### Group Multiselect
+
+Multiselect with options organized into groups.
+
+```ruby
+features = Clack.group_multiselect(
+  message: "Select features",
+  options: [
+    {
+      label: "Frontend",
+      options: [
+        { value: "react", label: "React" },
+        { value: "vue", label: "Vue" }
+      ]
+    },
+    {
+      label: "Backend",
+      options: [
+        { value: "api", label: "REST API" },
+        { value: "graphql", label: "GraphQL" }
+      ]
+    }
+  ]
+)
+```
+
+## Prompt Groups
+
+Chain multiple prompts and collect results in a hash. Cancellation is handled automatically.
+
+```ruby
+result = Clack.group do |g|
+  g.prompt(:name) { Clack.text(message: "Your name?") }
+  g.prompt(:email) { Clack.text(message: "Your email?") }
+  g.prompt(:confirm) { |r| Clack.confirm(message: "Create account for #{r[:email]}?") }
+end
+
+return if Clack.cancel?(result)
+
+puts "Welcome, #{result[:name]}!"
+```
+
+Handle cancellation with a callback:
+
+```ruby
+Clack.group(on_cancel: ->(r) { cleanup(r) }) do |g|
+  # prompts...
+end
+```
+
+## Logging
+
+Beautiful, consistent log messages.
+
+```ruby
+Clack.log.info("Starting build...")
+Clack.log.success("Build completed!")
+Clack.log.warn("Cache is stale")
+Clack.log.error("Build failed")
+Clack.log.step("Running migrations")
 Clack.log.message("Custom message")
 ```
 
-### Note Box
+### Stream
+
+Stream output from iterables, enumerables, or shell commands:
 
 ```ruby
-Clack.note("Welcome to your new project!", title: "Next Steps")
+# Stream from an array or enumerable
+Clack.stream.info(["Line 1", "Line 2", "Line 3"])
+Clack.stream.step(["Step 1", "Step 2", "Step 3"])
+
+# Stream from a shell command (returns true/false for success)
+success = Clack.stream.command("npm install", type: :info)
+
+# Stream from any IO or StringIO
+Clack.stream.success(io_stream)
+```
+
+## Note
+
+Display important information in a box.
+
+```ruby
+Clack.note(<<~MSG, title: "Next Steps")
+  cd my-project
+  bundle install
+  bin/rails server
+MSG
+```
+
+## Session Markers
+
+```ruby
+Clack.intro("my-cli v1.0")  # ┌ my-cli v1.0
+# ... your prompts ...
+Clack.outro("Done!")        # └ Done!
+
+# Or on error:
+Clack.cancel("Aborted")     # └ Aborted (red)
 ```
 
 ## Requirements
 
-- Ruby 3.1+
+- Ruby 3.2+
 - No runtime dependencies
 
 ## Development
 
 ```bash
 bundle install
-bundle exec rake          # Run lints and tests
-bundle exec rake spec     # Tests only
-bundle exec rake standard # Lint only
+bundle exec rake        # Lint + tests
+bundle exec rake spec   # Tests only
+COVERAGE=true bundle exec rake spec  # With coverage
 ```
 
 ## Credits
 
-This is a Ruby port of [Clack](https://github.com/bombshell-dev/clack), originally created by [Nate Moore](https://github.com/natemoo-re) and the [Astro](https://astro.build) team. The beautiful CLI aesthetic was pioneered by projects like [Astro](https://astro.build) and [Vercel](https://vercel.com).
+This is a Ruby port of [Clack](https://github.com/bombshell-dev/clack), created by [Nate Moore](https://github.com/natemoo-re) and the [Astro](https://astro.build) team.
 
 ## License
 
-MIT License. See [LICENSE](LICENSE) for details.
-
-This project is a port of Clack, which is also MIT licensed.
+MIT - See [LICENSE](LICENSE)

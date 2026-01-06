@@ -39,6 +39,10 @@ module Clack
     S_WARN = unicode? ? "▲" : "!"
     S_ERROR = unicode? ? "■" : "x"
 
+    # File system
+    S_FOLDER = unicode? ? "📁" : "[D]"
+    S_FILE = unicode? ? "📄" : "[F]"
+
     # Spinner frames
     SPINNER_FRAMES = unicode? ? %w[◒ ◐ ◓ ◑] : %w[• o O 0]
     SPINNER_DELAY = unicode? ? 0.08 : 0.12

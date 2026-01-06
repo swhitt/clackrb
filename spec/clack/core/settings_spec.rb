@@ -29,27 +29,36 @@ RSpec.describe Clack::Core::Settings do
     end
   end
 
-  describe ".cancel?" do
-    it "recognizes escape" do
-      expect(described_class.cancel?("\e")).to be true
+  describe ".printable?" do
+    it "recognizes printable characters" do
+      expect(described_class.printable?("a")).to be true
+      expect(described_class.printable?(" ")).to be true
+      expect(described_class.printable?("~")).to be true
     end
 
-    it "recognizes Ctrl+C" do
-      expect(described_class.cancel?("\u0003")).to be true
+    it "rejects control characters" do
+      expect(described_class.printable?("\t")).to be false
+      expect(described_class.printable?("\n")).to be false
+      expect(described_class.printable?("\e")).to be false
     end
 
-    it "returns false for other keys" do
-      expect(described_class.cancel?("q")).to be false
+    it "rejects nil and multi-char strings" do
+      expect(described_class.printable?(nil)).to be_falsey
+      expect(described_class.printable?("ab")).to be_falsey
     end
   end
 
-  describe ".enter?" do
-    it "recognizes enter key" do
-      expect(described_class.enter?("\r")).to be true
+  describe ".backspace?" do
+    it "recognizes backspace" do
+      expect(described_class.backspace?("\b")).to be true
+    end
+
+    it "recognizes delete" do
+      expect(described_class.backspace?("\u007F")).to be true
     end
 
     it "returns false for other keys" do
-      expect(described_class.enter?(" ")).to be false
+      expect(described_class.backspace?("x")).to be false
     end
   end
 end

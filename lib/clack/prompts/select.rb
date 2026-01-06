@@ -1,6 +1,8 @@
 module Clack
   module Prompts
     class Select < Core::Prompt
+      include Core::OptionsHelper
+
       def initialize(message:, options:, initial_value: nil, max_items: nil, **opts)
         super(message:, **opts)
         @options = normalize_options(options)
@@ -57,46 +59,9 @@ module Clack
 
       private
 
-      def normalize_options(options)
-        options.map do |opt|
-          case opt
-          when Hash
-            {
-              value: opt[:value],
-              label: opt[:label] || opt[:value].to_s,
-              hint: opt[:hint],
-              disabled: opt[:disabled] || false
-            }
-          else
-            {value: opt, label: opt.to_s, hint: nil, disabled: false}
-          end
-        end
-      end
-
-      def find_initial_cursor(initial_value)
-        return 0 if initial_value.nil?
-
-        idx = @options.find_index { |o| o[:value] == initial_value }
-        (idx && !@options[idx][:disabled]) ? idx : find_next_enabled(0, 1)
-      end
-
       def move_cursor(delta)
-        new_cursor = find_next_enabled(@cursor, delta)
-        @cursor = new_cursor
-        update_scroll
+        super
         update_value
-      end
-
-      def find_next_enabled(from, delta)
-        max = @options.length
-        idx = (from + delta) % max
-
-        max.times do
-          return idx unless @options[idx][:disabled]
-          idx = (idx + delta) % max
-        end
-
-        from  # All disabled, stay put
       end
 
       def update_value
@@ -107,36 +72,28 @@ module Clack
         @options[@cursor]
       end
 
-      def visible_options
-        return @options unless @max_items && @options.length > @max_items
-        @options[@scroll_offset, @max_items]
-      end
-
-      def update_scroll
-        return unless @max_items && @options.length > @max_items
-
-        if @cursor < @scroll_offset
-          @scroll_offset = @cursor
-        elsif @cursor >= @scroll_offset + @max_items
-          @scroll_offset = @cursor - @max_items + 1
-        end
-      end
-
       def option_display(opt, active)
-        if opt[:disabled]
-          symbol = Colors.dim(Symbols::S_RADIO_INACTIVE)
-          label = Colors.strikethrough(Colors.dim(opt[:label]))
-          "#{symbol} #{label}"
-        elsif active
-          symbol = Colors.green(Symbols::S_RADIO_ACTIVE)
-          label = opt[:label]
-          hint = opt[:hint] ? " #{Colors.dim("(#{opt[:hint]})")}" : ""
-          "#{symbol} #{label}#{hint}"
-        else
-          symbol = Colors.dim(Symbols::S_RADIO_INACTIVE)
-          label = Colors.dim(opt[:label])
-          "#{symbol} #{label}"
-        end
+        return disabled_option_display(opt) if opt[:disabled]
+        return active_option_display(opt) if active
+
+        inactive_option_display(opt)
+      end
+
+      def disabled_option_display(opt)
+        symbol = Colors.dim(Symbols::S_RADIO_INACTIVE)
+        label = Colors.strikethrough(Colors.dim(opt[:label]))
+        "#{symbol} #{label}"
+      end
+
+      def active_option_display(opt)
+        symbol = Colors.green(Symbols::S_RADIO_ACTIVE)
+        hint = opt[:hint] ? " #{Colors.dim("(#{opt[:hint]})")}" : ""
+        "#{symbol} #{opt[:label]}#{hint}"
+      end
+
+      def inactive_option_display(opt)
+        symbol = Colors.dim(Symbols::S_RADIO_INACTIVE)
+        "#{symbol} #{Colors.dim(opt[:label])}"
       end
     end
   end

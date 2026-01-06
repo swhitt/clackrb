@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(COVERAGE=true bundle exec rspec:*)",
+      "Bash(pgrep:*)",
+      "Bash(gh run list:*)",
+      "Bash(gh run view:*)"
+    ]
+  }
+}

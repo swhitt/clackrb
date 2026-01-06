@@ -1,6 +1,8 @@
 module Clack
   module Prompts
     class Multiselect < Core::Prompt
+      include Core::OptionsHelper
+
       def initialize(message:, options:, initial_values: [], required: true, max_items: nil, cursor_at: nil, **opts)
         super(message:, **opts)
         @options = normalize_options(options)
@@ -88,47 +90,6 @@ module Clack
 
       private
 
-      def normalize_options(options)
-        options.map do |opt|
-          case opt
-          when Hash
-            {
-              value: opt[:value],
-              label: opt[:label] || opt[:value].to_s,
-              hint: opt[:hint],
-              disabled: opt[:disabled] || false
-            }
-          else
-            {value: opt, label: opt.to_s, hint: nil, disabled: false}
-          end
-        end
-      end
-
-      def find_initial_cursor(cursor_at)
-        return 0 if cursor_at.nil?
-
-        idx = @options.find_index { |o| o[:value] == cursor_at }
-        (idx && !@options[idx][:disabled]) ? idx : 0
-      end
-
-      def move_cursor(delta)
-        new_cursor = find_next_enabled(@cursor, delta)
-        @cursor = new_cursor
-        update_scroll
-      end
-
-      def find_next_enabled(from, delta)
-        max = @options.length
-        idx = (from + delta) % max
-
-        max.times do
-          return idx unless @options[idx][:disabled]
-          idx = (idx + delta) % max
-        end
-
-        from
-      end
-
       def toggle_current
         opt = @options[@cursor]
         return if opt[:disabled]
@@ -167,29 +128,6 @@ module Clack
         @value = @selected.to_a
       end
 
-      def visible_options
-        return @options unless @max_items && @options.length > @max_items
-        @options[@scroll_offset, @max_items]
-      end
-
-      def update_scroll
-        return unless @max_items && @options.length > @max_items
-
-        if @cursor < @scroll_offset
-          @scroll_offset = @cursor
-        elsif @cursor >= @scroll_offset + @max_items
-          @scroll_offset = @cursor - @max_items + 1
-        end
-      end
-
-      def active_bar
-        (@state == :error) ? Colors.yellow(Symbols::S_BAR) : bar
-      end
-
-      def bar_end
-        (@state == :error) ? Colors.yellow(Symbols::S_BAR_END) : Colors.gray(Symbols::S_BAR_END)
-      end
-
       def option_display(opt, idx)
         active = idx == @cursor
         selected = @selected.include?(opt[:value])
@@ -199,17 +137,12 @@ module Clack
       end
 
       def option_parts(opt, active, selected)
-        if opt[:disabled]
-          [Colors.dim(Symbols::S_CHECKBOX_INACTIVE), Colors.strikethrough(Colors.dim(opt[:label]))]
-        elsif active && selected
-          [Colors.green(Symbols::S_CHECKBOX_SELECTED), opt[:label]]
-        elsif active
-          [Colors.cyan(Symbols::S_CHECKBOX_ACTIVE), opt[:label]]
-        elsif selected
-          [Colors.green(Symbols::S_CHECKBOX_SELECTED), Colors.dim(opt[:label])]
-        else
-          [Colors.dim(Symbols::S_CHECKBOX_INACTIVE), Colors.dim(opt[:label])]
-        end
+        return [Colors.dim(Symbols::S_CHECKBOX_INACTIVE), Colors.strikethrough(Colors.dim(opt[:label]))] if opt[:disabled]
+        return [Colors.green(Symbols::S_CHECKBOX_SELECTED), opt[:label]] if active && selected
+        return [Colors.cyan(Symbols::S_CHECKBOX_ACTIVE), opt[:label]] if active
+        return [Colors.green(Symbols::S_CHECKBOX_SELECTED), Colors.dim(opt[:label])] if selected
+
+        [Colors.dim(Symbols::S_CHECKBOX_INACTIVE), Colors.dim(opt[:label])]
       end
     end
   end

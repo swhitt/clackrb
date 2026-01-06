@@ -74,10 +74,11 @@ module Clack
 
       def render_frame(frame, msg)
         line = "#{Colors.magenta(frame)}  #{msg}"
-        return if line == @prev_frame
-
-        @output.print "\r#{Core::Cursor.clear_to_end}#{line}"
-        @prev_frame = line
+        @mutex.synchronize do
+          return if line == @prev_frame
+          @output.print "\r#{Core::Cursor.clear_to_end}#{line}"
+          @prev_frame = line
+        end
       end
 
       def finish(state, message)
