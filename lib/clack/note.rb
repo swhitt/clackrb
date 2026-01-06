@@ -14,6 +14,7 @@ module Clack
         end
 
         output.puts build_bottom_border(width)
+        output.puts Colors.gray(Symbols::S_BAR)
       end
 
       private
@@ -27,7 +28,7 @@ module Clack
       def build_top_border(title, width)
         if title
           left = "#{Symbols::S_CONNECT_LEFT}#{Symbols::S_BAR_H}"
-          right_len = width - title.length
+          right_len = width - title.length + 1
           right = "#{Symbols::S_BAR_H * right_len}#{Symbols::S_CORNER_TOP_RIGHT}"
           "#{Colors.gray(left)} #{Colors.green(title)} #{Colors.gray(right)}"
         else
