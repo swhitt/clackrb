@@ -44,4 +44,13 @@ RSpec.configure do |config|
 
   config.order = :random
   Kernel.srand config.seed
+
+  # Enable ANSI escape sequences for tests (cursor codes, etc.)
+  config.before(:suite) do
+    Clack::Core::Cursor.enabled = true
+  end
+
+  config.after(:suite) do
+    Clack::Core::Cursor.enabled = nil
+  end
 end

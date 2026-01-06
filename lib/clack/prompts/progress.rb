@@ -2,8 +2,34 @@
 
 module Clack
   module Prompts
+    # Visual progress bar for measurable operations.
+    #
+    # Shows a filled/empty bar with percentage. Call {#start} to begin,
+    # {#advance} or {#update} to show progress, {#stop} to complete.
+    #
+    # @example Basic usage
+    #   progress = Clack.progress(total: 100, message: "Downloading...")
+    #   progress.start
+    #   100.times { |i| progress.update(i + 1) }
+    #   progress.stop("Download complete!")
+    #
+    # @example With advance
+    #   progress = Clack.progress(total: files.size)
+    #   progress.start("Processing files")
+    #   files.each do |file|
+    #     process(file)
+    #     progress.advance  # increments by 1
+    #   end
+    #   progress.stop("Done!")
+    #
     class Progress
+      # @param total [Integer] total number of steps (must be non-negative)
+      # @param message [String, nil] initial message to display
+      # @param output [IO] output stream (default: $stdout)
+      # @raise [ArgumentError] if total is negative
       def initialize(total:, message: nil, output: $stdout)
+        raise ArgumentError, "total must be non-negative" if total.negative?
+
         @total = total
         @current = 0
         @message = message
@@ -12,6 +38,10 @@ module Clack
         @width = 40
       end
 
+      # Start displaying the progress bar.
+      #
+      # @param message [String, nil] optional message to display
+      # @return [self] for method chaining
       def start(message = nil)
         @message = message if message
         @started = true
@@ -19,24 +49,40 @@ module Clack
         self
       end
 
+      # Advance progress by the given amount.
+      #
+      # @param amount [Integer] steps to advance (default: 1)
+      # @return [self] for method chaining
       def advance(amount = 1)
         @current = [@current + amount, @total].min
         render
         self
       end
 
+      # Set progress to an absolute value.
+      #
+      # @param current [Integer] current progress value
+      # @return [self] for method chaining
       def update(current)
         @current = [current, @total].min
         render
         self
       end
 
+      # Update the message without changing progress.
+      #
+      # @param msg [String] new message
+      # @return [self] for method chaining
       def message(msg)
         @message = msg
         render
         self
       end
 
+      # Complete with success. Sets progress to 100%.
+      #
+      # @param final_message [String, nil] final message to display
+      # @return [self] for method chaining
       def stop(final_message = nil)
         @current = @total
         @message = final_message if final_message
@@ -44,6 +90,10 @@ module Clack
         self
       end
 
+      # Complete with error state.
+      #
+      # @param message [String, nil] error message
+      # @return [self] for method chaining
       def error(message = nil)
         @message = message if message
         render_final(:error)
@@ -72,7 +122,7 @@ module Clack
       def progress_bar
         filled = @total.zero? ? @width : (@current.to_f / @total * @width).round
         empty = @width - filled
-        bar = Colors.green("█" * filled) + Colors.gray("░" * empty)
+        bar = Colors.green(Symbols::S_PROGRESS_FILLED * filled) + Colors.gray(Symbols::S_PROGRESS_EMPTY * empty)
         "[#{bar}]"
       end
 

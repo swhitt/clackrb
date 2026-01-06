@@ -3,6 +3,8 @@
 require_relative "clack/version"
 require_relative "clack/symbols"
 require_relative "clack/colors"
+require_relative "clack/environment"
+require_relative "clack/utils"
 require_relative "clack/core/cursor"
 require_relative "clack/core/settings"
 require_relative "clack/core/key_reader"
@@ -28,6 +30,7 @@ require_relative "clack/box"
 require_relative "clack/group"
 require_relative "clack/stream"
 require_relative "clack/task_log"
+require_relative "clack/validators"
 
 # Clack - Beautiful CLI prompts for Ruby
 #
@@ -58,6 +61,28 @@ module Clack
     # @return [Boolean] true if the user cancelled
     def cancel?(value)
       value.equal?(CANCEL)
+    end
+    alias_method :cancelled?, :cancel?
+
+    # Check if cancelled and show cancel message if so.
+    # Useful for guard clauses in CLI scripts.
+    #
+    # @param value [Object] the result from a prompt
+    # @param message [String] message to display if cancelled
+    # @param output [IO] output stream
+    # @return [Boolean] true if cancelled
+    #
+    # @example Guard clause pattern
+    #   name = Clack.text(message: "Name?")
+    #   return if Clack.handle_cancel(name)  # Shows "Cancelled" and returns true
+    #
+    # @example With custom message
+    #   return if Clack.handle_cancel(name, "Aborted by user")
+    def handle_cancel(value, message = "Cancelled", output: $stdout)
+      return false unless cancel?(value)
+
+      cancel(message, output: output)
+      true
     end
 
     # Display an intro banner at the start of a CLI session.
@@ -152,6 +177,40 @@ module Clack
     # @return [Prompts::Spinner] spinner instance (call #start, #stop, #error)
     def spinner(**opts)
       Prompts::Spinner.new(**opts)
+    end
+
+    # Run a block with a spinner, handling success/error automatically.
+    #
+    # @param message [String] initial spinner message
+    # @param success_message [String, nil] message on success (defaults to message)
+    # @param error_message [String, nil] message on error (defaults to exception message)
+    # @return [Object] the block's return value
+    # @raise [Exception] re-raises any exception from the block
+    #
+    # @example Basic usage
+    #   result = Clack.spin("Installing dependencies...") { system("npm install") }
+    #
+    # @example With custom success message
+    #   Clack.spin("Compiling...", success: "Build complete!") { build_project }
+    #
+    # @example Access spinner inside block
+    #   Clack.spin("Working...") do |s|
+    #     s.message "Step 1..."
+    #     do_step_1
+    #     s.message "Step 2..."
+    #     do_step_2
+    #   end
+    def spin(message, success: nil, error: nil, **opts)
+      s = spinner(**opts)
+      s.start(message)
+      begin
+        result = yield(s)
+        s.stop(success || message)
+        result
+      rescue => exception
+        s.error(error || exception.message)
+        raise
+      end
     end
 
     # Prompt with type-to-filter autocomplete.
@@ -269,6 +328,62 @@ module Clack
       TaskLog.new(title: title, **opts)
     end
 
+    # Access global settings
+    # @return [Hash] Current configuration
+    # @see Core::Settings.update for modifying settings
+    def settings
+      Core::Settings.config
+    end
+
+    # Update global settings
+    # @param aliases [Hash, nil] Custom key to action mappings
+    # @param with_guide [Boolean, nil] Whether to show guide bars
+    # @return [Hash] Updated configuration
+    #
+    # @example Custom key bindings
+    #   Clack.update_settings(aliases: { "y" => :enter, "n" => :cancel })
+    #
+    # @example Disable guide bars
+    #   Clack.update_settings(with_guide: false)
+    def update_settings(**opts)
+      Core::Settings.update(**opts)
+    end
+
+    # Check if running in a CI environment
+    # @return [Boolean]
+    def ci?
+      Environment.ci?
+    end
+
+    # Check if running on Windows
+    # @return [Boolean]
+    def windows?
+      Environment.windows?
+    end
+
+    # Check if stdout is a TTY
+    # @param output [IO] Output stream to check
+    # @return [Boolean]
+    def tty?(output = $stdout)
+      Environment.tty?(output)
+    end
+
+    # Get terminal columns (width)
+    # @param output [IO] Output stream
+    # @param default [Integer] Default if detection fails
+    # @return [Integer]
+    def columns(output = $stdout, default: 80)
+      Environment.columns(output, default: default)
+    end
+
+    # Get terminal rows (height)
+    # @param output [IO] Output stream
+    # @param default [Integer] Default if detection fails
+    # @return [Integer]
+    def rows(output = $stdout, default: 24)
+      Environment.rows(output, default: default)
+    end
+
     # :nocov:
     # :reek:TooManyStatements :reek:NestedIterators :reek:UncommunicativeVariableName
     # Demo - showcases all Clack features (interactive, tested manually)
@@ -346,7 +461,7 @@ module Clack
         message: "Pick a theme color:",
         options: %w[red orange yellow green blue indigo violet pink cyan magenta]
       )
-      return if cancelled?(color)
+      return if handle_cancel(color)
 
       # Select key prompt (quick keyboard shortcuts)
       action = select_key(
@@ -357,14 +472,14 @@ module Clack
           {value: "test", label: "Run tests", key: "t"}
         ]
       )
-      return if cancelled?(action)
+      return if handle_cancel(action)
 
       # Path prompt
       config_path = path(
         message: "Select config directory:",
         only_directories: true
       )
-      return if cancelled?(config_path)
+      return if handle_cancel(config_path)
 
       # Group multiselect
       stack = group_multiselect(
@@ -397,7 +512,7 @@ module Clack
         ],
         required: false
       )
-      return if cancelled?(stack)
+      return if handle_cancel(stack)
 
       # Progress bar
       prog = progress(total: 100, message: "Downloading assets...")
@@ -440,17 +555,6 @@ module Clack
       MSG
 
       outro "Happy coding!"
-    end
-    # :nocov:
-
-    private
-
-    # :nocov:
-    def cancelled?(value)
-      return false unless cancel?(value)
-
-      cancel("Cancelled")
-      true
     end
     # :nocov:
   end

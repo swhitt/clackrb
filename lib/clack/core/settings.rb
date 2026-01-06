@@ -35,9 +35,51 @@ module Clack
         KEY_CTRL_C => :cancel
       }.freeze
 
+      # Global configuration (mutable)
+      @config = {
+        aliases: ALIASES.dup,
+        with_guide: true
+      }
+      @config_mutex = Mutex.new
+
       class << self
+        # Get a copy of the current global config
+        # @return [Hash] Current configuration
+        def config
+          @config_mutex.synchronize { @config.dup }
+        end
+
+        # Update global settings
+        # @param aliases [Hash, nil] Custom key to action mappings (merged with defaults)
+        # @param with_guide [Boolean, nil] Whether to show guide bars
+        # @return [Hash] Updated configuration
+        def update(aliases: nil, with_guide: nil)
+          @config_mutex.synchronize do
+            @config[:aliases] = ALIASES.merge(aliases) if aliases
+            @config[:with_guide] = with_guide unless with_guide.nil?
+            @config.dup
+          end
+        end
+
+        # Reset settings to defaults
+        def reset!
+          @config_mutex.synchronize do
+            @config = {
+              aliases: ALIASES.dup,
+              with_guide: true
+            }
+          end
+        end
+
+        # Check if guide bars should be shown
+        # @return [Boolean]
+        def with_guide?
+          @config_mutex.synchronize { @config[:with_guide] }
+        end
+
         def action?(key)
-          ALIASES[key] if ACTIONS.include?(ALIASES[key])
+          aliases = @config_mutex.synchronize { @config[:aliases] }
+          aliases[key] if ACTIONS.include?(aliases[key])
         end
 
         # Check if a key is a printable character

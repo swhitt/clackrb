@@ -2,7 +2,22 @@
 
 module Clack
   module Prompts
+    # Password input prompt with masked display.
+    #
+    # Displays a mask character for each input character, hiding the actual
+    # password. Supports backspace but not cursor movement (for security).
+    #
+    # @example Basic usage
+    #   secret = Clack.password(message: "Enter your API key")
+    #
+    # @example With custom mask
+    #   secret = Clack.password(message: "Password", mask: "*")
+    #
     class Password < Core::Prompt
+      # @param message [String] the prompt message
+      # @param mask [String, nil] character to display (default: "▪")
+      # @param validate [Proc, nil] validation proc returning error string or nil
+      # @param opts [Hash] additional options passed to {Core::Prompt}
       def initialize(message:, mask: nil, **opts)
         super(message:, **opts)
         @mask = mask || Symbols::S_PASSWORD_MASK

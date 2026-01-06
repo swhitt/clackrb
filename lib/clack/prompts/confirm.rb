@@ -2,7 +2,28 @@
 
 module Clack
   module Prompts
+    # Yes/No confirmation prompt.
+    #
+    # Displays a toggle between two options. Navigate with arrow keys, j/k,
+    # or press y/n to select directly.
+    #
+    # @example Basic usage
+    #   proceed = Clack.confirm(message: "Continue?")
+    #
+    # @example With custom labels
+    #   deploy = Clack.confirm(
+    #     message: "Deploy to production?",
+    #     active: "Yes, ship it!",
+    #     inactive: "No, abort",
+    #     initial_value: false
+    #   )
+    #
     class Confirm < Core::Prompt
+      # @param message [String] the prompt message
+      # @param active [String] label for the "yes" option (default: "Yes")
+      # @param inactive [String] label for the "no" option (default: "No")
+      # @param initial_value [Boolean] initial selection (default: true)
+      # @param opts [Hash] additional options passed to {Core::Prompt}
       def initialize(message:, active: "Yes", inactive: "No", initial_value: true, **opts)
         super(message:, **opts)
         @active_label = active

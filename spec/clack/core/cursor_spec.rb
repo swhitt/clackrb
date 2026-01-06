@@ -1,15 +1,28 @@
 # frozen_string_literal: true
 
 RSpec.describe Clack::Core::Cursor do
+  before { described_class.enabled = true }
+  after { described_class.enabled = nil }
+
   describe ".hide" do
     it "returns hide cursor sequence" do
       expect(described_class.hide).to eq("\e[?25l")
+    end
+
+    it "returns empty string when disabled" do
+      described_class.enabled = false
+      expect(described_class.hide).to eq("")
     end
   end
 
   describe ".show" do
     it "returns show cursor sequence" do
       expect(described_class.show).to eq("\e[?25h")
+    end
+
+    it "returns empty string when disabled" do
+      described_class.enabled = false
+      expect(described_class.show).to eq("")
     end
   end
 

@@ -2,7 +2,29 @@
 
 module Clack
   module Prompts
+    # Quick selection via keyboard shortcuts.
+    #
+    # Each option has an associated key. Pressing that key immediately
+    # selects the option and submits.
+    #
+    # Options format:
+    # - `{ value: "x", label: "Do X", key: "x" }` - explicit key
+    # - `{ value: "create", label: "Create" }` - key defaults to first char
+    #
+    # @example Basic usage
+    #   action = Clack.select_key(
+    #     message: "What to do?",
+    #     options: [
+    #       { value: "create", label: "Create new", key: "c" },
+    #       { value: "open", label: "Open existing", key: "o" },
+    #       { value: "quit", label: "Quit", key: "q" }
+    #     ]
+    #   )
+    #
     class SelectKey < Core::Prompt
+      # @param message [String] the prompt message
+      # @param options [Array<Hash>] options with :value, :label, and optionally :key, :hint
+      # @param opts [Hash] additional options passed to {Core::Prompt}
       def initialize(message:, options:, **opts)
         super(message:, **opts)
         @options = normalize_options(options)

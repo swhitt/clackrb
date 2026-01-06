@@ -2,12 +2,41 @@
 
 module Clack
   module Prompts
-    # Spinner options:
-    # - indicator: :dots (animating dots) or :timer (elapsed time)
-    # - frames: custom spinner frames array
-    # - delay: delay between frames in seconds
-    # - style_frame: proc to style the spinner frame
+    # Animated spinner for async operations.
+    #
+    # Runs animation in a background thread. Call {#start} to begin,
+    # {#stop}/{#error}/{#cancel} to finish. Thread-safe message updates.
+    #
+    # Indicator modes:
+    # - `:dots` - animating dots after message (default)
+    # - `:timer` - elapsed time display [Xs] or [Xm Ys]
+    #
+    # @example Basic usage
+    #   s = Clack.spinner
+    #   s.start("Installing...")
+    #   # ... do work ...
+    #   s.stop("Done!")
+    #
+    # @example With timer
+    #   s = Clack.spinner(indicator: :timer)
+    #   s.start("Building")
+    #   build_project
+    #   s.stop("Build complete")  # => "Build complete [12s]"
+    #
+    # @example Updating message mid-spin
+    #   s = Clack.spinner
+    #   s.start("Step 1...")
+    #   do_step_1
+    #   s.message("Step 2...")
+    #   do_step_2
+    #   s.stop("All done!")
+    #
     class Spinner
+      # @param indicator [:dots, :timer] animation style (default: :dots)
+      # @param frames [Array<String>, nil] custom spinner frames
+      # @param delay [Float, nil] delay between frames in seconds
+      # @param style_frame [Proc, nil] proc to style each frame character
+      # @param output [IO] output stream (default: $stdout)
       def initialize(
         indicator: :dots,
         frames: nil,
@@ -31,6 +60,10 @@ module Clack
         @mutex = Mutex.new
       end
 
+      # Start the spinner animation.
+      #
+      # @param message [String, nil] initial message to display
+      # @return [self] for method chaining
       def start(message = nil)
         @mutex.synchronize do
           return if @running
@@ -50,22 +83,35 @@ module Clack
         self
       end
 
+      # Stop with success state.
+      #
+      # @param message [String, nil] final message (uses current if nil)
       def stop(message = nil)
         finish(:success, message)
       end
 
+      # Stop with error state.
+      #
+      # @param message [String, nil] error message (uses current if nil)
       def error(message = nil)
         finish(:error, message)
       end
 
+      # Stop with cancelled state.
+      #
+      # @param message [String, nil] cancellation message
       def cancel(message = nil)
         finish(:cancel, message)
       end
 
+      # Update the spinner message while running.
+      #
+      # @param msg [String] new message to display
       def message(msg)
         @mutex.synchronize { @message = remove_trailing_dots(msg) }
       end
 
+      # Clear the spinner without showing a final message.
       def clear
         @mutex.synchronize do
           @running = false

@@ -2,18 +2,49 @@
 
 module Clack
   module Prompts
-    # Autocomplete with multiselect - type to filter, space to toggle selection
+    # Type-to-filter autocomplete with multiple selection.
+    #
+    # Combines text input filtering with checkbox-style selection.
+    # Type to filter, Space to toggle, Enter to confirm.
+    #
+    # Shortcuts:
+    # - Space: toggle current option
+    # - 'a': toggle all options
+    # - 'i': invert selection
+    #
+    # @example Basic usage
+    #   colors = Clack.autocomplete_multiselect(
+    #     message: "Pick colors",
+    #     options: %w[red orange yellow green blue]
+    #   )
+    #
+    # @example With options
+    #   tags = Clack.autocomplete_multiselect(
+    #     message: "Select tags",
+    #     options: all_tags,
+    #     placeholder: "Type to filter...",
+    #     required: true,
+    #     initial_values: ["important"]
+    #   )
+    #
     class AutocompleteMultiselect < Core::Prompt
       include Core::OptionsHelper
       include Core::TextInputHelper
 
+      # @param message [String] the prompt message
+      # @param options [Array<Hash, String>] list of options to filter
+      # @param max_items [Integer] max visible options (default: 5)
+      # @param placeholder [String, nil] placeholder text when empty
+      # @param required [Boolean] require at least one selection (default: true)
+      # @param initial_values [Array, nil] values to pre-select
+      # @param opts [Hash] additional options passed to {Core::Prompt}
       def initialize(message:, options:, max_items: 5, placeholder: nil, required: true, initial_values: nil, **opts)
         super(message:, **opts)
         @all_options = normalize_options(options)
         @max_items = max_items
         @placeholder = placeholder
         @required = required
-        @value = ""
+        @search_text = ""
         @cursor = 0
         @selected_index = 0
         @scroll_offset = 0
@@ -46,22 +77,19 @@ module Clack
       end
 
       def handle_char(key)
-        case key&.downcase
-        when "a"
-          toggle_all
-        when "i"
-          invert_selection
-        else
-          handle_text_input(key)
+        # Shortcut keys only work when search field is empty
+        # to avoid interfering with typing filter text
+        if @search_text.empty?
+          case key&.downcase
+          when "a"
+            toggle_all
+            return
+          when "i"
+            invert_selection
+            return
+          end
         end
-      end
-
-      def handle_text_input(key)
-        return unless super
-
-        @selected_index = 0
-        @scroll_offset = 0
-        update_filtered
+        handle_text_input(key)
       end
 
       def toggle_current
@@ -108,14 +136,14 @@ module Clack
         lines = []
         lines << "#{bar}\n"
         lines << "#{symbol_for_state}  #{@message}\n"
-        lines << "#{active_bar}  #{Colors.dim("Search:")} #{input_display}#{match_count}\n"
+        lines << "#{active_bar}  #{Colors.dim("Search:")} #{search_input_display}#{match_count}\n"
 
         visible_options.each_with_index do |opt, idx|
           actual_idx = @scroll_offset + idx
           lines << "#{active_bar}  #{option_display(opt, actual_idx == @selected_index)}\n"
         end
 
-        lines << "#{active_bar}  #{Colors.yellow("No matches found")}\n" if @filtered.empty? && !@value.empty?
+        lines << "#{active_bar}  #{Colors.yellow("No matches found")}\n" if @filtered.empty? && !@search_text.empty?
 
         lines << "#{active_bar}  #{instructions}\n"
         lines << "#{bar_end}\n"
@@ -134,7 +162,7 @@ module Clack
         lines << "#{symbol_for_state}  #{@message}\n"
 
         display = if @state == :cancel
-          Colors.strikethrough(Colors.dim(@value.to_s))
+          Colors.strikethrough(Colors.dim("cancelled"))
         else
           Colors.dim("#{@selected_values.size} items selected")
         end
@@ -144,6 +172,47 @@ module Clack
       end
 
       private
+
+      # Override TextInputHelper methods to use @search_text instead of @value
+      def search_input_display
+        return placeholder_display if @search_text.empty?
+
+        search_value_with_cursor
+      end
+
+      def search_value_with_cursor
+        chars = @search_text.grapheme_clusters
+        return "#{@search_text}#{cursor_block}" if @cursor >= chars.length
+
+        before = chars[0...@cursor].join
+        current = Colors.inverse(chars[@cursor])
+        after = chars[(@cursor + 1)..].join
+        "#{before}#{current}#{after}"
+      end
+
+      # Override to work with @search_text instead of @value
+      def handle_text_input(key)
+        return false unless Core::Settings.printable?(key)
+
+        chars = @search_text.grapheme_clusters
+
+        if Core::Settings.backspace?(key)
+          return false if @cursor.zero?
+
+          chars.delete_at(@cursor - 1)
+          @search_text = chars.join
+          @cursor -= 1
+        else
+          chars.insert(@cursor, key)
+          @search_text = chars.join
+          @cursor += 1
+        end
+
+        @selected_index = 0
+        @scroll_offset = 0
+        update_filtered
+        true
+      end
 
       def match_count
         return "" if @filtered.size == @all_options.size
@@ -162,7 +231,7 @@ module Clack
       end
 
       def update_filtered
-        query = @value.downcase
+        query = @search_text.downcase
         @filtered = @all_options.select do |opt|
           opt[:label].downcase.include?(query) ||
             opt[:value].to_s.downcase.include?(query) ||

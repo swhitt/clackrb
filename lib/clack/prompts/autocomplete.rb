@@ -2,10 +2,36 @@
 
 module Clack
   module Prompts
+    # Type-to-filter autocomplete prompt.
+    #
+    # Combines text input with a filtered option list. Type to filter,
+    # use arrow keys to navigate matches, Enter to select.
+    #
+    # Filtering searches across value, label, and hint fields.
+    #
+    # @example Basic usage
+    #   color = Clack.autocomplete(
+    #     message: "Pick a color",
+    #     options: %w[red orange yellow green blue indigo violet]
+    #   )
+    #
+    # @example With placeholder
+    #   city = Clack.autocomplete(
+    #     message: "Select city",
+    #     options: cities,
+    #     placeholder: "Type to search...",
+    #     max_items: 10
+    #   )
+    #
     class Autocomplete < Core::Prompt
       include Core::OptionsHelper
       include Core::TextInputHelper
 
+      # @param message [String] the prompt message
+      # @param options [Array<Hash, String>] list of options to filter
+      # @param max_items [Integer] max visible options (default: 5)
+      # @param placeholder [String, nil] placeholder text when empty
+      # @param opts [Hash] additional options passed to {Core::Prompt}
       def initialize(message:, options:, max_items: 5, placeholder: nil, **opts)
         super(message:, **opts)
         @all_options = normalize_options(options)
