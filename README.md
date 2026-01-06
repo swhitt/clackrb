@@ -15,6 +15,10 @@ exit if Clack.cancel?(name)
 Clack.outro "Nice to meet you, #{name}!"
 ```
 
+<p align="center">
+  <img src="examples/demo.gif" width="640" alt="Clack demo">
+</p>
+
 ## Why Clack?
 
 - **Zero dependencies** - Pure Ruby, stdlib only
@@ -78,9 +82,7 @@ Clack.outro "You're all set!"
 Try it yourself:
 
 ```bash
-ruby examples/demo.rb
-# or
-clack-demo
+ruby examples/full_demo.rb
 ```
 
 <details>
@@ -284,15 +286,15 @@ features = Clack.group_multiselect(
     {
       label: "Frontend",
       options: [
-        { value: "react", label: "React" },
-        { value: "vue", label: "Vue" }
+        { value: "hotwire", label: "Hotwire" },
+        { value: "stimulus", label: "Stimulus" }
       ]
     },
     {
-      label: "Backend",
+      label: "Background",
       options: [
-        { value: "api", label: "REST API" },
-        { value: "graphql", label: "GraphQL" }
+        { value: "sidekiq", label: "Sidekiq" },
+        { value: "solid_queue", label: "Solid Queue" }
       ]
     }
   ]
