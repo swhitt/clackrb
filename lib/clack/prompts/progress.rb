@@ -35,6 +35,7 @@ module Clack
         @message = message
         @output = output
         @started = false
+        @rendered_once = false
         @width = 40
       end
 
@@ -105,12 +106,17 @@ module Clack
       def render
         return unless @started
 
-        @output.print "\r#{Core::Cursor.clear_to_end}"
-        @output.print "#{symbol}  #{progress_bar} #{percentage}#{message_text}"
+        # Move cursor up and clear line if not first render
+        if @rendered_once
+          @output.print "\e[1A\e[2K"
+        end
+        @rendered_once = true
+        @output.puts "#{symbol}  #{progress_bar} #{percentage}#{message_text}"
       end
 
       def render_final(state)
-        @output.print "\r#{Core::Cursor.clear_to_end}"
+        # Move up and clear the progress line
+        @output.print "\e[1A\e[2K" if @rendered_once
         sym = (state == :success) ? Colors.green(Symbols::S_STEP_SUBMIT) : Colors.red(Symbols::S_STEP_CANCEL)
         @output.puts "#{sym}  #{@message}"
       end

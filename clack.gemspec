@@ -10,7 +10,7 @@ Gem::Specification.new do |spec|
 
   spec.summary = "Beautiful, minimal CLI prompts"
   spec.description = "Ruby port of Clack — effortlessly build beautiful command-line apps with the modern, minimal aesthetic popularized by Vercel and Astro."
-  spec.homepage = "https://github.com/swhitt/clack-ruby"
+  spec.homepage = "https://github.com/swhitt/clackrb"
   spec.license = "MIT"
 
   spec.required_ruby_version = ">= 3.2.0"
