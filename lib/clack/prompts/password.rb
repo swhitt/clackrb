@@ -5,22 +5,17 @@ module Clack
         super(message:, **opts)
         @mask = mask || Symbols::S_PASSWORD_MASK
         @value = ""
-        @cursor = 0
       end
 
       protected
 
       def handle_input(key, _action)
-        return unless key && key.length == 1 && key.ord >= 32
+        return unless Core::Settings.printable?(key)
 
-        case key
-        when "\u007F", "\b"  # Backspace
-          return if @cursor == 0
-          @value = @value[0...(@cursor - 1)] + @value[@cursor..]
-          @cursor -= 1
+        if Core::Settings.backspace?(key)
+          @value = @value.chop
         else
-          @value = @value[0...@cursor] + key + @value[@cursor..]
-          @cursor += 1
+          @value += key
         end
       end
 
@@ -52,24 +47,11 @@ module Clack
 
       private
 
-      def active_bar
-        (@state == :error) ? Colors.yellow(Symbols::S_BAR) : bar
-      end
-
-      def bar_end
-        (@state == :error) ? Colors.yellow(Symbols::S_BAR_END) : Colors.gray(Symbols::S_BAR_END)
-      end
-
       def masked_display
         masked = @mask * @value.length
         return cursor_block if masked.empty?
 
-        return "#{masked}#{cursor_block}" if @cursor >= @value.length
-
-        before = masked[0...@cursor]
-        current = Colors.inverse(masked[@cursor])
-        after = masked[(@cursor + 1)..]
-        "#{before}#{current}#{after}"
+        "#{masked}#{cursor_block}"
       end
 
       def cursor_block

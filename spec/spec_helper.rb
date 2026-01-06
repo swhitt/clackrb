@@ -3,11 +3,25 @@ if ENV["COVERAGE"]
   SimpleCov.start do
     add_filter "/spec/"
     enable_coverage :branch
+
+    # Exclude interactive/IO code that can't be unit tested
+    add_filter "lib/clack/core/key_reader.rb"
+
+    # Coverage groups for reporting
+    add_group "Prompts", "lib/clack/prompts"
+    add_group "Core", "lib/clack/core"
+    add_group "Main", "lib/clack"
+
+    # Minimum coverage for testable code (excluding demo methods)
+    minimum_coverage line: 95, branch: 75
   end
 end
 
 require "clack"
 require "stringio"
+
+# Load support files
+Dir[File.join(__dir__, "support", "**", "*.rb")].each { |f| require f }
 
 RSpec.configure do |config|
   config.expect_with :rspec do |expectations|

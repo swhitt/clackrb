@@ -12,21 +12,26 @@ module Clack
       protected
 
       def handle_input(key, action)
-        case action
-        when :left
-          @cursor = [@cursor - 1, 0].max
-        when :right
-          @cursor = [@cursor + 1, @value.length].min
-        else
-          handle_text_input(key)
+        # Only use arrow key actions for actual arrow keys, not vim h/l keys
+        # which should be treated as text input
+        if key&.start_with?("\e[")
+          case action
+          when :left
+            @cursor = [@cursor - 1, 0].max
+            return
+          when :right
+            @cursor = [@cursor + 1, @value.length].min
+            return
+          end
         end
+
+        handle_text_input(key)
       end
 
       def handle_text_input(key)
-        return unless key && key.length == 1 && key.ord >= 32
+        return unless Core::Settings.printable?(key)
 
-        case key
-        when "\u007F", "\b"  # Backspace
+        if Core::Settings.backspace?(key)
           return if @cursor == 0
           @value = @value[0...(@cursor - 1)] + @value[@cursor..]
           @cursor -= 1
@@ -68,20 +73,6 @@ module Clack
 
       private
 
-      def active_bar
-        case @state
-        when :error then Colors.yellow(Symbols::S_BAR)
-        else bar
-        end
-      end
-
-      def bar_end
-        case @state
-        when :error then Colors.yellow(Symbols::S_BAR_END)
-        else Colors.gray(Symbols::S_BAR_END)
-        end
-      end
-
       def input_display
         return placeholder_display if @value.empty?
         value_with_cursor
@@ -102,10 +93,6 @@ module Clack
         current = Colors.inverse(@value[@cursor])
         after = @value[(@cursor + 1)..]
         "#{before}#{current}#{after}"
-      end
-
-      def cursor_block
-        Colors.inverse(" ")
       end
     end
   end

@@ -3,8 +3,6 @@ require "io/console"
 module Clack
   module Core
     class Prompt
-      STATES = %i[initial active cancel submit error].freeze
-
       attr_reader :state, :value, :error_message
 
       def initialize(message:, validate: nil, input: $stdin, output: $stdout)
@@ -97,7 +95,6 @@ module Clack
         restore_cursor
         @output.print Cursor.clear_down
         @output.print build_final_frame
-        @output.print "\n"
       end
 
       def build_final_frame
@@ -126,8 +123,20 @@ module Clack
         @output.print Cursor.column(1)
       end
 
-      def bar(color = :gray)
-        Colors.send(color, Symbols::S_BAR)
+      def bar
+        Colors.gray(Symbols::S_BAR)
+      end
+
+      def active_bar
+        (@state == :error) ? Colors.yellow(Symbols::S_BAR) : bar
+      end
+
+      def bar_end
+        (@state == :error) ? Colors.yellow(Symbols::S_BAR_END) : Colors.gray(Symbols::S_BAR_END)
+      end
+
+      def cursor_block
+        Colors.inverse(" ")
       end
 
       def symbol_for_state
