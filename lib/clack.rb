@@ -229,9 +229,10 @@ module Clack
     end
 
     # :nocov:
+    # :reek:TooManyStatements :reek:NestedIterators :reek:UncommunicativeVariableName
     # Demo - showcases all Clack features (interactive, tested manually)
     def demo
-      intro "create-app"
+      intro "clack-demo"
 
       result = group(on_cancel: ->(_) { cancel("Operation cancelled.") }) do |g|
         g.prompt(:name) do
@@ -295,39 +296,91 @@ module Clack
             initial_value: "pnpm"
           )
         end
-
-        g.prompt(:git) do
-          confirm(
-            message: "Initialize a new git repository?",
-            initial_value: true
-          )
-        end
-
-        g.prompt(:install) do
-          confirm(
-            message: "Install dependencies?",
-            initial_value: true
-          )
-        end
       end
 
       return if cancel?(result)
 
-      # Run installation
-      if result[:install]
-        s = spinner
-        s.start "Creating project structure..."
-        sleep 0.8
-        s.message "Installing dependencies via #{result[:package_manager]}..."
-        sleep 1.2
-        s.message "Configuring #{result[:template]} template..."
-        sleep 0.6
-        if result[:git]
-          s.message "Initializing git repository..."
-          sleep 0.4
-        end
-        s.stop "Project created successfully!"
+      # Autocomplete prompt
+      color = autocomplete(
+        message: "Pick a theme color:",
+        options: %w[red orange yellow green blue indigo violet pink cyan magenta]
+      )
+      return if cancelled?(color)
+
+      # Select key prompt (quick keyboard shortcuts)
+      action = select_key(
+        message: "What would you like to do first?",
+        options: [
+          {value: "dev", label: "Start dev server", key: "d"},
+          {value: "build", label: "Build for production", key: "b"},
+          {value: "test", label: "Run tests", key: "t"}
+        ]
+      )
+      return if cancelled?(action)
+
+      # Path prompt
+      config_path = path(
+        message: "Select config directory:",
+        only_directories: true
+      )
+      return if cancelled?(config_path)
+
+      # Group multiselect
+      stack = group_multiselect(
+        message: "Select additional integrations:",
+        options: [
+          {
+            label: "Frontend",
+            options: [
+              {value: "react", label: "React"},
+              {value: "vue", label: "Vue"},
+              {value: "svelte", label: "Svelte"}
+            ]
+          },
+          {
+            label: "Backend",
+            options: [
+              {value: "express", label: "Express"},
+              {value: "fastify", label: "Fastify"},
+              {value: "hono", label: "Hono"}
+            ]
+          },
+          {
+            label: "Database",
+            options: [
+              {value: "postgres", label: "PostgreSQL"},
+              {value: "mysql", label: "MySQL"},
+              {value: "sqlite", label: "SQLite"}
+            ]
+          }
+        ],
+        required: false
+      )
+      return if cancelled?(stack)
+
+      # Progress bar
+      prog = progress(total: 100, message: "Downloading assets...")
+      prog.start
+      20.times do
+        sleep 0.03
+        prog.advance(5)
       end
+      prog.stop("Assets downloaded!")
+
+      # Tasks
+      tasks(tasks: [
+        {title: "Validating configuration", task: -> { sleep 0.3 }},
+        {title: "Generating types", task: -> { sleep 0.4 }},
+        {title: "Compiling assets", task: -> { sleep 0.3 }}
+      ])
+
+      # Spinner
+      s = spinner
+      s.start "Installing dependencies via #{result[:package_manager]}..."
+      sleep 1.0
+      s.message "Configuring #{result[:template]} template..."
+      sleep 0.6
+      s.stop "Project created successfully!"
 
       # Summary
       log.step "Project: #{result[:name]}"
@@ -335,6 +388,10 @@ module Clack
       log.step "Template: #{result[:template]}"
       log.step "TypeScript: #{result[:typescript] ? "Yes" : "No"}"
       log.step "Features: #{result[:features].join(", ")}" unless result[:features].empty?
+      log.step "Color: #{color}"
+      log.step "Action: #{action}"
+      log.step "Config: #{config_path}"
+      log.step "Stack: #{stack.join(", ")}" unless stack.empty?
 
       note <<~MSG, title: "Next steps"
         cd #{result[:directory]}
