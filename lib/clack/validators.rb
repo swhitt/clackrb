@@ -84,7 +84,7 @@ module Clack
       # @param message [String, nil] Custom error message
       # @return [Proc] Validator proc
       def in_range(range, message = nil)
-        msg = message || "Must be between #{range.min} and #{range.max}"
+        msg = message || "Must be between #{range.first} and #{range.last}"
         lambda do |value|
           int_val = value.to_s.to_i
           msg unless range.cover?(int_val) && value.to_s.match?(/\A-?\d+\z/)

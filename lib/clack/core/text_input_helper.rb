@@ -50,29 +50,32 @@ module Clack
         "#{before}#{current}#{after}"
       end
 
-      # Handle text input key (backspace or printable character).
+      # Handle text input key (backspace/delete or printable character).
       # Requires @value and @cursor instance variables.
       # Uses grapheme clusters for proper Unicode handling.
       #
       # @param key [String] The key pressed
       # @return [Boolean] true if input was handled
       def handle_text_input(key)
+        return handle_backspace if Core::Settings.backspace?(key)
         return false unless Core::Settings.printable?(key)
 
         chars = @value.grapheme_clusters
+        chars.insert(@cursor, key)
+        @value = chars.join
+        @cursor += 1
+        true
+      end
 
-        if Core::Settings.backspace?(key)
-          return false if @cursor.zero?
+      private
 
-          chars.delete_at(@cursor - 1)
-          @value = chars.join
-          @cursor -= 1
-        else
-          chars.insert(@cursor, key)
-          @value = chars.join
-          @cursor += 1
-        end
+      def handle_backspace
+        return false if @cursor.zero?
 
+        chars = @value.grapheme_clusters
+        chars.delete_at(@cursor - 1)
+        @value = chars.join
+        @cursor -= 1
         true
       end
     end

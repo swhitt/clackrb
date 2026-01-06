@@ -560,12 +560,17 @@ module Clack
   end
 end
 
-# Terminal cleanup on exit
+# Terminal cleanup on exit - show cursor if it was hidden
 at_exit do
-  print "\e[?25h" # Show cursor
+  print "\e[?25h"
 end
 
-trap("INT") do
+# Chain INT handler to restore cursor before passing to previous handler
+previous_int_handler = trap("INT") do
   print "\e[?25h"
-  exit 130
+  case previous_int_handler
+  when Proc then previous_int_handler.call
+  when "DEFAULT", "SYSTEM_DEFAULT" then exit(130)
+  else exit(130)
+  end
 end

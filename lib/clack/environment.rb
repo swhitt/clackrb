@@ -10,14 +10,18 @@ module Clack
       # Check if running on Windows
       # @return [Boolean]
       def windows?
-        @windows ||= RUBY_PLATFORM =~ /mswin|mingw|cygwin|bccwin/i
+        return @windows if defined?(@windows)
+
+        @windows = !!(RUBY_PLATFORM =~ /mswin|mingw|cygwin|bccwin/i)
       end
 
       # Check if running in a CI environment
       # Common CI env vars: CI, CONTINUOUS_INTEGRATION, BUILD_NUMBER, GITHUB_ACTIONS, etc.
       # @return [Boolean]
       def ci?
-        @ci ||= ENV["CI"] == "true" ||
+        return @ci if defined?(@ci)
+
+        @ci = ENV["CI"] == "true" ||
           ENV["CONTINUOUS_INTEGRATION"] == "true" ||
           ENV.key?("BUILD_NUMBER") ||
           ENV.key?("GITHUB_ACTIONS") ||
@@ -125,8 +129,8 @@ module Clack
 
       # Reset cached environment checks (useful for testing)
       def reset!
-        @windows = nil
-        @ci = nil
+        remove_instance_variable(:@windows) if defined?(@windows)
+        remove_instance_variable(:@ci) if defined?(@ci)
       end
     end
   end

@@ -4,7 +4,17 @@ require "io/console"
 
 module Clack
   module Core
+    # Reads single keystrokes from the terminal in raw mode.
+    # Handles escape sequences for arrow keys and other special keys.
     module KeyReader
+      # Timeout for detecting if Escape is part of a sequence (50ms).
+      # If no follow-up character arrives, treat Escape as a standalone key.
+      ESCAPE_TIMEOUT = 0.05
+
+      # Timeout for reading additional characters in a CSI sequence (10ms).
+      # Short because subsequent bytes in a sequence arrive almost instantly.
+      SEQUENCE_TIMEOUT = 0.01
+
       class << self
         def read
           console = IO.console
@@ -15,14 +25,14 @@ module Clack
             return char if char.nil? # EOF
             return char unless char == "\e"
 
-            # Check for escape sequence
-            return char unless IO.select([io], nil, nil, 0.05)
+            # Check for escape sequence - wait briefly for follow-up
+            return char unless IO.select([io], nil, nil, ESCAPE_TIMEOUT)
 
             seq = io.getc.to_s
             return "\e#{seq}" unless seq == "["
 
-            # Read CSI sequence
-            seq += io.getc.to_s while IO.select([io], nil, nil, 0.01)
+            # Read CSI sequence until no more characters arrive
+            seq += io.getc.to_s while IO.select([io], nil, nil, SEQUENCE_TIMEOUT)
             "\e[#{seq[1..]}"
           end
         rescue Errno::EIO, Errno::EBADF, IOError

@@ -141,12 +141,16 @@ Unicode with ASCII fallbacks for limited terminals:
 
 ```ruby
 module Symbols
-  UNICODE = $stdout.tty? && ENV['TERM'] != 'dumb'
+  def self.unicode?
+    return @unicode if defined?(@unicode)
+    @unicode = ENV["CLACK_UNICODE"] == "1" ||
+      ($stdout.tty? && ENV["TERM"] != "dumb" && !ENV["NO_COLOR"])
+  end
 
-  S_STEP_ACTIVE = UNICODE ? "◆" : "*"
-  S_STEP_SUBMIT = UNICODE ? "◇" : "o"
-  S_STEP_CANCEL = UNICODE ? "■" : "x"
-  S_BAR         = UNICODE ? "│" : "|"
+  S_STEP_ACTIVE = unicode? ? "◆" : "*"
+  S_STEP_SUBMIT = unicode? ? "◇" : "o"
+  S_STEP_CANCEL = unicode? ? "■" : "x"
+  S_BAR         = unicode? ? "│" : "|"
   # ...
 end
 ```
@@ -157,10 +161,14 @@ ANSI escape codes with automatic disabling for non-TTY:
 
 ```ruby
 module Colors
-  ENABLED = $stdout.tty? && !ENV["NO_COLOR"]
+  def self.enabled?
+    return true if ENV["FORCE_COLOR"] && ENV["FORCE_COLOR"] != "0"
+    return false if ENV["NO_COLOR"]
+    $stdout.tty?
+  end
 
   def self.cyan(text)
-    return text.to_s unless ENABLED
+    return text.to_s unless enabled?
     "\e[36m#{text}\e[0m"
   end
 end
