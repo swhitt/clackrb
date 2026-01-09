@@ -159,6 +159,39 @@ RSpec.describe Clack::Core::Prompt do
     end
   end
 
+  describe "#request_redraw" do
+    it "forces next render to redraw" do
+      prompt = test_class.new(message: "Input", output: output)
+      # Manually set up state to test redraw
+      prompt.instance_variable_set(:@prev_frame, "old frame")
+      prompt.instance_variable_set(:@needs_redraw, false)
+
+      prompt.request_redraw
+
+      expect(prompt.instance_variable_get(:@needs_redraw)).to be true
+    end
+  end
+
+  describe ".register and .unregister" do
+    after { Clack::Core::Prompt.active_prompts.clear }
+
+    it "tracks active prompts" do
+      prompt = test_class.new(message: "Input", output: output)
+
+      Clack::Core::Prompt.register(prompt)
+      expect(Clack::Core::Prompt.active_prompts).to include(prompt)
+
+      Clack::Core::Prompt.unregister(prompt)
+      expect(Clack::Core::Prompt.active_prompts).not_to include(prompt)
+    end
+  end
+
+  describe ".setup_signal_handler" do
+    it "does not raise on setup" do
+      expect { described_class.setup_signal_handler }.not_to raise_error
+    end
+  end
+
   describe "rendering" do
     it "clears previous frame before rendering" do
       stub_keys("a", "b", :enter)

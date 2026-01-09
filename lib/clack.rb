@@ -574,3 +574,6 @@ previous_int_handler = trap("INT") do
   else exit(130)
   end
 end
+
+# Set up SIGWINCH handler for terminal resize
+Clack::Core::Prompt.setup_signal_handler

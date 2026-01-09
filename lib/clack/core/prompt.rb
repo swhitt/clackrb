@@ -27,6 +27,36 @@ module Clack
     #   end
     #
     class Prompt
+      # Track active prompts for SIGWINCH notification.
+      # Access is single-threaded (main thread only), so no mutex needed.
+      @active_prompts = []
+
+      class << self
+        attr_reader :active_prompts
+
+        # Register a prompt instance for resize notifications
+        def register(prompt)
+          @active_prompts << prompt
+        end
+
+        # Unregister a prompt instance
+        def unregister(prompt)
+          @active_prompts.delete(prompt)
+        end
+
+        # Set up SIGWINCH handler (called once on load).
+        # Signal handlers must avoid mutex/complex operations.
+        def setup_signal_handler
+          return if Clack::Environment.windows?
+
+          Signal.trap("WINCH") do
+            @active_prompts.each(&:request_redraw)
+          end
+        rescue ArgumentError
+          # Signal not supported on this platform
+        end
+      end
+
       # @return [Symbol] current state (:initial, :active, :error, :submit, :cancel)
       attr_reader :state
       # @return [Object] the current/final value
@@ -48,6 +78,13 @@ module Clack
         @error_message = nil
         @prev_frame = nil
         @cursor = 0
+        @needs_redraw = false
+      end
+
+      # Request a full redraw on next render cycle.
+      # Called by SIGWINCH handler when terminal is resized.
+      def request_redraw
+        @needs_redraw = true
       end
 
       # Run the prompt interaction loop.
@@ -57,6 +94,7 @@ module Clack
       #
       # @return [Object, Clack::CANCEL] the submitted value or CANCEL sentinel
       def run
+        Prompt.register(self)
         setup_terminal
         render
         @state = :active
@@ -72,6 +110,7 @@ module Clack
         finalize
         (terminal_state? && @state == :cancel) ? CANCEL : @value
       ensure
+        Prompt.unregister(self)
         cleanup_terminal
       end
 
@@ -121,9 +160,16 @@ module Clack
       end
 
       # Render the current frame using differential rendering.
-      # Only redraws if the frame content has changed.
+      # Only redraws if the frame content has changed or redraw was requested.
       def render
         frame = build_frame
+
+        # Force redraw if terminal was resized
+        if @needs_redraw
+          @needs_redraw = false
+          @prev_frame = nil
+        end
+
         return if frame == @prev_frame
 
         if @state == :initial
