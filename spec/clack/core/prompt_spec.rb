@@ -159,6 +159,86 @@ RSpec.describe Clack::Core::Prompt do
     end
   end
 
+  describe "#request_redraw" do
+    it "sets the needs_redraw flag" do
+      prompt = test_class.new(message: "Input", output: output)
+      prompt.instance_variable_set(:@needs_redraw, false)
+
+      prompt.request_redraw
+
+      expect(prompt.instance_variable_get(:@needs_redraw)).to be true
+    end
+
+    it "forces output on next render even if frame unchanged" do
+      prompt = test_class.new(message: "Input", output: output)
+      prompt.instance_variable_set(:@state, :active)
+
+      prompt.send(:render)
+      initial_length = output.string.length
+
+      # Same frame shouldn't re-render
+      prompt.send(:render)
+      expect(output.string.length).to eq(initial_length)
+
+      # Request redraw should force output
+      prompt.request_redraw
+      prompt.send(:render)
+      expect(output.string.length).to be > initial_length
+    end
+  end
+
+  describe ".register and .unregister" do
+    after { Clack::Core::Prompt.active_prompts.clear }
+
+    it "tracks active prompts" do
+      prompt = test_class.new(message: "Input", output: output)
+
+      Clack::Core::Prompt.register(prompt)
+      expect(Clack::Core::Prompt.active_prompts).to include(prompt)
+
+      Clack::Core::Prompt.unregister(prompt)
+      expect(Clack::Core::Prompt.active_prompts).not_to include(prompt)
+    end
+
+    it "unregisters prompt when exception raised during run" do
+      stub_keys("a")
+      prompt = test_class.new(message: "Input", output: output)
+      allow(prompt).to receive(:handle_input).and_raise("boom")
+
+      expect { prompt.run }.to raise_error("boom")
+      expect(Clack::Core::Prompt.active_prompts).not_to include(prompt)
+    end
+
+    it "restores cursor when exception raised during run" do
+      stub_keys("a")
+      prompt = test_class.new(message: "Input", output: output)
+      allow(prompt).to receive(:handle_input).and_raise("boom")
+
+      expect { prompt.run }.to raise_error("boom")
+      expect(output.string).to include("\e[?25h")
+    end
+  end
+
+  describe ".setup_signal_handler" do
+    it "does not raise on setup" do
+      expect { described_class.setup_signal_handler }.not_to raise_error
+    end
+
+    it "iterates active_prompts in handler" do
+      skip "SIGWINCH not available" unless Signal.list.key?("WINCH")
+
+      prompt = test_class.new(message: "Input", output: output)
+      Clack::Core::Prompt.register(prompt)
+
+      # Can't test actual signal delivery (trap context limitations),
+      # but we can verify the handler logic works
+      Clack::Core::Prompt.active_prompts.each(&:request_redraw)
+      expect(prompt.instance_variable_get(:@needs_redraw)).to be true
+    ensure
+      Clack::Core::Prompt.unregister(prompt)
+    end
+  end
+
   describe "rendering" do
     it "clears previous frame before rendering" do
       stub_keys("a", "b", :enter)

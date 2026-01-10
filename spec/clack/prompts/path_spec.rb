@@ -130,20 +130,52 @@ RSpec.describe Clack::Prompts::Path do
       expect(File.directory?(result) || result == test_dir).to be true
     end
 
-    it "handles absolute path input" do
-      stub_keys("/tmp", :enter)
+    it "rejects absolute paths outside root" do
+      stub_keys("/tmp", :enter, :escape)
       prompt = described_class.new(message: "Select path:", root: test_dir, output: output)
       result = prompt.run
 
-      expect(result).to eq("/tmp")
+      expect(output.string).to include("Path must be within")
+      expect(result).to eq(Clack::CANCEL)
     end
 
-    it "handles home directory expansion" do
-      stub_keys("~", :enter)
+    it "rejects home directory outside root" do
+      stub_keys("~", :enter, :escape)
       prompt = described_class.new(message: "Select path:", root: test_dir, output: output)
       result = prompt.run
 
-      expect(result).to eq(File.expand_path("~"))
+      expect(output.string).to include("Path must be within")
+      expect(result).to eq(Clack::CANCEL)
+    end
+
+    it "rejects path traversal attempts" do
+      stub_keys("../../../etc/passwd", :enter, :escape)
+      prompt = described_class.new(message: "Select path:", root: test_dir, output: output)
+      result = prompt.run
+
+      expect(output.string).to include("Path must be within")
+      expect(result).to eq(Clack::CANCEL)
+    end
+
+    it "rejects paths with matching prefix but different directory" do
+      # Boundary bug: ../src2 from root "src" resolves to sibling "src2"
+      # Old code: "/tmp/src2".start_with?("/tmp/src") = true (wrong!)
+      # Fixed:    "/tmp/src2".start_with?("/tmp/src/") = false (correct!)
+      stub_keys("../src2", :enter, :escape)
+      prompt = described_class.new(message: "Select path:", root: File.join(test_dir, "src"), output: output)
+      result = prompt.run
+
+      expect(output.string).to include("Path must be within")
+      expect(result).to eq(Clack::CANCEL)
+    end
+
+    it "allows paths within root even with relative components" do
+      FileUtils.mkdir_p(File.join(test_dir, "a", "b"))
+      stub_keys("a/../a/b", :enter)
+      prompt = described_class.new(message: "Select path:", root: test_dir, output: output)
+      result = prompt.run
+
+      expect(result).to eq(File.join(test_dir, "a/b"))
     end
 
     it "supports max_items for scrolling" do
@@ -208,12 +240,12 @@ RSpec.describe Clack::Prompts::Path do
     end
 
     it "handles SystemCallError when listing directory" do
-      stub_keys("/nonexistent/path/that/does/not/exist", :enter)
+      stub_keys("nonexistent/deep/path", :enter)
       prompt = described_class.new(message: "Select path:", root: test_dir, output: output)
       result = prompt.run
 
-      # Should handle error gracefully
-      expect(result).to include("/nonexistent/path")
+      # Should handle gracefully and return path within root
+      expect(result).to eq(File.join(test_dir, "nonexistent/deep/path"))
     end
   end
 
