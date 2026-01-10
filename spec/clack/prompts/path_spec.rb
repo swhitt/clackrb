@@ -277,4 +277,67 @@ RSpec.describe Clack::Prompts::Path do
       expect(output.string).to include("src")
     end
   end
+
+  describe "warning validation" do
+    it "shows warning and allows confirmation with Enter" do
+      stub_keys("README.md", :enter, :enter)
+      prompt = described_class.new(
+        message: "Select path:",
+        root: test_dir,
+        validate: ->(path) { Clack::Warning.new("File exists, overwrite?") if File.exist?(path) },
+        output: output
+      )
+      result = prompt.run
+
+      expect(result).to eq(File.join(test_dir, "README.md"))
+      expect(output.string).to include("File exists, overwrite?")
+      expect(output.string).to include("Press Enter to confirm")
+    end
+
+    it "clears warning on edit" do
+      stub_keys("README.md", :enter, :backspace, :backspace, :backspace, :backspace, :backspace, :backspace, :backspace, :backspace, :backspace, "newfile.txt", :enter)
+      prompt = described_class.new(
+        message: "Select path:",
+        root: test_dir,
+        validate: ->(path) { Clack::Warning.new("Exists!") if File.exist?(path) },
+        output: output
+      )
+      result = prompt.run
+
+      expect(result).to eq(File.join(test_dir, "newfile.txt"))
+    end
+
+    it "can cancel from warning state" do
+      stub_keys("README.md", :enter, :escape)
+      prompt = described_class.new(
+        message: "Select path:",
+        root: test_dir,
+        validate: ->(_) { Clack::Warning.new("Warning!") },
+        output: output
+      )
+      result = prompt.run
+
+      expect(Clack.cancel?(result)).to be true
+    end
+
+    it "distinguishes warnings from errors" do
+      # First enter triggers error (nonexistent path), then clear and type valid path
+      stub_keys("bad", :enter, :backspace, :backspace, :backspace, "README.md", :enter, :enter)
+      prompt = described_class.new(
+        message: "Select path:",
+        root: test_dir,
+        validate: lambda { |path|
+          return "Path does not exist" unless File.exist?(path)
+
+          Clack::Warning.new("File will be overwritten") if File.file?(path)
+        },
+        output: output
+      )
+      result = prompt.run
+
+      expect(result).to eq(File.join(test_dir, "README.md"))
+      expect(output.string).to include("Path does not exist")
+      expect(output.string).to include("File will be overwritten")
+    end
+  end
 end

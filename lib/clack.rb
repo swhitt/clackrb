@@ -56,7 +56,28 @@ module Clack
   # Sentinel value returned when user cancels a prompt (Escape or Ctrl+C)
   CANCEL = Object.new.tap { |o| o.define_singleton_method(:inspect) { "Clack::CANCEL" } }.freeze
 
+  # Warning result from validation - allows user to proceed with confirmation.
+  # Validators can return a Warning to show a yellow message that doesn't block
+  # submission if the user confirms by pressing Enter again.
+  #
+  # @example Validator returning a warning
+  #   validate: ->(v) { Clack::Warning.new("File exists, overwrite?") if File.exist?(v) }
+  Warning = Data.define(:message) do
+    def to_s = message
+  end
+
   class << self
+    # Create a validation warning that allows the user to proceed with confirmation.
+    #
+    # @param message [String] the warning message
+    # @return [Warning] a warning object
+    #
+    # @example
+    #   validate: ->(v) { Clack.warning("Unusual value") if v.length > 100 }
+    def warning(message)
+      Warning.new(message)
+    end
+
     # Check if a prompt result was cancelled by the user.
     #
     # @param value [Object] the result from a prompt

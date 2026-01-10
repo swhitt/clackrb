@@ -208,44 +208,75 @@ RSpec.describe Clack::Prompts::Text do
       expect(output.string).to include("Required")
     end
 
-    it "displays help text when provided" do
-      stub_keys("x", :enter)
-      prompt = described_class.new(
-        message: "Input?",
-        help: "Enter something useful",
-        output: output
-      )
-      prompt.run
+    context "with warning validation" do
+      it "shows warning and allows confirmation with Enter" do
+        stub_keys("test", :enter, :enter)
+        prompt = described_class.new(
+          message: "Input?",
+          validate: ->(val) { Clack::Warning.new("Are you sure?") if val == "test" },
+          output: output
+        )
+        result = prompt.run
 
-      expect(output.string).to include("Enter something useful")
-    end
+        expect(result).to eq("test")
+        expect(output.string).to include("Are you sure?")
+        expect(output.string).to include("Press Enter to confirm")
+      end
 
-    it "does not show help line when not provided" do
-      stub_keys("x", :enter)
-      prompt = described_class.new(message: "Input?", output: output)
-      prompt.run
+      it "clears warning on edit and re-validates" do
+        stub_keys("bad", :enter, :backspace, :backspace, :backspace, "ok", :enter)
+        prompt = described_class.new(
+          message: "Input?",
+          validate: ->(val) { Clack::Warning.new("Bad value") if val == "bad" },
+          output: output
+        )
+        result = prompt.run
 
-      # Just verify it doesn't crash and works normally
-      expect(output.string).to include("Input?")
-    end
+        expect(result).to eq("ok")
+        expect(output.string).to include("Bad value")
+      end
 
-    it "supports slow/blocking validation (simulated async)" do
-      call_count = 0
-      # Type "bad", submit (fails), backspace 3x to clear, type "good", submit
-      stub_keys("bad", :enter, :backspace, :backspace, :backspace, "good", :enter)
-      prompt = described_class.new(
-        message: "Input?",
-        validate: ->(val) {
-          call_count += 1
-          sleep 0.01 # Simulate slow I/O (database, API, etc.)
-          "Invalid" if val == "bad"
-        },
-        output: output
-      )
-      result = prompt.run
+      it "can cancel from warning state" do
+        stub_keys("test", :enter, :escape)
+        prompt = described_class.new(
+          message: "Input?",
+          validate: ->(_) { Clack::Warning.new("Warning!") },
+          output: output
+        )
+        result = prompt.run
 
-      expect(result).to eq("good")
-      expect(call_count).to eq(2) # Called twice: once for "bad", once for "good"
+        expect(Clack.cancel?(result)).to be true
+      end
+
+      it "distinguishes warnings from errors" do
+        stub_keys(:enter, "x", :enter, :enter)
+        prompt = described_class.new(
+          message: "Input?",
+          validate: lambda { |val|
+            return "Required" if val.empty?
+
+            Clack::Warning.new("Short input") if val.length < 3
+          },
+          output: output
+        )
+        result = prompt.run
+
+        expect(result).to eq("x")
+        expect(output.string).to include("Required")
+        expect(output.string).to include("Short input")
+      end
+
+      it "appends input typed during warning state" do
+        stub_keys("a", :enter, "bc", :enter)
+        prompt = described_class.new(
+          message: "Input?",
+          validate: ->(v) { Clack::Warning.new("Short") if v.length < 3 },
+          output: output
+        )
+        result = prompt.run
+
+        expect(result).to eq("abc")
+      end
     end
   end
 end

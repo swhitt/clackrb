@@ -1,0 +1,12 @@
+#!/usr/bin/expect -f
+set timeout 10
+
+log_user 0
+spawn ruby examples/images/select_example.rb
+log_user 1
+sleep 0.5
+# Move down once
+send "\x1b\[B"
+sleep 0.5
+send "\r"
+expect eof

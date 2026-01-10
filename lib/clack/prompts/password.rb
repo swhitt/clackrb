@@ -45,7 +45,11 @@ module Clack
         lines << "#{active_bar}  #{masked_display}\n"
         lines << "#{bar_end}\n"
 
-        lines[-1] = "#{Colors.yellow(Symbols::S_BAR_END)}  #{Colors.yellow(@error_message)}\n" if @state == :error
+        validation_lines = validation_message_lines
+        if validation_lines.any?
+          lines[-1] = validation_lines.first
+          lines.concat(validation_lines[1..])
+        end
 
         lines.join
       end

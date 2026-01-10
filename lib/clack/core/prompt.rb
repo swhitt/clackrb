@@ -6,7 +6,7 @@ module Clack
   module Core
     # Base class for all interactive prompts.
     #
-    # Implements a state machine with states: :initial, :active, :error, :submit, :cancel.
+    # Implements a state machine with states: :initial, :active, :error, :warning, :submit, :cancel.
     # Subclasses override {#handle_input}, {#build_frame}, and {#build_final_frame}
     # to customize behavior and rendering.
     #
@@ -57,12 +57,14 @@ module Clack
         end
       end
 
-      # @return [Symbol] current state (:initial, :active, :error, :submit, :cancel)
+      # @return [Symbol] current state (:initial, :active, :error, :warning, :submit, :cancel)
       attr_reader :state
       # @return [Object] the current/final value
       attr_reader :value
       # @return [String, nil] validation error message, if any
       attr_reader :error_message
+      # @return [String, nil] validation warning message, if any
+      attr_reader :warning_message
 
       # @param message [String] the prompt message to display
       # @param help [String, nil] optional help text shown below the message
@@ -80,6 +82,8 @@ module Clack
         @state = :initial
         @value = nil
         @error_message = nil
+        @warning_message = nil
+        @warning_confirmed = false
         @prev_frame = nil
         @cursor = 0
         @needs_redraw = false
@@ -127,9 +131,24 @@ module Clack
       def handle_key(key)
         return if terminal_state?
 
-        @state = :active if @state == :error
-
         action = Settings.action?(key)
+
+        # Handle warning state: Enter confirms, Cancel aborts, other input clears warning
+        if @state == :warning
+          case action
+          when :enter
+            confirm_warning
+            submit
+          when :cancel
+            @state = :cancel
+          else
+            clear_warning
+            handle_input(key, action)
+          end
+          return
+        end
+
+        @state = :active if @state == :error
 
         case action
         when :cancel
@@ -150,27 +169,57 @@ module Clack
       end
 
       # Validate and submit the current value.
-      # Sets state to :error if validation fails, :submit otherwise.
-      # Applies transform after successful validation.
+      # Sets state to :error if validation fails, :warning if warning returned,
+      # or :submit otherwise. Applies transform after successful validation.
       def submit
-        if @validate
-          result = @validate.call(@value)
-          if result
-            @error_message = result.is_a?(Exception) ? result.message : result.to_s
-            @state = :error
-            return
-          end
-        end
+        @state = validate_value(@value)
+        return unless @state == :submit
+
         if @transform
           begin
             @value = @transform.call(@value)
           rescue => error
             @error_message = "Transform failed: #{error.message}"
             @state = :error
-            return
           end
         end
-        @state = :submit
+      end
+
+      # Validate a value and return the resulting state.
+      # Handles errors, warnings, and the warning confirmation flow.
+      #
+      # @param value [Object] the value to validate
+      # @return [Symbol] :submit, :warning, or :error
+      def validate_value(value)
+        return :submit unless @validate
+
+        result = @validate.call(value)
+        return :submit unless result
+
+        if result.is_a?(Warning)
+          return :submit if @warning_confirmed
+
+          @warning_message = result.message
+          :warning
+        else
+          @error_message = result.is_a?(Exception) ? result.message : result.to_s
+          :error
+        end
+      end
+
+      # Clear warning state and return to active.
+      # Call this when user edits input during warning state.
+      def clear_warning
+        @warning_confirmed = false
+        @warning_message = nil
+        @state = :active
+      end
+
+      # Confirm warning and prepare for resubmission.
+      # Call this when user confirms a warning.
+      def confirm_warning
+        @warning_confirmed = true
+        @warning_message = nil
       end
 
       # Render the current frame using differential rendering.
@@ -253,11 +302,11 @@ module Clack
       end
 
       def active_bar
-        (@state == :error) ? Colors.yellow(Symbols::S_BAR) : bar
+        %i[error warning].include?(@state) ? Colors.yellow(Symbols::S_BAR) : bar
       end
 
       def bar_end
-        (@state == :error) ? Colors.yellow(Symbols::S_BAR_END) : Colors.gray(Symbols::S_BAR_END)
+        %i[error warning].include?(@state) ? Colors.yellow(Symbols::S_BAR_END) : Colors.gray(Symbols::S_BAR_END)
       end
 
       def help_line
@@ -275,7 +324,23 @@ module Clack
         when :initial, :active then Colors.cyan(Symbols::S_STEP_ACTIVE)
         when :submit then Colors.green(Symbols::S_STEP_SUBMIT)
         when :cancel then Colors.red(Symbols::S_STEP_CANCEL)
-        when :error then Colors.yellow(Symbols::S_STEP_ERROR)
+        when :error, :warning then Colors.yellow(Symbols::S_STEP_ERROR)
+        end
+      end
+
+      # Build validation message lines for error or warning states.
+      # Returns array of lines to append, or empty array if no validation message.
+      def validation_message_lines
+        case @state
+        when :error
+          ["#{Colors.yellow(Symbols::S_BAR_END)}  #{Colors.yellow(@error_message)}\n"]
+        when :warning
+          [
+            "#{Colors.yellow(Symbols::S_BAR_END)}  #{Colors.yellow(@warning_message)}\n",
+            "#{bar}  #{Colors.dim("Press Enter to confirm, or edit your input")}\n"
+          ]
+        else
+          []
         end
       end
     end

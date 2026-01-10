@@ -48,17 +48,8 @@ module Clack
 
       protected
 
-      def handle_key(key)
-        return if terminal_state?
-
-        @state = :active if @state == :error
-        action = Core::Settings.action?(key)
-
+      def handle_input(key, action)
         case action
-        when :cancel
-          @state = :cancel
-        when :enter
-          submit_selection
         when :up
           move_selection(-1)
         when :down
@@ -89,7 +80,7 @@ module Clack
         update_suggestions
       end
 
-      def submit_selection
+      def submit
         path = @value.empty? ? @root : resolve_path(@value)
 
         unless path_within_root?(path)
@@ -98,14 +89,14 @@ module Clack
           return
         end
 
-        # Store original input in case validation fails
+        # Temporarily set value to resolved path for validation
         original_value = @value
         @value = path
 
-        submit
+        super
 
-        # Restore input buffer if validation failed
-        @value = original_value if @state == :error
+        # Restore input buffer if validation or transform failed (but not for warnings)
+        @value = original_value if @state == :error || @state == :warning
       end
 
       def build_frame
@@ -122,7 +113,11 @@ module Clack
 
         lines << "#{bar_end}\n"
 
-        lines[-1] = "#{Colors.yellow(Symbols::S_BAR_END)}  #{Colors.yellow(@error_message)}\n" if @state == :error
+        validation_lines = validation_message_lines
+        if validation_lines.any?
+          lines[-1] = validation_lines.first
+          lines.concat(validation_lines[1..])
+        end
 
         lines.join
       end

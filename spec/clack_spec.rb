@@ -17,6 +17,38 @@ RSpec.describe Clack do
     end
   end
 
+  describe "Warning" do
+    it "stores the message" do
+      warning = Clack::Warning.new("Watch out!")
+      expect(warning.message).to eq("Watch out!")
+    end
+
+    it "converts to string" do
+      warning = Clack::Warning.new("Be careful")
+      expect(warning.to_s).to eq("Be careful")
+    end
+
+    it "handles empty message" do
+      warning = Clack::Warning.new("")
+      expect(warning.message).to eq("")
+      expect(warning.to_s).to eq("")
+    end
+
+    it "handles nil message" do
+      warning = Clack::Warning.new(nil)
+      expect(warning.message).to be_nil
+      expect(warning.to_s).to be_nil
+    end
+  end
+
+  describe ".warning" do
+    it "creates a Warning object" do
+      warning = Clack.warning("Test warning")
+      expect(warning).to be_a(Clack::Warning)
+      expect(warning.message).to eq("Test warning")
+    end
+  end
+
   describe ".cancel?" do
     it "returns true for CANCEL" do
       expect(Clack.cancel?(Clack::CANCEL)).to be true
