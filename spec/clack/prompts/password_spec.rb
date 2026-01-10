@@ -72,5 +72,25 @@ RSpec.describe Clack::Prompts::Password do
 
       expect(result).to eq("ab")
     end
+
+    it "correctly counts grapheme clusters for emoji" do
+      stub_keys("🔥", "🎉", :enter)
+      prompt = described_class.new(message: "Password:", output: output)
+      result = prompt.run
+
+      expect(result).to eq("🔥🎉")
+      # Should show 2 masks, not 8 (the byte length)
+      expect(output.string).to include("**")
+      expect(output.string).not_to include("********")
+    end
+
+    it "correctly masks multi-byte unicode characters" do
+      stub_keys("日", "本", :enter)
+      prompt = described_class.new(message: "Password:", output: output)
+      result = prompt.run
+
+      expect(result).to eq("日本")
+      expect(output.string).to include("**")
+    end
   end
 end

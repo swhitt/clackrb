@@ -92,6 +92,12 @@ module Clack
       def submit_selection
         path = @value.empty? ? @root : resolve_path(@value)
 
+        unless path_within_root?(path)
+          @error_message = "Path must be within #{@root}"
+          @state = :error
+          return
+        end
+
         if @validate
           result = @validate.call(path)
           if result
@@ -138,6 +144,13 @@ module Clack
 
       def update_suggestions
         base_path = resolve_path(@value)
+
+        # Only show suggestions for paths within root
+        unless path_within_root?(base_path)
+          @suggestions = []
+          return
+        end
+
         search_dir = File.directory?(base_path) ? base_path : File.dirname(base_path)
         prefix = File.directory?(base_path) ? "" : File.basename(base_path).downcase
 
@@ -172,13 +185,21 @@ module Clack
       def resolve_path(input)
         return @root if input.empty?
 
-        if input.start_with?("/")
+        path = if input.start_with?("/")
           input
         elsif input.start_with?("~")
           File.expand_path(input)
         else
           File.join(@root, input)
         end
+
+        # Canonicalize to resolve .. and symlinks
+        File.expand_path(path)
+      end
+
+      def path_within_root?(path)
+        expanded = File.expand_path(path)
+        expanded.start_with?(@root) || expanded == @root
       end
 
       def visible_suggestions

@@ -53,7 +53,7 @@ module Clack
         lines << "#{bar}\n"
         lines << "#{symbol_for_state}  #{@message}\n"
 
-        masked = @mask * @value.length
+        masked = @mask * @value.grapheme_clusters.length
         display = (@state == :cancel) ? Colors.strikethrough(Colors.dim(masked)) : Colors.dim(masked)
         lines << "#{bar}  #{display}\n"
 
@@ -63,7 +63,7 @@ module Clack
       private
 
       def masked_display
-        masked = @mask * @value.length
+        masked = @mask * @value.grapheme_clusters.length
         return cursor_block if masked.empty?
 
         "#{masked}#{cursor_block}"
