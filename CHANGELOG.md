@@ -2,16 +2,17 @@
 
 ## [Unreleased]
 
-### Added
-- Full prompt library: text, password, confirm, select, multiselect, autocomplete, path, select_key, spinner, progress, tasks, group_multiselect
-- `Clack.group` for chaining prompts with shared results
-- `Clack.stream` for streaming output from commands and iterables
-- Vim-style navigation (`hjkl`) alongside arrow keys
-- Zero runtime dependencies
+## [0.1.1]
 
-### Changed
-- Ruby 3.2+ support
+### Fixed
+- Path prompt now correctly rejects paths outside root (fixed boundary check bug)
+- Password backspace properly removes Unicode grapheme clusters, not just bytes
+- Terminal cleanup handles closed output streams gracefully
+- SIGWINCH handler uses explicit signal check instead of rescue
+
+### Added
+- Terminal resize support via SIGWINCH signal handling
 
 ## [0.1.0]
 
-Initial release.
+Initial release with full prompt library.
