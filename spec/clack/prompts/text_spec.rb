@@ -207,5 +207,76 @@ RSpec.describe Clack::Prompts::Text do
       # Error appeared then was resolved
       expect(output.string).to include("Required")
     end
+
+    context "with warning validation" do
+      it "shows warning and allows confirmation with Enter" do
+        stub_keys("test", :enter, :enter)
+        prompt = described_class.new(
+          message: "Input?",
+          validate: ->(val) { Clack::Warning.new("Are you sure?") if val == "test" },
+          output: output
+        )
+        result = prompt.run
+
+        expect(result).to eq("test")
+        expect(output.string).to include("Are you sure?")
+        expect(output.string).to include("Press Enter to confirm")
+      end
+
+      it "clears warning on edit and re-validates" do
+        stub_keys("bad", :enter, :backspace, :backspace, :backspace, "ok", :enter)
+        prompt = described_class.new(
+          message: "Input?",
+          validate: ->(val) { Clack::Warning.new("Bad value") if val == "bad" },
+          output: output
+        )
+        result = prompt.run
+
+        expect(result).to eq("ok")
+        expect(output.string).to include("Bad value")
+      end
+
+      it "can cancel from warning state" do
+        stub_keys("test", :enter, :escape)
+        prompt = described_class.new(
+          message: "Input?",
+          validate: ->(_) { Clack::Warning.new("Warning!") },
+          output: output
+        )
+        result = prompt.run
+
+        expect(Clack.cancel?(result)).to be true
+      end
+
+      it "distinguishes warnings from errors" do
+        stub_keys(:enter, "x", :enter, :enter)
+        prompt = described_class.new(
+          message: "Input?",
+          validate: lambda { |val|
+            return "Required" if val.empty?
+
+            Clack::Warning.new("Short input") if val.length < 3
+          },
+          output: output
+        )
+        result = prompt.run
+
+        expect(result).to eq("x")
+        expect(output.string).to include("Required")
+        expect(output.string).to include("Short input")
+      end
+
+      it "appends input typed during warning state" do
+        stub_keys("a", :enter, "bc", :enter)
+        prompt = described_class.new(
+          message: "Input?",
+          validate: ->(v) { Clack::Warning.new("Short") if v.length < 3 },
+          output: output
+        )
+        result = prompt.run
+
+        expect(result).to eq("abc")
+      end
+    end
   end
 end

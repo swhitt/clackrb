@@ -157,6 +157,24 @@ RSpec.describe Clack::Validators do
     it "returns second error when first passes but second fails" do
       expect(validator.call("hi")).to eq("Must be at least 3 characters")
     end
+
+    it "returns warning and skips subsequent validators" do
+      validator = described_class.combine(
+        described_class.as_warning(described_class.min_length(5)),
+        described_class.max_length(3)
+      )
+      result = validator.call("test")
+      expect(result).to be_a(Clack::Warning)
+      expect(result.message).to eq("Must be at least 5 characters")
+    end
+
+    it "returns error before checking warning validators" do
+      validator = described_class.combine(
+        described_class.required,
+        described_class.as_warning(described_class.min_length(5))
+      )
+      expect(validator.call("")).to eq("This field is required")
+    end
   end
 
   describe ".email" do
@@ -220,6 +238,48 @@ RSpec.describe Clack::Validators do
 
     it "returns error for non-existent path" do
       expect(validator.call("/nonexistent/dir")).to eq("Directory does not exist")
+    end
+  end
+
+  describe ".file_exists_warning" do
+    let(:validator) { described_class.file_exists_warning }
+
+    it "returns nil for non-existent path" do
+      expect(validator.call("/nonexistent/file.txt")).to be_nil
+    end
+
+    it "returns Warning for existing file" do
+      result = validator.call(__FILE__)
+      expect(result).to be_a(Clack::Warning)
+      expect(result.message).to eq("File already exists. Overwrite?")
+    end
+
+    it "accepts custom message" do
+      validator = described_class.file_exists_warning("Replace existing?")
+      result = validator.call(__FILE__)
+      expect(result.message).to eq("Replace existing?")
+    end
+  end
+
+  describe ".as_warning" do
+    let(:error_validator) { described_class.max_length(5, "Too long!") }
+    let(:warning_validator) { described_class.as_warning(error_validator) }
+
+    it "returns nil when wrapped validator passes" do
+      expect(warning_validator.call("hi")).to be_nil
+    end
+
+    it "returns Warning when wrapped validator would fail" do
+      result = warning_validator.call("toolong")
+      expect(result).to be_a(Clack::Warning)
+      expect(result.message).to eq("Too long!")
+    end
+
+    it "can wrap any validator" do
+      required_warning = described_class.as_warning(described_class.required)
+      result = required_warning.call("")
+      expect(result).to be_a(Clack::Warning)
+      expect(result.message).to eq("This field is required")
     end
   end
 end

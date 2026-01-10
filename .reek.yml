@@ -65,7 +65,7 @@ detectors:
     max_ifs: 4
 
   TooManyMethods:
-    max_methods: 25
+    max_methods: 26
 
 exclude_paths:
   - spec

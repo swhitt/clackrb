@@ -18,6 +18,7 @@ RSpec.describe Clack::Core::Prompt do
       def build_frame
         frame = "#{symbol_for_state} #{@message}: #{@test_value}\n"
         frame += "Error: #{@error_message}\n" if @state == :error && @error_message
+        frame += "Warning: #{@warning_message}\n" if @state == :warning && @warning_message
         frame
       end
 
@@ -294,6 +295,105 @@ RSpec.describe Clack::Core::Prompt do
       prompt.run
 
       expect(output.string).to include(Clack::Symbols::S_STEP_CANCEL)
+    end
+
+    it "includes error symbol for warning state" do
+      stub_keys("x", :enter, :enter)
+      prompt = test_class.new(
+        message: "Input",
+        validate: ->(_) { Clack::Warning.new("Careful!") },
+        output: output
+      )
+      prompt.run
+
+      expect(output.string).to include(Clack::Symbols::S_STEP_ERROR)
+    end
+  end
+
+  describe "warning validation" do
+    it "transitions to warning state when validator returns Warning" do
+      stub_keys("x", :enter, :enter)
+      prompt = test_class.new(
+        message: "Input",
+        validate: ->(_) { Clack::Warning.new("Are you sure?") },
+        output: output
+      )
+      prompt.run
+
+      expect(output.string).to include("Are you sure?")
+      expect(prompt.state).to eq(:submit)
+    end
+
+    it "confirms warning and submits on second Enter" do
+      stub_keys("test", :enter, :enter)
+      prompt = test_class.new(
+        message: "Input",
+        validate: ->(v) { Clack::Warning.new("Warning!") if v == "test" },
+        output: output
+      )
+      result = prompt.run
+
+      expect(result).to eq("test")
+    end
+
+    it "cancels from warning state on Escape" do
+      stub_keys("x", :enter, :escape)
+      prompt = test_class.new(
+        message: "Input",
+        validate: ->(_) { Clack::Warning.new("Warning!") },
+        output: output
+      )
+      result = prompt.run
+
+      expect(result).to eq(Clack::CANCEL)
+      expect(prompt.state).to eq(:cancel)
+    end
+
+    it "clears warning and processes input when typing during warning" do
+      stub_keys("a", :enter, "b", :enter)
+      prompt = test_class.new(
+        message: "Input",
+        validate: ->(v) { Clack::Warning.new("Short!") if v.length < 2 },
+        output: output
+      )
+      result = prompt.run
+
+      expect(result).to eq("ab")
+    end
+
+    it "re-validates after clearing warning" do
+      call_count = 0
+      stub_keys("x", :enter, "y", :enter, :enter)
+      prompt = test_class.new(
+        message: "Input",
+        validate: lambda { |_|
+          call_count += 1
+          Clack::Warning.new("Warning #{call_count}")
+        },
+        output: output
+      )
+      prompt.run
+
+      # Should have been called 3 times: initial submit, after edit, final confirm
+      expect(call_count).to eq(3)
+    end
+
+    it "distinguishes warnings from errors" do
+      stub_keys(:enter, "x", :enter, :enter)
+      prompt = test_class.new(
+        message: "Input",
+        validate: lambda { |v|
+          return "Required" if v.empty?
+
+          Clack::Warning.new("Short") if v.length < 3
+        },
+        output: output
+      )
+      result = prompt.run
+
+      expect(result).to eq("x")
+      expect(output.string).to include("Required")
+      expect(output.string).to include("Short")
     end
   end
 end

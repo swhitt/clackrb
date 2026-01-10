@@ -48,17 +48,8 @@ module Clack
 
       protected
 
-      def handle_key(key)
-        return if terminal_state?
-
-        @state = :active if @state == :error
-        action = Core::Settings.action?(key)
-
+      def handle_input(key, action)
         case action
-        when :cancel
-          @state = :cancel
-        when :enter
-          submit_selection
         when :up
           move_selection(-1)
         when :down
@@ -89,7 +80,7 @@ module Clack
         update_suggestions
       end
 
-      def submit_selection
+      def submit
         path = @value.empty? ? @root : resolve_path(@value)
 
         unless path_within_root?(path)
@@ -98,14 +89,9 @@ module Clack
           return
         end
 
-        if @validate
-          result = @validate.call(path)
-          if result
-            @error_message = result.is_a?(Exception) ? result.message : result.to_s
-            @state = :error
-            return
-          end
-        end
+        # Use base class validation helper
+        new_state = validate_value(path)
+        return @state = new_state unless new_state == :submit
 
         @value = path
         @state = :submit
@@ -124,7 +110,11 @@ module Clack
 
         lines << "#{bar_end}\n"
 
-        lines[-1] = "#{Colors.yellow(Symbols::S_BAR_END)}  #{Colors.yellow(@error_message)}\n" if @state == :error
+        validation_lines = validation_message_lines
+        if validation_lines.any?
+          lines[-1] = validation_lines.first
+          lines.concat(validation_lines[1..])
+        end
 
         lines.join
       end

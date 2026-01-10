@@ -131,6 +131,38 @@ module Clack
         ->(value) { message unless File.directory?(value.to_s) }
       end
 
+      # Warning if file exists. Allows user to confirm overwrite.
+      #
+      # @param message [String] Warning message
+      # @return [Proc] Validator proc returning Warning
+      #
+      # @example
+      #   Clack.text(message: "Output file?", validate: Clack::Validators.file_exists_warning)
+      def file_exists_warning(message = "File already exists. Overwrite?")
+        ->(value) { Clack::Warning.new(message) if File.exist?(value.to_s) }
+      end
+
+      # Convert any validator to return a warning instead of an error.
+      # Warnings allow the user to proceed with confirmation.
+      #
+      # @param validator [Proc] Original validator
+      # @return [Proc] Validator that returns Warning instead of String
+      #
+      # @example
+      #   # Make max_length a warning instead of error
+      #   Clack.text(
+      #     message: "Bio?",
+      #     validate: Clack::Validators.as_warning(
+      #       Clack::Validators.max_length(100, "Bio is quite long")
+      #     )
+      #   )
+      def as_warning(validator)
+        lambda do |value|
+          result = validator.call(value)
+          Clack::Warning.new(result) if result
+        end
+      end
+
       private
 
       def first_failing_validation(validators, value)

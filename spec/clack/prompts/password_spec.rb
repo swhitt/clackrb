@@ -100,5 +100,45 @@ RSpec.describe Clack::Prompts::Password do
 
       expect(result).to eq("🔥")
     end
+
+    context "with warning validation" do
+      it "shows warning and allows confirmation with Enter" do
+        stub_keys("weak", :enter, :enter)
+        prompt = described_class.new(
+          message: "Password:",
+          validate: ->(val) { Clack::Warning.new("Weak password") if val.length < 8 },
+          output: output
+        )
+        result = prompt.run
+
+        expect(result).to eq("weak")
+        expect(output.string).to include("Weak password")
+        expect(output.string).to include("Press Enter to confirm")
+      end
+
+      it "clears warning on edit" do
+        stub_keys("bad", :enter, :backspace, :backspace, :backspace, "secure123", :enter)
+        prompt = described_class.new(
+          message: "Password:",
+          validate: ->(val) { Clack::Warning.new("Too short") if val.length < 8 },
+          output: output
+        )
+        result = prompt.run
+
+        expect(result).to eq("secure123")
+      end
+
+      it "can cancel from warning state" do
+        stub_keys("test", :enter, :escape)
+        prompt = described_class.new(
+          message: "Password:",
+          validate: ->(_) { Clack::Warning.new("Warning!") },
+          output: output
+        )
+        result = prompt.run
+
+        expect(Clack.cancel?(result)).to be true
+      end
+    end
   end
 end

@@ -1,131 +1,81 @@
-# VHS Tape file for recording Clack Ruby demo
-# Install VHS: brew install vhs
+# Clack Ruby Demo
 # Run: vhs examples/demo.tape
 
-Output demo.gif
-Output demo.webm
+Output examples/demo.gif
 
 Set Shell "bash"
-Set FontSize 26
-Set Width 1280
-Set Height 960
-Set Theme {"name":"VSCode Dark","black":"#000000","red":"#f44747","green":"#6a9955","yellow":"#dcdcaa","blue":"#569cd6","magenta":"#c586c0","cyan":"#4ec9b0","white":"#d4d4d4","brightBlack":"#808080","brightRed":"#f44747","brightGreen":"#6a9955","brightYellow":"#dcdcaa","brightBlue":"#569cd6","brightMagenta":"#c586c0","brightCyan":"#4ec9b0","brightWhite":"#ffffff","background":"#000000","foreground":"#d4d4d4","selection":"#264f78","cursor":"#ffffff"}
+Set FontSize 24
+Set Width 1000
+Set Height 700
+Set Theme "Catppuccin Mocha"
 Set Padding 20
 Set Framerate 30
 Set PlaybackSpeed 0.5
-Set TypingSpeed 80ms
-Set WaitTimeout 30s
+Set TypingSpeed 50ms
 
-# Run the full demo
 Type "ruby examples/full_demo.rb"
 Enter
-Sleep 1.5s
+Sleep 800ms
 
-# Text - project name
-Type "acme"
-Sleep 100ms
-Type "-api"
+# Project name - just type a valid one
+Type "my-app"
+Sleep 200ms
+Enter
+Sleep 500ms
+
+# Password - triggers entropy warning, pause to read, then confirm
+Type "secretpw1"
+Sleep 200ms
+Enter
+Sleep 600ms
+# Warning: "This password may be easy to guess"
+Sleep 1.2s
+Enter
+Sleep 500ms
+
+# TypeScript? Yes
+Enter
 Sleep 400ms
-Enter
-Sleep 800ms
 
-# Password - API key
-Type "sk_live"
-Sleep 80ms
-Type "_abc123"
+# Framework - pick Rails (default)
+Enter
 Sleep 400ms
-Enter
-Sleep 800ms
 
-# Confirm - Use Rails? Yes (default)
-Sleep 300ms
-Enter
-Sleep 800ms
-
-# Select Ruby version - pick 3.3 (down 1)
-Sleep 300ms
-Down
-Sleep 300ms
-Enter
-Sleep 800ms
-
-# Multiselect gems - pick sidekiq, rspec, rubocop
-Sleep 300ms
-Space
-Sleep 200ms
-Down
-Down
-Sleep 200ms
-Space
-Sleep 200ms
-Down
-Sleep 200ms
-Space
-Sleep 300ms
-Enter
-Sleep 800ms
-
-# Select key - database: "p" for PostgreSQL
-Sleep 400ms
+# Database - "p" for PostgreSQL
 Type "p"
-Sleep 800ms
+Sleep 400ms
 
-# Autocomplete template - type to filter for "API"
+# Dependencies - pick RSpec and RuboCop
+Space
+Down@3
+Space
+Sleep 200ms
+Enter
+Sleep 400ms
+
+# Autocomplete - type "api"
 Type "api"
+Sleep 300ms
+Enter
+Sleep 400ms
+
+# Group multiselect - GitHub Actions + Docker
+Down
+Space
+Down@3
+Space
+Sleep 200ms
+Enter
+Sleep 400ms
+
+# Config file - accept default, confirm overwrite warning
+Enter
 Sleep 500ms
 Enter
-Sleep 800ms
-
-# Autocomplete multiselect services - pick Stripe and Sentry
-Type "str"
 Sleep 400ms
-Space
-Sleep 300ms
-Backspace
-Backspace
-Backspace
-Sleep 200ms
-Type "sen"
-Sleep 400ms
-Space
-Sleep 300ms
-Enter
-Sleep 800ms
 
-# Path picker - accept current dir
-Sleep 400ms
-Enter
-Sleep 800ms
+# Watch progress/tasks
+Sleep 2.5s
 
-# Group multiselect - pick Tailwind, FactoryBot, GitHub Actions
-Sleep 300ms
-Down
-Down
-Sleep 200ms
-Space
-Sleep 200ms
-Down
-Down
-Sleep 200ms
-Space
-Sleep 200ms
-Down
-Down
-Down
-Sleep 200ms
-Space
-Sleep 300ms
-Enter
-Sleep 800ms
-
-# Progress bar
-Sleep 1500ms
-
-# Tasks
-Sleep 2500ms
-
-# Spinner
-Sleep 3000ms
-
-# Summary and outro
-Sleep 4000ms
+# Final output
+Sleep 1.5s
