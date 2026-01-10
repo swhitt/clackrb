@@ -30,7 +30,8 @@ module Clack
         return unless Core::Settings.printable?(key)
 
         if Core::Settings.backspace?(key)
-          @value = @value.chop
+          clusters = @value.grapheme_clusters
+          @value = (clusters.length > 0) ? clusters[0..-2].join : ""
         else
           @value += key
         end

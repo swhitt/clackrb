@@ -170,10 +170,10 @@ module Clack
 
       def format_entry(dir, entry)
         full_path = File.join(dir, entry)
-        if full_path.start_with?(@root)
+        if full_path == @root || full_path.start_with?("#{@root}/")
           # Show relative path without leading ./
           path = full_path[@root.length..]
-          path = path.sub(%r{^/}, "") # Remove leading slash
+          path = path.sub(%r{^/}, "")
           path = entry if path.empty?
         else
           path = full_path
@@ -199,7 +199,7 @@ module Clack
 
       def path_within_root?(path)
         expanded = File.expand_path(path)
-        expanded.start_with?(@root) || expanded == @root
+        expanded == @root || expanded.start_with?("#{@root}/")
       end
 
       def visible_suggestions

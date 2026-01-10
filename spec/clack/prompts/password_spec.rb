@@ -92,5 +92,13 @@ RSpec.describe Clack::Prompts::Password do
       expect(result).to eq("日本")
       expect(output.string).to include("**")
     end
+
+    it "backspace removes entire grapheme cluster not just byte" do
+      stub_keys("🔥", "🎉", :backspace, :enter)
+      prompt = described_class.new(message: "Password:", output: output)
+      result = prompt.run
+
+      expect(result).to eq("🔥")
+    end
   end
 end
