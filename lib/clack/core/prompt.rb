@@ -28,7 +28,9 @@ module Clack
     #
     class Prompt
       # Track active prompts for SIGWINCH notification.
-      # Access is single-threaded (main thread only), so no mutex needed.
+      # Signal handler may fire during register/unregister. We can't use
+      # .dup (allocates, forbidden in trap context) so we accept a benign
+      # race: worst case, a prompt misses one resize notification.
       @active_prompts = []
 
       class << self
@@ -39,7 +41,6 @@ module Clack
           @active_prompts << prompt
         end
 
-        # Unregister a prompt instance
         def unregister(prompt)
           @active_prompts.delete(prompt)
         end
@@ -48,12 +49,11 @@ module Clack
         # Signal handlers must avoid mutex/complex operations.
         def setup_signal_handler
           return if Clack::Environment.windows?
+          return unless Signal.list.key?("WINCH")
 
           Signal.trap("WINCH") do
             @active_prompts.each(&:request_redraw)
           end
-        rescue ArgumentError
-          # Signal not supported on this platform
         end
       end
 
@@ -222,6 +222,8 @@ module Clack
 
       def cleanup_terminal
         @output.print Cursor.show
+      rescue IOError, SystemCallError
+        # Output unavailable - terminal may need manual reset
       end
 
       def restore_cursor
