@@ -2,11 +2,16 @@
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-01-10
+
 ### Added
 - Validation warnings: validators can return `Clack::Warning.new("message")` for soft validation that allows users to proceed with confirmation
 - `Clack.warning("message")` helper for creating warnings
 - `Clack::Validators.file_exists_warning` validator for file overwrite confirmation
 - `Clack::Validators.as_warning(validator)` to convert any validator to return warnings instead of errors
+
+### Fixed
+- Path prompt no longer duplicates warning state handling logic
 
 ## [0.1.1]
 
