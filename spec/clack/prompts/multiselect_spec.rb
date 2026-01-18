@@ -343,5 +343,19 @@ RSpec.describe Clack::Prompts::Multiselect do
       # Hints should appear in multiple frames during navigation
       expect(output.string.scan("all").length).to be > 1
     end
+
+    it "displays warning state from custom validator" do
+      stub_keys(:space, :enter, :enter)
+      prompt = described_class.new(
+        message: "Choose:",
+        options: options,
+        validate: ->(_) { Clack::Warning.new("Are you sure?") },
+        output: output
+      )
+      prompt.run
+
+      expect(output.string).to include("Are you sure?")
+      expect(output.string).to include("Press Enter to confirm")
+    end
   end
 end
