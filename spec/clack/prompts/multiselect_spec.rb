@@ -324,5 +324,24 @@ RSpec.describe Clack::Prompts::Multiselect do
 
       expect(output.string).to include("Select items:")
     end
+
+    it "shows keyboard hints on initial render" do
+      stub_keys(:space, :enter)
+      prompt = described_class.new(message: "Choose:", options: options, output: output)
+      prompt.run
+
+      expect(output.string).to include("space")
+      expect(output.string).to include("all")
+      expect(output.string).to include("invert")
+    end
+
+    it "shows keyboard hints during active state" do
+      stub_keys(:down, :space, :enter)
+      prompt = described_class.new(message: "Choose:", options: options, output: output)
+      prompt.run
+
+      # Hints should appear in multiple frames during navigation
+      expect(output.string.scan("all").length).to be > 1
+    end
   end
 end

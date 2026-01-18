@@ -100,9 +100,12 @@ module Clack
           lines << "#{active_bar}  #{option_display(opt, actual_idx)}\n"
         end
 
-        lines << "#{bar_end}\n"
-
-        lines[-1] = "#{Colors.yellow(Symbols::S_BAR_END)}  #{Colors.yellow(@error_message)}\n" if @state == :error
+        if @state == :error
+          lines << "#{Colors.yellow(Symbols::S_BAR_END)}  #{Colors.yellow(@error_message)}\n"
+        else
+          lines << "#{bar}  #{keyboard_hints}\n"
+          lines << "#{bar_end}\n"
+        end
 
         lines.join
       end
@@ -159,6 +162,15 @@ module Clack
 
       def update_value
         @value = @selected.to_a
+      end
+
+      def keyboard_hints
+        hints = [
+          "#{Colors.dim("space")} select",
+          "#{Colors.dim("a")} all",
+          "#{Colors.dim("i")} invert"
+        ]
+        Colors.dim(hints.join(Colors.dim(" / ")))
       end
 
       def option_display(opt, idx)
