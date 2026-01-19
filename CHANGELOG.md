@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+## [0.1.2]
+
+### Added
+- `multiline_text` prompt for multi-line input (Ctrl+D to submit)
+- `help:` option on all prompts for contextual help text
+- Documentation for blocking validation (database/API calls work out of the box)
+
 ## [0.1.1]
 
 ### Fixed
