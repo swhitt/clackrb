@@ -4,10 +4,21 @@ module Clack
   # Built-in validators for common validation patterns.
   # Use these with the `validate:` option on prompts.
   #
+  # Validation procs can perform any operation including slow I/O (database
+  # lookups, API calls, etc.) - they simply block until complete.
+  #
   # @example Using built-in validators
   #   Clack.text(message: "Name?", validate: Clack::Validators.required)
   #   Clack.text(message: "Email?", validate: Clack::Validators.format(/@/, "Must be an email"))
   #   Clack.password(message: "Password?", validate: Clack::Validators.min_length(8))
+  #
+  # @example Database validation (blocking I/O)
+  #   Clack.text(
+  #     message: "Email?",
+  #     validate: ->(email) {
+  #       "Already taken" if User.exists?(email: email)
+  #     }
+  #   )
   #
   # @example Combining validators
   #   Clack.text(

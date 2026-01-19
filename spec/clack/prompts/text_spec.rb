@@ -228,5 +228,24 @@ RSpec.describe Clack::Prompts::Text do
       # Just verify it doesn't crash and works normally
       expect(output.string).to include("Input?")
     end
+
+    it "supports slow/blocking validation (simulated async)" do
+      call_count = 0
+      # Type "bad", submit (fails), backspace 3x to clear, type "good", submit
+      stub_keys("bad", :enter, :backspace, :backspace, :backspace, "good", :enter)
+      prompt = described_class.new(
+        message: "Input?",
+        validate: ->(val) {
+          call_count += 1
+          sleep 0.01 # Simulate slow I/O (database, API, etc.)
+          "Invalid" if val == "bad"
+        },
+        output: output
+      )
+      result = prompt.run
+
+      expect(result).to eq("good")
+      expect(call_count).to eq(2) # Called twice: once for "bad", once for "good"
+    end
   end
 end
