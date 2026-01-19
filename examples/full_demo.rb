@@ -10,19 +10,28 @@ Clack.intro "create-app"
 
 Clack.box "Welcome to the Ruby app generator", title: "create-app"
 
-# Text input
+# Text input with help text
 name = Clack.text(
   message: "What is your project named?",
-  placeholder: "my-app"
+  placeholder: "my-app",
+  help: "Use lowercase letters, numbers, and hyphens"
 )
 exit 1 if Clack.handle_cancel(name)
 
 # Password input (masked)
 api_key = Clack.password(
   message: "Enter your API key:",
-  mask: "*"
+  mask: "*",
+  help: "Get your key from dashboard.example.com"
 )
 exit 1 if Clack.handle_cancel(api_key)
+
+# Multiline text input
+description = Clack.multiline_text(
+  message: "Project description:",
+  help: "Press Ctrl+D when done"
+)
+exit 1 if Clack.handle_cancel(description)
 
 # Confirm
 use_rails = Clack.confirm(
@@ -160,6 +169,7 @@ s.stop "Setup complete"
 
 # Log output
 Clack.log.step "Project: #{name}"
+Clack.log.step "Description: #{description.lines.first&.strip}" unless description.empty?
 Clack.log.step "Ruby: #{ruby_version}"
 Clack.log.step "Database: #{db}"
 Clack.log.step "Template: #{template}"

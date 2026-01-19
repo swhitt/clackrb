@@ -37,6 +37,16 @@ Sleep 400ms
 Enter
 Sleep 800ms
 
+# Multiline text - project description
+Type "A fast API for the"
+Sleep 200ms
+Enter
+Sleep 100ms
+Type "ACME corporation."
+Sleep 400ms
+Ctrl+d
+Sleep 800ms
+
 # Confirm - Use Rails? Yes (default)
 Sleep 300ms
 Enter
