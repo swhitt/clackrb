@@ -55,18 +55,19 @@ module Clack
 
         action = Core::Settings.action?(key)
 
-        # Handle warning state: Enter confirms, Cancel aborts, other input clears warning
+        # Handle warning state: Enter confirms, Cancel aborts, other input clears and continues
         if @state == :warning
           case action
           when :enter
             confirm_warning
-            submit
+            return submit
           when :cancel
             @state = :cancel
+            return
           else
             clear_warning
+            # Fall through to process the key that cleared the warning
           end
-          return
         end
 
         @state = :active if @state == :error

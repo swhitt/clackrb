@@ -357,5 +357,23 @@ RSpec.describe Clack::Prompts::Multiselect do
       expect(output.string).to include("Are you sure?")
       expect(output.string).to include("Press Enter to confirm")
     end
+
+    it "processes keystroke that clears warning state" do
+      call_count = 0
+      stub_keys(:space, :enter, :down, :space, :enter)
+      prompt = described_class.new(
+        message: "Choose:",
+        options: options,
+        validate: lambda { |_|
+          call_count += 1
+          Clack::Warning.new("Sure?") if call_count == 1
+        },
+        output: output
+      )
+      result = prompt.run
+
+      # First submit triggers warning, :down clears it AND moves cursor, :space selects b
+      expect(result).to contain_exactly("a", "b")
+    end
   end
 end
