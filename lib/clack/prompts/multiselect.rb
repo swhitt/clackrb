@@ -53,8 +53,24 @@ module Clack
       def handle_key(key)
         return if terminal_state?
 
-        @state = :active if @state == :error
         action = Core::Settings.action?(key)
+
+        # Handle warning state: Enter confirms, Cancel aborts, other input clears and continues
+        if @state == :warning
+          case action
+          when :enter
+            confirm_warning
+            return submit
+          when :cancel
+            @state = :cancel
+            return
+          else
+            clear_warning
+            # Fall through to process the key that cleared the warning
+          end
+        end
+
+        @state = :active if @state == :error
 
         case action
         when :cancel
@@ -101,9 +117,16 @@ module Clack
           lines << "#{active_bar}  #{option_display(opt, actual_idx)}\n"
         end
 
-        lines << "#{bar_end}\n"
-
-        lines[-1] = "#{Colors.yellow(Symbols::S_BAR_END)}  #{Colors.yellow(@error_message)}\n" if @state == :error
+        if @state == :error
+          lines << "#{Colors.yellow(Symbols::S_BAR_END)}  #{Colors.yellow(@error_message)}\n"
+        elsif @state == :warning
+          lines << "#{Colors.yellow(Symbols::S_BAR_END)}  #{Colors.yellow(@warning_message)}\n"
+          lines << "#{bar}  #{Colors.dim("Press Enter to confirm, or make a different selection")}\n"
+          lines << "#{bar_end}\n"
+        else
+          lines << "#{bar}  #{keyboard_hints}\n"
+          lines << "#{bar_end}\n"
+        end
 
         lines.join
       end
@@ -160,6 +183,15 @@ module Clack
 
       def update_value
         @value = @selected.to_a
+      end
+
+      def keyboard_hints
+        hints = [
+          "#{Colors.dim("space")} select",
+          "#{Colors.dim("a")} all",
+          "#{Colors.dim("i")} invert"
+        ]
+        Colors.dim(hints.join(Colors.dim(" / ")))
       end
 
       def option_display(opt, idx)

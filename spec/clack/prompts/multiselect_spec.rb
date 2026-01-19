@@ -324,5 +324,56 @@ RSpec.describe Clack::Prompts::Multiselect do
 
       expect(output.string).to include("Select items:")
     end
+
+    it "shows keyboard hints on initial render" do
+      stub_keys(:space, :enter)
+      prompt = described_class.new(message: "Choose:", options: options, output: output)
+      prompt.run
+
+      expect(output.string).to include("space")
+      expect(output.string).to include("all")
+      expect(output.string).to include("invert")
+    end
+
+    it "shows keyboard hints during active state" do
+      stub_keys(:down, :space, :enter)
+      prompt = described_class.new(message: "Choose:", options: options, output: output)
+      prompt.run
+
+      # Hints should appear in multiple frames during navigation
+      expect(output.string.scan("all").length).to be > 1
+    end
+
+    it "displays warning state from custom validator" do
+      stub_keys(:space, :enter, :enter)
+      prompt = described_class.new(
+        message: "Choose:",
+        options: options,
+        validate: ->(_) { Clack::Warning.new("Are you sure?") },
+        output: output
+      )
+      prompt.run
+
+      expect(output.string).to include("Are you sure?")
+      expect(output.string).to include("Press Enter to confirm")
+    end
+
+    it "processes keystroke that clears warning state" do
+      call_count = 0
+      stub_keys(:space, :enter, :down, :space, :enter)
+      prompt = described_class.new(
+        message: "Choose:",
+        options: options,
+        validate: lambda { |_|
+          call_count += 1
+          Clack::Warning.new("Sure?") if call_count == 1
+        },
+        output: output
+      )
+      result = prompt.run
+
+      # First submit triggers warning, :down clears it AND moves cursor, :space selects b
+      expect(result).to contain_exactly("a", "b")
+    end
   end
 end

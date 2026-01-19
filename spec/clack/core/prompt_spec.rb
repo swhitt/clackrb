@@ -296,6 +296,44 @@ RSpec.describe Clack::Core::Prompt do
     end
   end
 
+  describe "terminal cleanup" do
+    it "handles IOError during cleanup gracefully" do
+      stub_keys(:enter)
+      broken_output = StringIO.new
+      prompt = test_class.new(message: "Input", output: broken_output)
+
+      # Close the output before cleanup runs
+      allow(broken_output).to receive(:print).and_call_original
+      allow(broken_output).to receive(:print).with("\e[?25h").and_raise(IOError, "stream closed")
+
+      # Should not raise despite IOError
+      expect { prompt.run }.not_to raise_error
+    end
+
+    it "handles SystemCallError during cleanup gracefully" do
+      stub_keys(:enter)
+      broken_output = StringIO.new
+      prompt = test_class.new(message: "Input", output: broken_output)
+
+      allow(broken_output).to receive(:print).and_call_original
+      allow(broken_output).to receive(:print).with("\e[?25h").and_raise(Errno::EIO, "I/O error")
+
+      expect { prompt.run }.not_to raise_error
+    end
+
+    it "still returns value even when cleanup fails" do
+      stub_keys("test", :enter)
+      broken_output = StringIO.new
+      prompt = test_class.new(message: "Input", output: broken_output)
+
+      allow(broken_output).to receive(:print).and_call_original
+      allow(broken_output).to receive(:print).with("\e[?25h").and_raise(IOError)
+
+      result = prompt.run
+      expect(result).to eq("test")
+    end
+  end
+
   describe ".setup_signal_handler" do
     it "does not raise on setup" do
       expect { described_class.setup_signal_handler }.not_to raise_error
@@ -383,6 +421,176 @@ RSpec.describe Clack::Core::Prompt do
       prompt.run
 
       expect(output.string).to include(Clack::Symbols::S_STEP_ERROR)
+    end
+  end
+
+  describe "#validate_value" do
+    # Direct unit tests for the validate_value method
+    let(:prompt) { test_class.new(message: "Input", output: output) }
+
+    it "returns :submit when no validator is set" do
+      result = prompt.send(:validate_value, "anything")
+      expect(result).to eq(:submit)
+    end
+
+    it "returns :submit when validator returns nil" do
+      prompt = test_class.new(
+        message: "Input",
+        validate: ->(_) {},
+        output: output
+      )
+      result = prompt.send(:validate_value, "test")
+      expect(result).to eq(:submit)
+    end
+
+    it "returns :submit when validator returns false" do
+      prompt = test_class.new(
+        message: "Input",
+        validate: ->(_) { false },
+        output: output
+      )
+      result = prompt.send(:validate_value, "test")
+      expect(result).to eq(:submit)
+    end
+
+    it "returns :error when validator returns a string" do
+      prompt = test_class.new(
+        message: "Input",
+        validate: ->(_) { "Error message" },
+        output: output
+      )
+      result = prompt.send(:validate_value, "test")
+      expect(result).to eq(:error)
+      expect(prompt.error_message).to eq("Error message")
+    end
+
+    it "returns :warning when validator returns a Warning" do
+      prompt = test_class.new(
+        message: "Input",
+        validate: ->(_) { Clack::Warning.new("Be careful") },
+        output: output
+      )
+      result = prompt.send(:validate_value, "test")
+      expect(result).to eq(:warning)
+      expect(prompt.warning_message).to eq("Be careful")
+    end
+
+    it "returns :submit for Warning when warning is confirmed" do
+      prompt = test_class.new(
+        message: "Input",
+        validate: ->(_) { Clack::Warning.new("Be careful") },
+        output: output
+      )
+      prompt.instance_variable_set(:@warning_confirmed, true)
+      result = prompt.send(:validate_value, "test")
+      expect(result).to eq(:submit)
+    end
+
+    it "extracts message from Exception objects" do
+      prompt = test_class.new(
+        message: "Input",
+        validate: ->(_) { StandardError.new("Exception message") },
+        output: output
+      )
+      result = prompt.send(:validate_value, "test")
+      expect(result).to eq(:error)
+      expect(prompt.error_message).to eq("Exception message")
+    end
+
+    it "calls to_s on non-string, non-Warning, non-Exception results" do
+      custom_error = Object.new
+      def custom_error.to_s
+        "Custom error via to_s"
+      end
+
+      prompt = test_class.new(
+        message: "Input",
+        validate: ->(_) { custom_error },
+        output: output
+      )
+      result = prompt.send(:validate_value, "test")
+      expect(result).to eq(:error)
+      expect(prompt.error_message).to eq("Custom error via to_s")
+    end
+  end
+
+  describe "error message clearing" do
+    it "clears error_message from output when transitioning from error to active" do
+      stub_keys(:enter, "x", :enter)
+      prompt = test_class.new(
+        message: "Input",
+        validate: ->(v) { "Required" if v.empty? },
+        output: output
+      )
+      prompt.run
+
+      # The error should appear then disappear
+      frames = output.string.split("\e[J")
+      error_frames = frames.select { |f| f.include?("Required") }
+      success_frames = frames.reject { |f| f.include?("Required") }
+
+      expect(error_frames).not_to be_empty
+      expect(success_frames).not_to be_empty
+    end
+
+    it "transitions from error to active state on keypress" do
+      call_count = 0
+      stub_keys(:enter, "x", :enter)
+      prompt = test_class.new(
+        message: "Input",
+        validate: lambda { |_|
+          call_count += 1
+          "Error" if call_count == 1
+        },
+        output: output
+      )
+      prompt.run
+
+      # The error state is cleared (not displayed), even though error_message may linger
+      # The final state should be submit, not error
+      expect(prompt.state).to eq(:submit)
+      expect(call_count).to eq(2) # Validated twice: error then success
+    end
+
+    it "clears error state on any keypress after error" do
+      stub_keys(:enter, "a", "b", :enter)
+      prompt = test_class.new(
+        message: "Input",
+        validate: ->(v) { "Required" if v.empty? },
+        output: output
+      )
+      prompt.run
+
+      expect(prompt.state).to eq(:submit)
+    end
+  end
+
+  describe "validator exception handling" do
+    it "handles validator that raises StandardError" do
+      stub_keys(:enter, "x", :enter)
+      prompt = test_class.new(
+        message: "Input",
+        validate: lambda { |v|
+          raise StandardError, "Validator exploded" if v.empty?
+          nil
+        },
+        output: output
+      )
+
+      # Should not raise, the exception is converted to error state
+      expect { prompt.run }.to raise_error(StandardError, "Validator exploded")
+    end
+
+    it "handles validator that returns truthy non-string value" do
+      stub_keys(:enter, "x", :enter)
+      prompt = test_class.new(
+        message: "Input",
+        validate: ->(v) { 123 if v.empty? },
+        output: output
+      )
+      prompt.run
+
+      expect(output.string).to include("123")
     end
   end
 
