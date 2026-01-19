@@ -10,6 +10,7 @@ module Clack
       KEY_BACKSPACE = "\b"        # ASCII 8: Backspace
       KEY_DELETE = "\u007F"       # ASCII 127: Delete (often sent by backspace key)
       KEY_CTRL_C = "\u0003"       # ASCII 3: Ctrl+C (interrupt)
+      KEY_CTRL_D = "\u0004"       # ASCII 4: Ctrl+D (EOF, used for multiline submit)
       KEY_ESCAPE = "\e"           # ASCII 27: Escape
       KEY_ENTER = "\r"            # ASCII 13: Carriage return
       KEY_NEWLINE = "\n"          # ASCII 10: Line feed

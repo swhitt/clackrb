@@ -12,6 +12,7 @@ require_relative "clack/core/prompt"
 require_relative "clack/core/options_helper"
 require_relative "clack/core/text_input_helper"
 require_relative "clack/prompts/text"
+require_relative "clack/prompts/multiline_text"
 require_relative "clack/prompts/password"
 require_relative "clack/prompts/confirm"
 require_relative "clack/prompts/select"
@@ -126,6 +127,19 @@ module Clack
     # @return [String, CANCEL] user input or CANCEL if cancelled
     def text(message:, **opts)
       Prompts::Text.new(message:, **opts).run
+    end
+
+    # Prompt for multi-line text input.
+    #
+    # Enter inserts a newline, Ctrl+D submits. Useful for commit messages,
+    # notes, or any multi-line content.
+    #
+    # @param message [String] the prompt message
+    # @param initial_value [String, nil] pre-filled editable text (can contain newlines)
+    # @param validate [Proc, nil] validation function returning error message or nil
+    # @return [String, CANCEL] user input (lines joined with \n) or CANCEL if cancelled
+    def multiline_text(message:, **opts)
+      Prompts::MultilineText.new(message:, **opts).run
     end
 
     # Prompt for password input (masked display).

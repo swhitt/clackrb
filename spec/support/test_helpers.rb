@@ -22,6 +22,7 @@ module TestHelpers
     enter: "\r",
     escape: "\e",
     ctrl_c: "\u0003",
+    ctrl_d: "\u0004",
     up: "\e[A",
     down: "\e[B",
     right: "\e[C",
