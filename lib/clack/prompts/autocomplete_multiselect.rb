@@ -136,6 +136,7 @@ module Clack
         lines = []
         lines << "#{bar}\n"
         lines << "#{symbol_for_state}  #{@message}\n"
+        lines << help_line
         lines << "#{active_bar}  #{Colors.dim("Search:")} #{search_input_display}#{match_count}\n"
 
         visible_options.each_with_index do |opt, idx|

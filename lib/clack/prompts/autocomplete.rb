@@ -89,6 +89,7 @@ module Clack
         lines = []
         lines << "#{bar}\n"
         lines << "#{symbol_for_state}  #{@message}\n"
+        lines << help_line
         lines << "#{active_bar}  #{input_display}\n"
 
         visible_options.each_with_index do |opt, idx|

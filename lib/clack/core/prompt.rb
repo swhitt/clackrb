@@ -65,11 +65,13 @@ module Clack
       attr_reader :error_message
 
       # @param message [String] the prompt message to display
+      # @param help [String, nil] optional help text shown below the message
       # @param validate [Proc, nil] optional validation proc; returns error string or nil
       # @param input [IO] input stream (default: $stdin)
       # @param output [IO] output stream (default: $stdout)
-      def initialize(message:, validate: nil, input: $stdin, output: $stdout)
+      def initialize(message:, help: nil, validate: nil, input: $stdin, output: $stdout)
         @message = message
+        @help = help
         @validate = validate
         @input = input
         @output = output
@@ -244,6 +246,12 @@ module Clack
 
       def bar_end
         (@state == :error) ? Colors.yellow(Symbols::S_BAR_END) : Colors.gray(Symbols::S_BAR_END)
+      end
+
+      def help_line
+        return "" unless @help
+
+        "#{bar}  #{Colors.dim(@help)}\n"
       end
 
       def cursor_block

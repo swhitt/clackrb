@@ -70,6 +70,7 @@ module Clack
         lines = []
         lines << "#{bar}\n"
         lines << "#{symbol_for_state}  #{@message} #{Colors.dim("(Ctrl+D to submit)")}\n"
+        lines << help_line
 
         @lines.each_with_index do |line, idx|
           display = (idx == @line_index) ? line_with_cursor(line) : line

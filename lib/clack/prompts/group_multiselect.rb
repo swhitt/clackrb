@@ -59,6 +59,7 @@ module Clack
         lines = []
         lines << "#{bar}\n"
         lines << "#{symbol_for_state}  #{@message}\n"
+        lines << help_line
 
         prev_was_group = false
         @flat_items.each_with_index do |item, idx|

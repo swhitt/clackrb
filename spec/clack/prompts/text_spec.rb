@@ -207,5 +207,26 @@ RSpec.describe Clack::Prompts::Text do
       # Error appeared then was resolved
       expect(output.string).to include("Required")
     end
+
+    it "displays help text when provided" do
+      stub_keys("x", :enter)
+      prompt = described_class.new(
+        message: "Input?",
+        help: "Enter something useful",
+        output: output
+      )
+      prompt.run
+
+      expect(output.string).to include("Enter something useful")
+    end
+
+    it "does not show help line when not provided" do
+      stub_keys("x", :enter)
+      prompt = described_class.new(message: "Input?", output: output)
+      prompt.run
+
+      # Just verify it doesn't crash and works normally
+      expect(output.string).to include("Input?")
+    end
   end
 end

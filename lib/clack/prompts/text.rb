@@ -70,6 +70,7 @@ module Clack
         lines = []
         lines << "#{bar}\n"
         lines << "#{symbol_for_state}  #{@message}\n"
+        lines << help_line
         lines << "#{active_bar}  #{input_display}\n"
         lines << "#{bar_end}\n" if @state == :active || @state == :initial
 
