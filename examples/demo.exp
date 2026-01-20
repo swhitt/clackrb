@@ -7,8 +7,7 @@ set timeout 60
 
 proc type_char {c} {
     send -- $c
-    # Long delay to force separate asciinema events
-    sleep 0.5
+    sleep 0.08
 }
 
 proc type_slow {str} {
@@ -30,53 +29,53 @@ proc wait_prompt {pattern} {
         -re $pattern { }
         timeout { puts "Timeout waiting for: $pattern"; exit 1 }
     }
-    sleep 0.5
+    sleep 0.3
 }
 
 spawn ruby examples/full_demo.rb
 
 # Let intro render
-sleep 1
+sleep 0.6
 
-# Service name - type with visible per-char delay
+# Service name
 wait_prompt "Service name:"
-sleep 0.4
+sleep 0.2
 type_slow "order-api"
-sleep 0.6
+sleep 0.3
 send "\r"
 
-# GitHub token - type slowly
+# GitHub token
 wait_prompt "GitHub token:"
-sleep 0.4
+sleep 0.2
 type_slow "ghp_xxxxxxx"
-sleep 0.6
+sleep 0.3
 send "\r"
 
-# Generate OpenAPI spec? Pause to read, then accept
+# Generate OpenAPI spec? Yes
 wait_prompt "OpenAPI spec"
-sleep 0.8
+sleep 0.4
 send "\r"
 
-# Language - pause, navigate, pause, select
+# Language - pick Python
 wait_prompt "Language:"
-sleep 0.5
+sleep 0.3
 down
-sleep 0.5
+sleep 0.3
 send "\r"
 
-# Integrations - deliberate selections
+# Integrations - pick PostgreSQL, Redis
 wait_prompt "Integrations:"
-sleep 0.4
+sleep 0.2
 space
-sleep 0.4
+sleep 0.2
 down
-sleep 0.4
+sleep 0.2
 space
-sleep 0.5
+sleep 0.3
 send "\r"
 
-# Let progress bar and spinner play out fully
+# Let progress bar and spinner play out
 wait_prompt "Ship it"
-sleep 2
+sleep 1.5
 
 expect eof

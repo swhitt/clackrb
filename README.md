@@ -5,7 +5,7 @@
 A faithful Ruby port of [@clack/prompts](https://github.com/bombshell-dev/clack).
 
 <p align="center">
-  <img src="examples/demo.gif" width="640" alt="Clack demo">
+  <img src="examples/demo.gif?v=2" width="640" alt="Clack demo">
 </p>
 
 ## Why Clack?
