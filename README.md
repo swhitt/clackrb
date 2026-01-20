@@ -76,10 +76,17 @@ ruby examples/full_demo.rb
 <details>
 <summary>Recording the demo GIF</summary>
 
-Install [VHS](https://github.com/charmbracelet/vhs) and run:
+Requires [asciinema](https://asciinema.org/), [agg](https://github.com/asciinema/agg), and [expect](https://core.tcl-lang.org/expect/index):
 
 ```bash
-vhs examples/demo.tape
+# Record the demo (automated via expect script)
+asciinema rec examples/demo.cast --command "expect examples/demo.exp" --overwrite -q
+
+# Split batched frames to show typing (Ruby buffers terminal output)
+ruby examples/split_cast.rb
+
+# Convert to GIF
+agg examples/demo.cast examples/demo.gif --font-size 18 --cols 80 --rows 28 --speed 0.6
 ```
 </details>
 

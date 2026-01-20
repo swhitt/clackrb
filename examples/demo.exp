@@ -1,0 +1,82 @@
+#!/usr/bin/expect -f
+# Automated demo script for Clack Ruby
+# Run with: expect examples/demo.exp
+# Record with: asciinema rec demo.cast --command "expect examples/demo.exp" --overwrite -q
+
+set timeout 60
+
+proc type_char {c} {
+    send -- $c
+    # Long delay to force separate asciinema events
+    sleep 0.5
+}
+
+proc type_slow {str} {
+    foreach c [split $str ""] {
+        type_char $c
+    }
+}
+
+proc down {} {
+    send "\x1b\[B"
+}
+
+proc space {} {
+    send " "
+}
+
+proc wait_prompt {pattern} {
+    expect {
+        -re $pattern { }
+        timeout { puts "Timeout waiting for: $pattern"; exit 1 }
+    }
+    sleep 0.5
+}
+
+spawn ruby examples/full_demo.rb
+
+# Let intro render
+sleep 1
+
+# Service name - type with visible per-char delay
+wait_prompt "Service name:"
+sleep 0.4
+type_slow "order-api"
+sleep 0.6
+send "\r"
+
+# GitHub token - type slowly
+wait_prompt "GitHub token:"
+sleep 0.4
+type_slow "ghp_xxxxxxx"
+sleep 0.6
+send "\r"
+
+# Generate OpenAPI spec? Pause to read, then accept
+wait_prompt "OpenAPI spec"
+sleep 0.8
+send "\r"
+
+# Language - pause, navigate, pause, select
+wait_prompt "Language:"
+sleep 0.5
+down
+sleep 0.5
+send "\r"
+
+# Integrations - deliberate selections
+wait_prompt "Integrations:"
+sleep 0.4
+space
+sleep 0.4
+down
+sleep 0.4
+space
+sleep 0.5
+send "\r"
+
+# Let progress bar and spinner play out fully
+wait_prompt "Ship it"
+sleep 2
+
+expect eof
