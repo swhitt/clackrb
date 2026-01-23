@@ -7,10 +7,12 @@ module Clack
   # Transforms are applied after validation passes, so you can validate
   # the raw input and transform it into a normalized form.
   #
-  # @example Using built-in transformers
+  # @example Using symbol shortcuts (preferred)
+  #   Clack.text(message: "Name?", transform: :strip)
+  #   Clack.text(message: "Code?", transform: :upcase)
+  #
+  # @example Using module methods
   #   Clack.text(message: "Name?", transform: Clack::Transformers.strip)
-  #   Clack.text(message: "Code?", transform: Clack::Transformers.upcase)
-  #   Clack.text(message: "Phone?", transform: Clack::Transformers.phone_us)
   #
   # @example Custom transformer
   #   Clack.text(
@@ -18,101 +20,125 @@ module Clack
   #     transform: ->(v) { v.to_f.round(2) }
   #   )
   #
-  # @example Combining with validation
+  # @example Chaining multiple transforms
   #   Clack.text(
-  #     message: "Phone?",
-  #     validate: Clack::Validators.format(/\A[\d\s\-().]+\z/, "Invalid phone number"),
-  #     transform: Clack::Transformers.phone_us
+  #     message: "Username?",
+  #     transform: Clack::Transformers.chain(:strip, :downcase)
   #   )
   #
   module Transformers
+    # Lookup table for symbol shortcuts
+    REGISTRY = {}
+
     class << self
+      # Resolve a transformer from a symbol, proc, or return as-is.
+      # @param transformer [Symbol, Proc, nil] the transformer to resolve
+      # @return [Proc, nil] the resolved transformer proc
+      def resolve(transformer)
+        case transformer
+        when Symbol
+          REGISTRY[transformer] || raise(ArgumentError, "Unknown transformer: #{transformer}")
+        when Proc
+          transformer
+        when nil
+          nil
+        else
+          raise ArgumentError, "Transform must be a Symbol or Proc, got #{transformer.class}"
+        end
+      end
+
       # Strip leading/trailing whitespace.
-      #
       # @return [Proc] Transformer proc
       def strip
-        ->(value) { value.to_s.strip }
+        REGISTRY[:strip]
+      end
+
+      # Alias for strip (for JS developers).
+      # @return [Proc] Transformer proc
+      def trim
+        REGISTRY[:trim]
       end
 
       # Convert to lowercase.
-      #
       # @return [Proc] Transformer proc
       def downcase
-        ->(value) { value.to_s.downcase }
+        REGISTRY[:downcase]
       end
 
       # Convert to uppercase.
-      #
       # @return [Proc] Transformer proc
       def upcase
-        ->(value) { value.to_s.upcase }
+        REGISTRY[:upcase]
       end
 
-      # Squeeze multiple spaces into single space.
-      #
+      # Capitalize first letter, lowercase rest.
+      # @return [Proc] Transformer proc
+      def capitalize
+        REGISTRY[:capitalize]
+      end
+
+      # Capitalize first letter of each word.
+      # @return [Proc] Transformer proc
+      def titlecase
+        REGISTRY[:titlecase]
+      end
+
+      # Strip and collapse whitespace to single spaces.
       # @return [Proc] Transformer proc
       def squish
-        ->(value) { value.to_s.strip.gsub(/\s+/, " ") }
+        REGISTRY[:squish]
+      end
+
+      # Remove all whitespace.
+      # @return [Proc] Transformer proc
+      def compact
+        REGISTRY[:compact]
       end
 
       # Parse as integer.
-      #
       # @return [Proc] Transformer proc
       def to_integer
-        ->(value) { value.to_s.to_i }
+        REGISTRY[:to_integer]
       end
 
       # Parse as float.
-      #
       # @return [Proc] Transformer proc
       def to_float
-        ->(value) { value.to_s.to_f }
+        REGISTRY[:to_float]
       end
 
-      # Format US phone number as (XXX) XXX-XXXX.
-      # Extracts digits and formats them.
-      #
+      # Extract only digits.
       # @return [Proc] Transformer proc
-      def phone_us
-        lambda do |value|
-          digits = value.to_s.gsub(/\D/, "")
-          digits = digits[-10..] if digits.length > 10 # Take last 10 digits
-          return value if digits.length != 10
-
-          "(#{digits[0..2]}) #{digits[3..5]}-#{digits[6..9]}"
-        end
-      end
-
-      # Format as credit card with spaces: XXXX XXXX XXXX XXXX.
-      #
-      # @return [Proc] Transformer proc
-      def credit_card
-        lambda do |value|
-          digits = value.to_s.gsub(/\D/, "")
-          digits.scan(/.{1,4}/).join(" ")
-        end
-      end
-
-      # Format Social Security Number as XXX-XX-XXXX.
-      #
-      # @return [Proc] Transformer proc
-      def ssn
-        lambda do |value|
-          digits = value.to_s.gsub(/\D/, "")
-          return value if digits.length != 9
-
-          "#{digits[0..2]}-#{digits[3..4]}-#{digits[5..8]}"
-        end
+      def digits_only
+        REGISTRY[:digits_only]
       end
 
       # Combine multiple transformers, applied in order.
+      # Accepts symbols or procs.
       #
-      # @param transformers [Array<Proc>] Transformers to combine
+      # @param transformers [Array<Symbol, Proc>] Transformers to combine
       # @return [Proc] Combined transformer proc
-      # :reek:NestedIterators :reek:UncommunicativeVariableName
+      #
+      # @example
+      #   Clack::Transformers.chain(:strip, :downcase)
+      #   Clack::Transformers.chain(:strip, ->(v) { v.reverse })
       def chain(*transformers)
-        ->(value) { transformers.reduce(value) { |val, transformer| transformer.call(val) } }
+        resolved = transformers.map { |xform| resolve(xform) }
+        ->(value) { resolved.reduce(value) { |val, xform| xform.call(val) } }
       end
     end
+
+    # Register built-in transformers
+    REGISTRY[:strip] = ->(value) { value.to_s.strip }
+    REGISTRY[:trim] = REGISTRY[:strip]
+    REGISTRY[:downcase] = ->(value) { value.to_s.downcase }
+    REGISTRY[:upcase] = ->(value) { value.to_s.upcase }
+    REGISTRY[:capitalize] = ->(value) { value.to_s.capitalize }
+    REGISTRY[:titlecase] = ->(value) { value.to_s.gsub(/\b\w/, &:upcase) }
+    REGISTRY[:squish] = ->(value) { value.to_s.strip.gsub(/\s+/, " ") }
+    REGISTRY[:compact] = ->(value) { value.to_s.gsub(/\s+/, "") }
+    REGISTRY[:to_integer] = ->(value) { value.to_s.to_i }
+    REGISTRY[:to_float] = ->(value) { value.to_s.to_f }
+    REGISTRY[:digits_only] = ->(value) { value.to_s.gsub(/\D/, "") }
   end
 end

@@ -31,22 +31,21 @@ email = Clack.text(
 )
 exit 0 if Clack.cancel?(email)
 
-# Phone number with validation and transform
+# Phone number with validation and custom transform
 phone = Clack.text(
   message: "Phone number",
   validate: ->(v) { "Enter 10 digits" unless v.gsub(/\D/, "").length == 10 },
-  transform: Clack::Transformers.phone_us
+  transform: ->(v) {
+    digits = v.gsub(/\D/, "")
+    "(#{digits[0, 3]}) #{digits[3, 3]}-#{digits[6, 4]}"
+  }
 )
 exit 0 if Clack.cancel?(phone)
 
-# Username with transform (strip + downcase)
+# Username with transform (symbol shortcuts + custom)
 handle = Clack.text(
   message: "Twitter handle",
-  transform: Clack::Transformers.chain(
-    Clack::Transformers.strip,
-    Clack::Transformers.downcase,
-    ->(v) { v.delete_prefix("@") }
-  )
+  transform: Clack::Transformers.chain(:strip, :downcase, ->(v) { v.delete_prefix("@") })
 )
 exit 0 if Clack.cancel?(handle)
 

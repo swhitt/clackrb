@@ -102,13 +102,30 @@ exit 1 if Clack.cancel?(result)
 
 ### Validation & Transforms
 
-Prompts support `validate:` and `transform:` options. Validation returns an error message (or `nil` to pass). Transforms normalize the value after validation.
+Prompts support `validate:` and `transform:` options.
+
+```
+User Input → Validation (raw) → Transform (if valid) → Final Value
+```
+
+Validation returns an error message (or `nil` to pass). Transforms normalize the value after validation passes.
 
 ```ruby
-phone = Clack.text(
-  message: "Phone number",
-  validate: ->(v) { "Enter 10 digits" unless v.gsub(/\D/, "").length == 10 },
-  transform: Clack::Transformers.phone_us  # -> "(555) 123-4567"
+# Use symbol shortcuts (preferred)
+name = Clack.text(message: "Name?", transform: :strip)
+code = Clack.text(message: "Code?", transform: :upcase)
+
+# Chain multiple transforms
+username = Clack.text(
+  message: "Username?",
+  transform: Clack::Transformers.chain(:strip, :downcase)
+)
+
+# Combine validation and transform
+amount = Clack.text(
+  message: "Amount?",
+  validate: ->(v) { "Must be a number" unless v.match?(/\A\d+\z/) },
+  transform: :to_integer
 )
 ```
 
@@ -116,20 +133,22 @@ Built-in validators and transformers:
 
 ```ruby
 # Validators - return error message or nil
-Clack::Validators.required("Field is required")
+Clack::Validators.required
 Clack::Validators.min_length(8)
-Clack::Validators.max_length(100)
-Clack::Validators.format(/\A[a-z]+\z/, "Only lowercase letters")
+Clack::Validators.format(/\A[a-z]+\z/, "Only lowercase")
 Clack::Validators.email
-Clack::Validators.combine(validator1, validator2)  # First error wins
+Clack::Validators.combine(v1, v2)  # First error wins
 
-# Transformers - normalize the value
-Clack::Transformers.strip
-Clack::Transformers.downcase
-Clack::Transformers.upcase
-Clack::Transformers.squish        # Collapse whitespace
-Clack::Transformers.phone_us      # -> "(555) 123-4567"
-Clack::Transformers.chain(t1, t2) # Apply in order
+# Transformers - normalize the value (use :symbol or Clack::Transformers.name)
+:strip / :trim      # Remove leading/trailing whitespace
+:downcase / :upcase # Change case
+:capitalize         # "hello world" -> "Hello world"
+:titlecase          # "hello world" -> "Hello World"
+:squish             # Collapse whitespace to single spaces
+:compact            # Remove all whitespace
+:to_integer         # Parse as integer
+:to_float           # Parse as float
+:digits_only        # Extract only digits
 ```
 
 ### Text

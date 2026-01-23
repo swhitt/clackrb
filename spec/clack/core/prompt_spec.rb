@@ -157,6 +157,36 @@ RSpec.describe Clack::Core::Prompt do
 
       expect(transform_called).to be false
     end
+
+    it "accepts symbol shortcuts for transforms" do
+      stub_keys("h", "e", "l", "l", "o", :enter)
+      prompt = test_class.new(
+        message: "Input",
+        transform: :upcase,
+        output: output
+      )
+      result = prompt.run
+
+      expect(result).to eq("HELLO")
+    end
+
+    it "handles transform errors gracefully" do
+      stub_keys("x", :enter, "y", :enter)
+      call_count = 0
+      prompt = test_class.new(
+        message: "Input",
+        transform: lambda { |_val|
+          call_count += 1
+          raise "oops" if call_count == 1
+          "ok"
+        },
+        output: output
+      )
+      prompt.run
+
+      expect(output.string).to include("Transform failed: oops")
+      expect(prompt.state).to eq(:submit)
+    end
   end
 
   describe "state machine" do

@@ -18,6 +18,9 @@ detectors:
   FeatureEnvy:
     enabled: false  # Transformation/formatting methods naturally reference their input more than self
 
+  NestedIterators:
+    enabled: false  # Functional composition (map + reduce) is idiomatic for transformer chains
+
   TooManyConstants:
     enabled: false  # Symbols module is intentionally constant-heavy
 
