@@ -108,7 +108,12 @@ Prompts support `validate:` and `transform:` options.
 User Input → Validation (raw) → Transform (if valid) → Final Value
 ```
 
-Validation returns an error message (or `nil` to pass). Transforms normalize the value after validation passes.
+Validation returns an error message, a `Clack::Warning`, or `nil` to pass. Transforms normalize the value after validation passes.
+
+**Validation results:**
+- `nil` or `false` - passes validation
+- String - shows error (red), user must fix input
+- `Clack::Warning.new(message)` - shows warning (yellow), user can confirm with Enter or edit
 
 ```ruby
 # Use symbol shortcuts (preferred)
@@ -127,17 +132,27 @@ amount = Clack.text(
   validate: ->(v) { "Must be a number" unless v.match?(/\A\d+\z/) },
   transform: :to_integer
 )
+
+# Warning validation (soft failure, user can confirm or edit)
+file = Clack.text(
+  message: "Output file?",
+  validate: ->(v) { Clack::Warning.new("File exists. Overwrite?") if File.exist?(v) }
+)
 ```
 
 Built-in validators and transformers:
 
 ```ruby
-# Validators - return error message or nil
+# Validators - return error message, Warning, or nil
 Clack::Validators.required
 Clack::Validators.min_length(8)
 Clack::Validators.format(/\A[a-z]+\z/, "Only lowercase")
 Clack::Validators.email
-Clack::Validators.combine(v1, v2)  # First error wins
+Clack::Validators.combine(v1, v2)  # First error/warning wins
+
+# Warning validators - allow user to confirm or edit
+Clack::Validators.file_exists_warning  # For file overwrite confirmations
+Clack::Validators.as_warning(validator)  # Convert any validator to warning
 
 # Transformers - normalize the value (use :symbol or Clack::Transformers.name)
 :strip / :trim      # Remove leading/trailing whitespace

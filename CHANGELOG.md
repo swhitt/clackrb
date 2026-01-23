@@ -2,6 +2,15 @@
 
 ## [Unreleased]
 
+### Added
+- Warning validation: Validators can return `Clack::Warning.new(message)` for soft failures that allow user confirmation
+- Built-in warning validators: `Validators.file_exists_warning` and `Validators.as_warning(validator)`
+- Test coverage for warning state machine and multiselect keyboard shortcuts
+
+### Changed
+- Simplified Multiselect implementation by using base class warning/error handling (37 lines → 12 lines)
+- Unified validation message rendering across all prompt types
+
 ## [0.1.2]
 
 ### Added

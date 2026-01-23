@@ -13,7 +13,7 @@ detectors:
     enabled: false  # Writable attributes for config are intentional
 
   TooManyInstanceVariables:
-    max_instance_variables: 14  # Complex prompt classes need state for cursor, scroll, selection, etc.
+    max_instance_variables: 15  # Complex prompt classes need state for cursor, scroll, selection, warnings, etc.
 
   FeatureEnvy:
     enabled: false  # Transformation/formatting methods naturally reference their input more than self
@@ -68,7 +68,7 @@ detectors:
     max_ifs: 4
 
   TooManyMethods:
-    max_methods: 26
+    max_methods: 27  # Warning validation adds confirm_warning, clear_warning, validate_value
 
 exclude_paths:
   - spec

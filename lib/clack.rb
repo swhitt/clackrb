@@ -145,7 +145,9 @@ module Clack
     # @param placeholder [String, nil] dim text shown when input is empty
     # @param default_value [String, nil] value used if submitted empty
     # @param initial_value [String, nil] pre-filled editable text
-    # @param validate [Proc, nil] validation function returning error message or nil
+    # @param validate [Proc, nil] validation function returning error string, Warning, or nil
+    # @param transform [Symbol, Proc, nil] transform function to normalize the value
+    # @param help [String, nil] help text shown below the message
     # @return [String, CANCEL] user input or CANCEL if cancelled
     def text(message:, **opts)
       Prompts::Text.new(message:, **opts).run
@@ -158,7 +160,8 @@ module Clack
     #
     # @param message [String] the prompt message
     # @param initial_value [String, nil] pre-filled editable text (can contain newlines)
-    # @param validate [Proc, nil] validation function returning error message or nil
+    # @param validate [Proc, nil] validation function returning error string, Warning, or nil
+    # @param help [String, nil] help text shown below the message
     # @return [String, CANCEL] user input (lines joined with \n) or CANCEL if cancelled
     def multiline_text(message:, **opts)
       Prompts::MultilineText.new(message:, **opts).run
@@ -168,7 +171,8 @@ module Clack
     #
     # @param message [String] the prompt message
     # @param mask [String] character to display for each input character (default: ▪)
-    # @param validate [Proc, nil] validation function
+    # @param validate [Proc, nil] validation function returning error string, Warning, or nil
+    # @param help [String, nil] help text shown below the message
     # @return [String, CANCEL] password or CANCEL if cancelled
     def password(message:, **opts)
       Prompts::Password.new(message:, **opts).run
