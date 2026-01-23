@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-## [0.1.3] - 2026-01-23
+## [0.1.4] - 2026-01-23
 
 ### Added
 - Warning validation: Validators can return `Clack::Warning.new(message)` for soft failures that allow user confirmation
