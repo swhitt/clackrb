@@ -5,27 +5,21 @@ require_relative "../lib/clack"
 
 Clack.intro "validation-demo"
 
-# Required field (hard error)
+# Required field
 name = Clack.text(
   message: "Username (required)",
   validate: ->(v) { "Username is required" if v.to_s.strip.empty? }
 )
 exit 0 if Clack.cancel?(name)
 
-# Password with both error and warning
-# - Empty: hard error (blocks submission)
-# - Short: warning (can confirm to proceed)
+# Length validation
 password = Clack.password(
-  message: "Password",
-  validate: lambda { |v|
-    return "Password is required" if v.empty?
-
-    Clack.warning("Weak password - press Enter to use anyway") if v.length < 8
-  }
+  message: "Password (min 8 chars)",
+  validate: ->(v) { "Password must be at least 8 characters" if v.to_s.length < 8 }
 )
 exit 0 if Clack.cancel?(password)
 
-# Email with format validation
+# Format validation
 email = Clack.text(
   message: "Email address",
   validate: lambda { |v|
@@ -37,27 +31,41 @@ email = Clack.text(
 )
 exit 0 if Clack.cancel?(email)
 
-# Output file with overwrite warning using built-in validator
-output = Clack.text(
-  message: "Output file",
-  placeholder: "output.json",
-  default_value: "output.json",
-  validate: Clack::Validators.file_exists_warning
+# Phone number with validation and custom transform
+phone = Clack.text(
+  message: "Phone number",
+  validate: ->(v) { "Enter 10 digits" unless v.gsub(/\D/, "").length == 10 },
+  transform: ->(v) {
+    digits = v.gsub(/\D/, "")
+    "(#{digits[0, 3]}) #{digits[3, 3]}-#{digits[6, 4]}"
+  }
 )
-exit 0 if Clack.cancel?(output)
+exit 0 if Clack.cancel?(phone)
 
-# Using as_warning to convert any validator to a soft warning
-bio = Clack.text(
-  message: "Bio (optional)",
-  validate: Clack::Validators.as_warning(
-    Clack::Validators.max_length(50, "Bio is quite long")
-  )
+# Username with transform (symbol shortcuts + custom)
+handle = Clack.text(
+  message: "Twitter handle",
+  transform: Clack::Transformers.chain(:strip, :downcase, ->(v) { v.delete_prefix("@") })
 )
-exit 0 if Clack.cancel?(bio)
+exit 0 if Clack.cancel?(handle)
+
+# Multiselect required
+features = Clack.multiselect(
+  message: "Select at least one feature",
+  options: [
+    {value: "a", label: "Feature A"},
+    {value: "b", label: "Feature B"},
+    {value: "c", label: "Feature C"}
+  ],
+  required: true # Built-in validation
+)
+exit 0 if Clack.cancel?(features)
 
 Clack.log.success "All validations passed!"
 Clack.log.info "Username: #{name}"
 Clack.log.info "Email: #{email}"
-Clack.log.info "Output: #{output}"
+Clack.log.info "Phone: #{phone}"
+Clack.log.info "Handle: @#{handle}"
+Clack.log.info "Features: #{features.join(", ")}"
 
 Clack.outro "Done!"
