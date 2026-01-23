@@ -1,7 +1,0 @@
-#!/usr/bin/expect -f
-set timeout 10
-
-log_user 0
-spawn ruby examples/images/spinner_example.rb
-log_user 1
-expect eof
