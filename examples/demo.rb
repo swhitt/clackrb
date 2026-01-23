@@ -80,7 +80,7 @@ def run_demo
     message: "Pick a theme color:",
     options: %w[red orange yellow green blue indigo violet pink cyan magenta]
   )
-  return if Clack.cancel?(color)
+  return if Clack.handle_cancel(color)
 
   # Select key prompt (quick keyboard shortcuts)
   action = Clack.select_key(
@@ -91,14 +91,14 @@ def run_demo
       {value: "test", label: "Run tests", key: "t"}
     ]
   )
-  return if Clack.cancel?(action)
+  return if Clack.handle_cancel(action)
 
   # Path prompt
   config_path = Clack.path(
     message: "Select config directory:",
     only_directories: true
   )
-  return if Clack.cancel?(config_path)
+  return if Clack.handle_cancel(config_path)
 
   # Group multiselect
   stack = Clack.group_multiselect(
@@ -131,7 +131,7 @@ def run_demo
     ],
     required: false
   )
-  return if Clack.cancel?(stack)
+  return if Clack.handle_cancel(stack)
 
   # Progress bar
   prog = Clack.progress(total: 100, message: "Downloading assets...")
