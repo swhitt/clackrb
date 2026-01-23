@@ -15,6 +15,91 @@ RSpec.shared_examples "a cancellable prompt" do
   end
 end
 
+# Shared examples for warning validation behavior
+# Requires:
+#   - let(:output) { StringIO.new }
+#   - let(:valid_input) - keys that produce valid input (e.g., "test")
+#   - let(:warning_input) - keys that trigger warning (e.g., "warn")
+#   - let(:warning_validator) - validator that returns Warning for warning_input
+RSpec.shared_examples "a prompt with warning validation" do
+  context "with warning validation" do
+    it "shows warning and allows confirmation with Enter" do
+      stub_keys(*warning_input, :enter, :enter)
+      prompt = described_class.new(
+        message: "Input?",
+        validate: warning_validator,
+        output: output
+      )
+      prompt.run
+
+      expect(output.string).to include("Are you sure?")
+      expect(output.string).to include("Press Enter to confirm")
+    end
+
+    it "can cancel from warning state" do
+      stub_keys(*warning_input, :enter, :escape)
+      prompt = described_class.new(
+        message: "Input?",
+        validate: warning_validator,
+        output: output
+      )
+      result = prompt.run
+
+      expect(Clack.cancel?(result)).to be true
+    end
+
+    it "distinguishes warnings from errors" do
+      stub_keys(:enter, *valid_input, :enter, :enter)
+      prompt = described_class.new(
+        message: "Input?",
+        validate: lambda { |val|
+          return "Required" if val.to_s.empty?
+
+          Clack::Warning.new("Short input") if val.to_s.length < 3
+        },
+        output: output
+      )
+      prompt.run
+
+      expect(output.string).to include("Required")
+      expect(output.string).to include("Short input")
+    end
+  end
+end
+
+# Shared examples for text-input prompts with warning validation
+# Requires same as "a prompt with warning validation" plus:
+#   - let(:edit_keys) - keys that edit the input during warning (e.g., [:backspace, "ok"])
+RSpec.shared_examples "a text prompt with warning validation" do
+  it_behaves_like "a prompt with warning validation"
+
+  context "with warning validation" do
+    it "clears warning on edit and re-validates" do
+      stub_keys(*warning_input, :enter, *edit_keys, :enter)
+      prompt = described_class.new(
+        message: "Input?",
+        validate: ->(val) { Clack::Warning.new("Bad value") if val.to_s.match?(/bad|warn/) },
+        output: output
+      )
+      prompt.run
+
+      expect(output.string).to include("Bad value")
+    end
+
+    it "appends input typed during warning state" do
+      stub_keys("a", :enter, "bc", :enter)
+      prompt = described_class.new(
+        message: "Input?",
+        validate: ->(v) { Clack::Warning.new("Short") if v.to_s.length < 3 },
+        output: output
+      )
+      result = prompt.run
+
+      expect(result).to eq("abc")
+    end
+  end
+end
+
 # Test helpers for simulating user input
 module TestHelpers
   # Key constants matching what KeyReader returns

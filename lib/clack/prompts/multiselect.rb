@@ -50,33 +50,8 @@ module Clack
 
       protected
 
-      def handle_key(key)
-        return if terminal_state?
-
-        action = Core::Settings.action?(key)
-
-        # Handle warning state: Enter confirms, Cancel aborts, other input clears and continues
-        if @state == :warning
-          case action
-          when :enter
-            confirm_warning
-            return submit
-          when :cancel
-            @state = :cancel
-            return
-          else
-            clear_warning
-            # Fall through to process the key that cleared the warning
-          end
-        end
-
-        @state = :active if @state == :error
-
+      def handle_input(key, action)
         case action
-        when :cancel
-          @state = :cancel
-        when :enter
-          submit
         when :up
           move_cursor(-1)
         when :down
@@ -117,12 +92,8 @@ module Clack
           lines << "#{active_bar}  #{option_display(opt, actual_idx)}\n"
         end
 
-        if @state == :error
-          lines << "#{Colors.yellow(Symbols::S_BAR_END)}  #{Colors.yellow(@error_message)}\n"
-        elsif @state == :warning
-          lines << "#{Colors.yellow(Symbols::S_BAR_END)}  #{Colors.yellow(@warning_message)}\n"
-          lines << "#{bar}  #{Colors.dim("Press Enter to confirm, or make a different selection")}\n"
-          lines << "#{bar_end}\n"
+        if @state == :error || @state == :warning
+          lines.concat(validation_message_lines)
         else
           lines << "#{bar}  #{keyboard_hints}\n"
           lines << "#{bar_end}\n"
