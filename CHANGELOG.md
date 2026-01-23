@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-01-23
+
 ### Added
 - Warning validation: Validators can return `Clack::Warning.new(message)` for soft failures that allow user confirmation
 - Built-in warning validators: `Validators.file_exists_warning` and `Validators.as_warning(validator)`
