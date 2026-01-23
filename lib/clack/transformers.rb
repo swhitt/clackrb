@@ -134,7 +134,7 @@ module Clack
     REGISTRY[:downcase] = ->(value) { value.to_s.downcase }
     REGISTRY[:upcase] = ->(value) { value.to_s.upcase }
     REGISTRY[:capitalize] = ->(value) { value.to_s.capitalize }
-    REGISTRY[:titlecase] = ->(value) { value.to_s.gsub(/\b\w/, &:upcase) }
+    REGISTRY[:titlecase] = ->(value) { value.to_s.split.map(&:capitalize).join(" ") }
     REGISTRY[:squish] = ->(value) { value.to_s.strip.gsub(/\s+/, " ") }
     REGISTRY[:compact] = ->(value) { value.to_s.gsub(/\s+/, "") }
     REGISTRY[:to_integer] = ->(value) { value.to_s.to_i }

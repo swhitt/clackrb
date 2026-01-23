@@ -76,7 +76,7 @@ RSpec.describe Clack::Transformers do
     end
 
     it "handles mixed case" do
-      expect(described_class.titlecase.call("hELLO wORLD")).to eq("HELLO WORLD")
+      expect(described_class.titlecase.call("hELLO wORLD")).to eq("Hello World")
     end
   end
 
