@@ -102,6 +102,8 @@ exit 1 if Clack.cancel?(result)
 
 ### Text
 
+<img src="examples/images/text.svg" alt="Text prompt">
+
 ```ruby
 name = Clack.text(
   message: "What is your project named?",
@@ -114,6 +116,8 @@ name = Clack.text(
 
 ### Password
 
+<img src="examples/images/password.svg" alt="Password prompt">
+
 ```ruby
 secret = Clack.password(
   message: "Enter your API key",
@@ -122,6 +126,8 @@ secret = Clack.password(
 ```
 
 ### Confirm
+
+<img src="examples/images/confirm.svg" alt="Confirm prompt">
 
 ```ruby
 proceed = Clack.confirm(
@@ -135,6 +141,8 @@ proceed = Clack.confirm(
 ### Select
 
 Single selection with keyboard navigation.
+
+<img src="examples/images/select.svg" alt="Select prompt">
 
 ```ruby
 db = Clack.select(
@@ -152,6 +160,8 @@ db = Clack.select(
 ### Multiselect
 
 Multiple selections with toggle controls.
+
+<img src="examples/images/multiselect.svg" alt="Multiselect prompt">
 
 ```ruby
 features = Clack.multiselect(
@@ -229,6 +239,8 @@ action = Clack.select_key(
 ### Spinner
 
 Non-blocking animated indicator for async work.
+
+<img src="examples/images/spinner.svg" alt="Spinner">
 
 ```ruby
 spinner = Clack.spinner
