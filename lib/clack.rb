@@ -32,6 +32,7 @@ require_relative "clack/group"
 require_relative "clack/stream"
 require_relative "clack/task_log"
 require_relative "clack/validators"
+require_relative "clack/transformers"
 
 # Clack - Beautiful CLI prompts for Ruby
 #

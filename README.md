@@ -100,6 +100,38 @@ result = Clack.text(message: "Name?")
 exit 1 if Clack.cancel?(result)
 ```
 
+### Validation & Transforms
+
+Prompts support `validate:` and `transform:` options. Validation returns an error message (or `nil` to pass). Transforms normalize the value after validation.
+
+```ruby
+phone = Clack.text(
+  message: "Phone number",
+  validate: ->(v) { "Enter 10 digits" unless v.gsub(/\D/, "").length == 10 },
+  transform: Clack::Transformers.phone_us  # -> "(555) 123-4567"
+)
+```
+
+Built-in validators and transformers:
+
+```ruby
+# Validators - return error message or nil
+Clack::Validators.required("Field is required")
+Clack::Validators.min_length(8)
+Clack::Validators.max_length(100)
+Clack::Validators.format(/\A[a-z]+\z/, "Only lowercase letters")
+Clack::Validators.email
+Clack::Validators.combine(validator1, validator2)  # First error wins
+
+# Transformers - normalize the value
+Clack::Transformers.strip
+Clack::Transformers.downcase
+Clack::Transformers.upcase
+Clack::Transformers.squish        # Collapse whitespace
+Clack::Transformers.phone_us      # -> "(555) 123-4567"
+Clack::Transformers.chain(t1, t2) # Apply in order
+```
+
 ### Text
 
 ```ruby

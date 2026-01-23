@@ -31,6 +31,25 @@ email = Clack.text(
 )
 exit 0 if Clack.cancel?(email)
 
+# Phone number with validation and transform
+phone = Clack.text(
+  message: "Phone number",
+  validate: ->(v) { "Enter 10 digits" unless v.gsub(/\D/, "").length == 10 },
+  transform: Clack::Transformers.phone_us
+)
+exit 0 if Clack.cancel?(phone)
+
+# Username with transform (strip + downcase)
+handle = Clack.text(
+  message: "Twitter handle",
+  transform: Clack::Transformers.chain(
+    Clack::Transformers.strip,
+    Clack::Transformers.downcase,
+    ->(v) { v.delete_prefix("@") }
+  )
+)
+exit 0 if Clack.cancel?(handle)
+
 # Multiselect required
 features = Clack.multiselect(
   message: "Select at least one feature",
@@ -46,6 +65,8 @@ exit 0 if Clack.cancel?(features)
 Clack.log.success "All validations passed!"
 Clack.log.info "Username: #{name}"
 Clack.log.info "Email: #{email}"
+Clack.log.info "Phone: #{phone}"
+Clack.log.info "Handle: @#{handle}"
 Clack.log.info "Features: #{features.join(", ")}"
 
 Clack.outro "Done!"
