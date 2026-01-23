@@ -67,12 +67,14 @@ module Clack
       # @param message [String] the prompt message to display
       # @param help [String, nil] optional help text shown below the message
       # @param validate [Proc, nil] optional validation proc; returns error string or nil
+      # @param transform [Symbol, Proc, nil] transformer (symbol shortcut or proc); applied after validation
       # @param input [IO] input stream (default: $stdin)
       # @param output [IO] output stream (default: $stdout)
-      def initialize(message:, help: nil, validate: nil, input: $stdin, output: $stdout)
+      def initialize(message:, help: nil, validate: nil, transform: nil, input: $stdin, output: $stdout)
         @message = message
         @help = help
         @validate = validate
+        @transform = Transformers.resolve(transform)
         @input = input
         @output = output
         @state = :initial
@@ -149,11 +151,21 @@ module Clack
 
       # Validate and submit the current value.
       # Sets state to :error if validation fails, :submit otherwise.
+      # Applies transform after successful validation.
       def submit
         if @validate
           result = @validate.call(@value)
           if result
             @error_message = result.is_a?(Exception) ? result.message : result.to_s
+            @state = :error
+            return
+          end
+        end
+        if @transform
+          begin
+            @value = @transform.call(@value)
+          rescue => error
+            @error_message = "Transform failed: #{error.message}"
             @state = :error
             return
           end

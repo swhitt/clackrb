@@ -111,6 +111,82 @@ RSpec.describe Clack::Core::Prompt do
 
       expect(prompt.state).to eq(:submit)
     end
+
+    it "transforms value after validation" do
+      stub_keys("h", "e", "l", "l", "o", :enter)
+      prompt = test_class.new(
+        message: "Input",
+        transform: ->(val) { val.upcase },
+        output: output
+      )
+      result = prompt.run
+
+      expect(result).to eq("HELLO")
+    end
+
+    it "transforms after validation passes" do
+      stub_keys(:enter, "x", :enter)
+      transform_calls = 0
+      prompt = test_class.new(
+        message: "Input",
+        validate: ->(val) { "Required" if val.to_s.empty? },
+        transform: lambda { |_val|
+          transform_calls += 1
+          "transformed"
+        },
+        output: output
+      )
+      prompt.run
+
+      # Transform should only be called once (when validation passes)
+      expect(transform_calls).to eq(1)
+    end
+
+    it "does not transform on cancel" do
+      stub_keys(:escape)
+      transform_called = false
+      prompt = test_class.new(
+        message: "Input",
+        transform: lambda { |_val|
+          transform_called = true
+          "transformed"
+        },
+        output: output
+      )
+      prompt.run
+
+      expect(transform_called).to be false
+    end
+
+    it "accepts symbol shortcuts for transforms" do
+      stub_keys("h", "e", "l", "l", "o", :enter)
+      prompt = test_class.new(
+        message: "Input",
+        transform: :upcase,
+        output: output
+      )
+      result = prompt.run
+
+      expect(result).to eq("HELLO")
+    end
+
+    it "handles transform errors gracefully" do
+      stub_keys("x", :enter, "y", :enter)
+      call_count = 0
+      prompt = test_class.new(
+        message: "Input",
+        transform: lambda { |_val|
+          call_count += 1
+          raise "oops" if call_count == 1
+          "ok"
+        },
+        output: output
+      )
+      prompt.run
+
+      expect(output.string).to include("Transform failed: oops")
+      expect(prompt.state).to eq(:submit)
+    end
   end
 
   describe "state machine" do

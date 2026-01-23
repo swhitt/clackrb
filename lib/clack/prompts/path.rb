@@ -98,17 +98,14 @@ module Clack
           return
         end
 
-        if @validate
-          result = @validate.call(path)
-          if result
-            @error_message = result.is_a?(Exception) ? result.message : result.to_s
-            @state = :error
-            return
-          end
-        end
-
+        # Store original input in case validation fails
+        original_value = @value
         @value = path
-        @state = :submit
+
+        submit
+
+        # Restore input buffer if validation failed
+        @value = original_value if @state == :error
       end
 
       def build_frame

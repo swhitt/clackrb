@@ -100,6 +100,57 @@ result = Clack.text(message: "Name?")
 exit 1 if Clack.cancel?(result)
 ```
 
+### Validation & Transforms
+
+Prompts support `validate:` and `transform:` options.
+
+```
+User Input → Validation (raw) → Transform (if valid) → Final Value
+```
+
+Validation returns an error message (or `nil` to pass). Transforms normalize the value after validation passes.
+
+```ruby
+# Use symbol shortcuts (preferred)
+name = Clack.text(message: "Name?", transform: :strip)
+code = Clack.text(message: "Code?", transform: :upcase)
+
+# Chain multiple transforms
+username = Clack.text(
+  message: "Username?",
+  transform: Clack::Transformers.chain(:strip, :downcase)
+)
+
+# Combine validation and transform
+amount = Clack.text(
+  message: "Amount?",
+  validate: ->(v) { "Must be a number" unless v.match?(/\A\d+\z/) },
+  transform: :to_integer
+)
+```
+
+Built-in validators and transformers:
+
+```ruby
+# Validators - return error message or nil
+Clack::Validators.required
+Clack::Validators.min_length(8)
+Clack::Validators.format(/\A[a-z]+\z/, "Only lowercase")
+Clack::Validators.email
+Clack::Validators.combine(v1, v2)  # First error wins
+
+# Transformers - normalize the value (use :symbol or Clack::Transformers.name)
+:strip / :trim      # Remove leading/trailing whitespace
+:downcase / :upcase # Change case
+:capitalize         # "hello world" -> "Hello world"
+:titlecase          # "hello world" -> "Hello World"
+:squish             # Collapse whitespace to single spaces
+:compact            # Remove all whitespace
+:to_integer         # Parse as integer
+:to_float           # Parse as float
+:digits_only        # Extract only digits
+```
+
 ### Text
 
 <img src="examples/images/text.svg" alt="Text prompt">
