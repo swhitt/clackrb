@@ -73,7 +73,7 @@ def run_demo
     end
   end
 
-  return if Clack.cancel?(result)
+  return if Clack.handle_cancel(result)
 
   # Autocomplete prompt
   color = Clack.autocomplete(
