@@ -23,7 +23,7 @@ Gem::Specification.new do |spec|
     "rubygems_mfa_required" => "true"
   }
 
-  spec.files = Dir["lib/**/*", "LICENSE", "README.md", "CHANGELOG.md"]
+  spec.files = Dir["lib/**/*", "examples/**/*", "LICENSE", "README.md", "CHANGELOG.md"]
   spec.bindir = "exe"
   spec.executables = ["clack-demo"]
   spec.require_paths = ["lib"]

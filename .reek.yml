@@ -72,3 +72,4 @@ detectors:
 
 exclude_paths:
   - spec
+  - examples

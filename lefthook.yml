@@ -7,4 +7,5 @@ pre-commit:
       stage_fixed: true
     reek:
       glob: "*.rb"
+      exclude: "examples/"
       run: bundle exec reek {staged_files}
