@@ -119,7 +119,7 @@ module Clack
         if windows? && !windows_terminal?
           begin
             IO.console&.respond_to?(:raw)
-          rescue
+          rescue IOError, SystemCallError
             false
           end
         else

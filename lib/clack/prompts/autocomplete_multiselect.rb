@@ -39,8 +39,8 @@ module Clack
       # @param required [Boolean] require at least one selection (default: true)
       # @param initial_values [Array, nil] values to pre-select
       # @param filter [Proc, nil] custom filter proc receiving (option_hash, query_string)
-      #   and returning true/false. When nil, the default case-insensitive substring
-      #   match across label, value, and hint is used.
+      #   and returning true/false. When nil, the default fuzzy matching
+      #   across label, value, and hint is used.
       # @param opts [Hash] additional options passed to {Core::Prompt}
       def initialize(message:, options:, max_items: 5, placeholder: nil, required: true, initial_values: nil, filter: nil, **opts)
         super(message:, **opts)
@@ -153,9 +153,10 @@ module Clack
         lines << "#{active_bar}  #{instructions}\n"
         lines << "#{bar_end}\n"
 
-        if @state == :error
-          lines[-2] = "#{Colors.yellow(Symbols::S_BAR)}  #{Colors.yellow(@error_message)}\n"
-          lines[-1] = "#{Colors.yellow(Symbols::S_BAR_END)}\n"
+        validation_lines = validation_message_lines
+        if validation_lines.any?
+          lines[-1] = validation_lines.first
+          lines.concat(validation_lines[1..])
         end
 
         lines.join

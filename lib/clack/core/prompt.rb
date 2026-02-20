@@ -111,23 +111,28 @@ module Clack
 
         Prompt.register(self)
         warn_narrow_terminal
-        setup_terminal
-        render
-        @state = :active
+        terminal_setup = false
 
-        loop do
-          key = KeyReader.read
-          dispatch_key(key)
+        begin
+          setup_terminal
+          terminal_setup = true
           render
+          @state = :active
 
-          break if terminal_state?
+          loop do
+            key = KeyReader.read
+            dispatch_key(key)
+            render
+
+            break if terminal_state?
+          end
+
+          finalize
+          (terminal_state? && @state == :cancel) ? CANCEL : @value
+        ensure
+          Prompt.unregister(self)
+          cleanup_terminal if terminal_setup
         end
-
-        finalize
-        (terminal_state? && @state == :cancel) ? CANCEL : @value
-      ensure
-        Prompt.unregister(self)
-        cleanup_terminal
       end
 
       protected
@@ -334,6 +339,9 @@ module Clack
       # validation outcome since there's no interactive way to fix input.
       def run_ci_mode
         submit
+        if @state == :error
+          @output.print "#{Colors.yellow("!")}  #{Colors.yellow("CI mode: validation failed for")} \"#{@message}\": #{@error_message}\n"
+        end
         @value
       end
 

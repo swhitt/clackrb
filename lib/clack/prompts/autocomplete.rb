@@ -42,8 +42,8 @@ module Clack
       # @param max_items [Integer] max visible options (default: 5)
       # @param placeholder [String, nil] placeholder text when empty
       # @param filter [Proc, nil] custom filter proc receiving (option_hash, query_string)
-      #   and returning true/false. When nil, the default case-insensitive substring
-      #   match across label, value, and hint is used.
+      #   and returning true/false. When nil, the default fuzzy matching
+      #   across label, value, and hint is used.
       # @param opts [Hash] additional options passed to {Core::Prompt}
       def initialize(message:, options:, max_items: 5, placeholder: nil, filter: nil, **opts)
         super(message:, **opts)

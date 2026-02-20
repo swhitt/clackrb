@@ -54,11 +54,12 @@ module Clack
         #
         # @param query [String] the search query
         # @param target [String] the string to score against
+        # @param q_down [String, nil] pre-downcased query (optimization for batch use)
         # @return [Integer] match score (0 = no match)
-        def score(query, target)
+        def score(query, target, q_down: nil)
           return 0 if query.empty?
 
-          q_down = query.downcase
+          q_down ||= query.downcase
           t_down = target.downcase
           qi = 0
           total = 0
@@ -90,8 +91,10 @@ module Clack
         def filter(options, query)
           return options if query.empty?
 
+          q_down = query.downcase
+
           scored = options.filter_map do |opt|
-            s = best_score(opt, query)
+            s = best_score(opt, query, q_down)
             [opt, s] if s.positive?
           end
 
@@ -104,12 +107,12 @@ module Clack
           char == " " || char == "_" || char == "-" || char == "/"
         end
 
-        def best_score(opt, query)
+        def best_score(opt, query, q_down)
           scores = [
-            score(query, opt[:label]),
-            score(query, opt[:value].to_s)
+            score(query, opt[:label], q_down: q_down),
+            score(query, opt[:value].to_s, q_down: q_down)
           ]
-          scores << score(query, opt[:hint]) if opt[:hint]
+          scores << score(query, opt[:hint], q_down: q_down) if opt[:hint]
           scores.max
         end
       end

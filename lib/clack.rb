@@ -91,6 +91,9 @@ module Clack
     def cancel?(value)
       value.equal?(CANCEL)
     end
+    # @!method cancelled?(value)
+    #   Alias for {#cancel?} (British spelling).
+    #   @see #cancel?
     alias_method :cancelled?, :cancel?
 
     # Check if cancelled and show cancel message if so.
@@ -214,6 +217,7 @@ module Clack
     # @option opts [Array, nil] :initial_values initially selected values
     # @option opts [Boolean] :required require at least one selection (default: true)
     # @option opts [Integer, nil] :max_items max visible items (enables scrolling)
+    # @option opts [Object, nil] :cursor_at value of initially focused option
     # @return [Array, CANCEL] selected values or CANCEL if cancelled
     def multiselect(message:, options:, **opts)
       Prompts::Multiselect.new(message:, options: options, **opts).run
@@ -221,7 +225,12 @@ module Clack
 
     # Create an animated spinner for async operations.
     #
-    # @return [Prompts::Spinner] spinner instance (call #start, #stop, #error)
+    # @option opts [:dots, :timer] :indicator animation style (default: :dots)
+    # @option opts [Array<String>, nil] :frames custom animation frames
+    # @option opts [Float, nil] :delay seconds between frames
+    # @option opts [Proc, nil] :style_frame proc to style each frame
+    # @option opts [IO] :output output stream (default: $stdout)
+    # @return [Prompts::Spinner] spinner instance (call #start, #stop, #error, #cancel, #clear)
     def spinner(**opts)
       Prompts::Spinner.new(**opts)
     end
@@ -266,8 +275,9 @@ module Clack
     # @param options [Array<Hash, String>] list of options to filter
     # @option opts [String, nil] :placeholder placeholder text
     # @option opts [Proc, nil] :filter custom filter proc receiving (option_hash, query_string)
-    #   and returning true/false. Defaults to case-insensitive substring match
-    #   across label, value, and hint.
+    #   and returning true/false. Defaults to fuzzy matching across label, value, and hint,
+    #   sorted by relevance score.
+    # @option opts [Integer, nil] :max_items max visible items (enables scrolling, default: 5)
     # @return [Object, CANCEL] selected value or CANCEL if cancelled
     def autocomplete(message:, options:, **opts)
       Prompts::Autocomplete.new(message:, options: options, **opts).run
@@ -281,8 +291,9 @@ module Clack
     # @option opts [Boolean] :required require at least one selection (default: true)
     # @option opts [Array, nil] :initial_values initially selected values
     # @option opts [Proc, nil] :filter custom filter proc receiving (option_hash, query_string)
-    #   and returning true/false. Defaults to case-insensitive substring match
-    #   across label, value, and hint.
+    #   and returning true/false. Defaults to fuzzy matching across label, value, and hint,
+    #   sorted by relevance score.
+    # @option opts [Integer, nil] :max_items max visible items (enables scrolling, default: 5)
     # @return [Array, CANCEL] selected values or CANCEL if cancelled
     def autocomplete_multiselect(message:, options:, **opts)
       Prompts::AutocompleteMultiselect.new(message:, options: options, **opts).run
@@ -293,6 +304,7 @@ module Clack
     # @param message [String] the prompt message
     # @option opts [String] :root starting directory (default: ".")
     # @option opts [Boolean] :only_directories only show directories (default: false)
+    # @option opts [Integer, nil] :max_items max visible items (enables scrolling, default: 5)
     # @return [String, CANCEL] selected path or CANCEL if cancelled
     def path(message:, **opts)
       Prompts::Path.new(message:, **opts).run
@@ -318,7 +330,7 @@ module Clack
 
     # Run multiple tasks with progress indicators.
     #
-    # @param tasks [Array<Hash>] tasks with :title and :task (Proc)
+    # @param tasks [Array<Hash>] tasks with :title, :task (Proc), and optional :enabled (Boolean, default: true)
     # @return [Array<Hash>] task results
     def tasks(tasks:, **opts)
       Prompts::Tasks.new(tasks: tasks, **opts).run
@@ -330,6 +342,9 @@ module Clack
     # @param options [Array<Hash>] groups with :label and :options
     # @option opts [Array, nil] :initial_values initially selected values
     # @option opts [Boolean] :required require at least one selection (default: true)
+    # @option opts [Object, nil] :cursor_at value of initially focused option
+    # @option opts [Boolean] :selectable_groups allow toggling entire groups (default: true)
+    # @option opts [Integer] :group_spacing lines between groups (default: 0)
     # @return [Array, CANCEL] selected values or CANCEL if cancelled
     def group_multiselect(message:, options:, **opts)
       Prompts::GroupMultiselect.new(message:, options: options, **opts).run

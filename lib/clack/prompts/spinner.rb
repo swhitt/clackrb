@@ -73,8 +73,8 @@ module Clack
           @cancelled = false
           @finished = false
           @prev_frame = nil
+          @frame_idx = 0
           @start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-          @dot_idx = 0
         end
 
         @output.print Core::Cursor.hide

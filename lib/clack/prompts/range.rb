@@ -85,17 +85,9 @@ module Clack
       end
 
       def clamp(val)
-        val = @min if val < @min
-        val = @max if val > @max
-        # Snap to step grid
-        if @step != 0
-          snapped = @min + (((val - @min).to_f / @step).round * @step)
-          snapped = @max if snapped > @max
-          snapped = @min if snapped < @min
-          snapped
-        else
-          val
-        end
+        val = val.clamp(@min, @max)
+        snapped = @min + (((val - @min).to_f / @step).round * @step)
+        snapped.clamp(@min, @max)
       end
 
       def format_value(val)

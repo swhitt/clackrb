@@ -146,11 +146,6 @@ module Clack
         output = StringIO.new
         read_count = 0
 
-        @mutex.synchronize do
-          @saved_read_queue = queue
-          @saved_read_count = 0
-        end
-
         verbose, $VERBOSE = $VERBOSE, nil
         Core::KeyReader.singleton_class.alias_method(:_original_read, :read)
 

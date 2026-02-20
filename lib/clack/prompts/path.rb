@@ -45,7 +45,6 @@ module Clack
         @scroll_offset = 0
         @suggestions = []
         @dir_cache = {}     # directory path => sorted entries array
-        @dir_cache_key = nil # current cached directory
         update_suggestions
       end
 
