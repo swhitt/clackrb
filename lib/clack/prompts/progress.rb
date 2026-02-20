@@ -116,9 +116,7 @@ module Clack
         @output.puts "#{sym}  #{@message}"
       end
 
-      def symbol
-        Colors.cyan(Symbols::S_STEP_ACTIVE)
-      end
+      def symbol = Colors.cyan(Symbols::S_STEP_ACTIVE)
 
       def progress_bar
         filled = @total.zero? ? @width : (@current.to_f / @total * @width).round
@@ -132,9 +130,7 @@ module Clack
         Colors.dim("#{pct.to_s.rjust(3)}%")
       end
 
-      def message_text
-        @message ? "  #{@message}" : ""
-      end
+      def message_text = @message ? "  #{@message}" : ""
     end
   end
 end

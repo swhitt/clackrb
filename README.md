@@ -95,9 +95,16 @@ agg examples/demo.cast examples/demo.gif --font-size 18 --cols 80 --rows 28 --sp
 All prompts return the user's input, or `Clack::CANCEL` if they pressed Escape/Ctrl+C.
 
 ```ruby
-# Always check for cancellation
+# Check for cancellation
 result = Clack.text(message: "Name?")
 exit 1 if Clack.cancel?(result)
+
+# Or use handle_cancel for a one-liner that prints "Cancelled" and returns true
+result = Clack.text(message: "Name?")
+exit 1 if Clack.handle_cancel(result)
+
+# With a custom message
+exit 1 if Clack.handle_cancel(result, "Aborted by user")
 ```
 
 ### Validation & Transforms
@@ -144,15 +151,25 @@ Built-in validators and transformers:
 
 ```ruby
 # Validators - return error message, Warning, or nil
-Clack::Validators.required
-Clack::Validators.min_length(8)
+Clack::Validators.required              # Non-empty input
+Clack::Validators.min_length(3)         # Minimum character count
+Clack::Validators.max_length(100)       # Maximum character count
 Clack::Validators.format(/\A[a-z]+\z/, "Only lowercase")
-Clack::Validators.email
-Clack::Validators.combine(v1, v2)  # First error/warning wins
+Clack::Validators.email                 # Email format (user@host.tld)
+Clack::Validators.url                   # URL format (http/https)
+Clack::Validators.integer               # Integer string ("-5", "42")
+Clack::Validators.in_range(1..100)      # Numeric range (parses as int)
+Clack::Validators.one_of(%w[a b c])     # Allowlist check
+Clack::Validators.path_exists           # File/dir exists on disk
+Clack::Validators.directory_exists      # Directory exists on disk
+Clack::Validators.future_date           # Date strictly after today
+Clack::Validators.past_date             # Date strictly before today
+Clack::Validators.date_range(min: d1, max: d2) # Date within range
+Clack::Validators.combine(v1, v2)       # First error/warning wins
 
 # Warning validators - allow user to confirm or edit
-Clack::Validators.file_exists_warning  # For file overwrite confirmations
-Clack::Validators.as_warning(validator)  # Convert any validator to warning
+Clack::Validators.file_exists_warning   # For file overwrite confirmations
+Clack::Validators.as_warning(validator) # Convert any validator to warning
 
 # Transformers - normalize the value (use :symbol or Clack::Transformers.name)
 :strip / :trim      # Remove leading/trailing whitespace
@@ -188,6 +205,18 @@ name = Clack.text(
 secret = Clack.password(
   message: "Enter your API key",
   mask: "*"  # Default: "▪"
+)
+```
+
+### Multiline Text
+
+Multi-line text input. Enter inserts a newline, Ctrl+D submits.
+
+```ruby
+bio = Clack.multiline_text(
+  message: "Tell us about yourself",
+  initial_value: "Hello!\n",
+  validate: ->(v) { "Too short" if v.strip.length < 10 }
 )
 ```
 
@@ -255,6 +284,13 @@ color = Clack.autocomplete(
   options: %w[red orange yellow green blue indigo violet],
   placeholder: "Type to search..."
 )
+
+# Custom filter logic (receives option hash and query string)
+cmd = Clack.autocomplete(
+  message: "Select command",
+  options: commands,
+  filter: ->(opt, query) { opt[:label].start_with?(query) }
+)
 ```
 
 ### Autocomplete Multiselect
@@ -286,6 +322,23 @@ project_dir = Clack.path(
 ```
 
 **Navigation:** Type to filter | `Tab` to autocomplete | `↑↓` to select
+
+### Date
+
+Segmented date picker with three format modes.
+
+```ruby
+date = Clack.date(
+  message: "Release date?",
+  format: :us,                        # :iso (YYYY-MM-DD), :us (MM/DD/YYYY), :eu (DD/MM/YYYY)
+  initial_value: Date.today + 7,
+  min: Date.today,
+  max: Date.today + 365,
+  validate: ->(d) { "Not a Friday" unless d.friday? }
+)
+```
+
+**Navigation:** `Tab`/`←→` between segments | `↑↓` adjust value | type digits directly
 
 ### Select Key
 
@@ -320,6 +373,23 @@ spinner.stop("Dependencies installed!")
 # Or: spinner.cancel("Cancelled")
 ```
 
+**Block form** - wraps a block with automatic success/error handling:
+
+```ruby
+result = Clack.spin("Installing dependencies...") { system("npm install") }
+
+# With custom messages
+Clack.spin("Compiling...", success: "Build complete!") { build_project }
+
+# Access the spinner inside the block
+Clack.spin("Working...") do |s|
+  s.message "Step 1..."
+  do_step_1
+  s.message "Step 2..."
+  do_step_2
+end
+```
+
 ### Progress
 
 Visual progress bar for measurable operations.
@@ -346,6 +416,22 @@ results = Clack.tasks(tasks: [
   { title: "Building project", task: -> { build } },
   { title: "Running tests", task: -> { run_tests } }
 ])
+
+# Update the spinner message mid-task
+Clack.tasks(tasks: [
+  { title: "Installing", task: ->(message) {
+    message.call("Fetching packages...")
+    fetch_packages
+    message.call("Compiling...")
+    compile
+  }}
+])
+
+# Conditionally skip tasks with enabled:
+Clack.tasks(tasks: [
+  { title: "Lint", task: -> { lint } },
+  { title: "Deploy", task: -> { deploy }, enabled: ENV["DEPLOY"] == "true" }
+])
 ```
 
 ### Group Multiselect
@@ -370,7 +456,9 @@ features = Clack.group_multiselect(
         { value: "solid_queue", label: "Solid Queue" }
       ]
     }
-  ]
+  ],
+  selectable_groups: true,  # Toggle all options in a group at once
+  group_spacing: 1          # Blank lines between groups
 )
 ```
 
@@ -483,6 +571,18 @@ Clack.outro("Done!")        # └ Done!
 
 # Or on error:
 Clack.cancel("Aborted")     # └ Aborted (red)
+```
+
+## Configuration
+
+Customize key bindings and display options globally:
+
+```ruby
+# Add custom key bindings (merged with defaults)
+Clack.update_settings(aliases: { "y" => :enter, "n" => :cancel })
+
+# Disable guide bars
+Clack.update_settings(with_guide: false)
 ```
 
 ## Requirements

@@ -1,7 +1,9 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-require_relative "../lib/clack"
+# Run with: ruby examples/create_app.rb
+
+require_relative "../lib/clack" # Or: require "clack" if installed as a gem
 
 Clack.intro "create-my-app"
 

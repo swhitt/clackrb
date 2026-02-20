@@ -20,7 +20,7 @@ RSpec.describe Clack::Transformers do
     end
 
     it "raises for invalid type" do
-      expect { described_class.resolve("string") }.to raise_error(ArgumentError, /must be a Symbol or Proc/)
+      expect { described_class.resolve("string") }.to raise_error(ArgumentError, /must be a Symbol or respond to #call/)
     end
   end
 

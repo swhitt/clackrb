@@ -4,7 +4,7 @@
 # Demo script showcasing all Clack Ruby prompts
 # Run with: ruby examples/demo.rb
 
-require_relative "../lib/clack"
+require_relative "../lib/clack" # Or: require "clack" if installed as a gem
 
 def run_demo
   Clack.intro "clack-demo"

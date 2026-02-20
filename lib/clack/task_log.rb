@@ -69,7 +69,8 @@ module Clack
       reset_buffers
     end
 
-    # @api private
+    # Add a message from a group to the log buffer.
+    # @private
     def add_group_message(_group, msg)
       clear_buffer
       @buffer << msg.to_s
@@ -149,15 +150,12 @@ module Clack
 
   # A group within a TaskLog
   class TaskLogGroup
-    def initialize(name, parent)
-      @name = name
+    def initialize(_name, parent)
       @parent = parent
-      @buffer = []
     end
 
     # Add a message to this group
     def message(msg, raw: false)
-      @buffer << msg.to_s
       @parent.add_group_message(self, msg)
     end
 

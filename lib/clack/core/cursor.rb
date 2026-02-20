@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 module Clack
+  # Core building blocks for prompt rendering and interaction.
   module Core
     # ANSI escape sequences for cursor control.
     # See: https://en.wikipedia.org/wiki/ANSI_escape_code

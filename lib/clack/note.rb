@@ -1,8 +1,15 @@
 # frozen_string_literal: true
 
 module Clack
+  # Renders a bordered note box with optional title in the terminal.
   module Note
     class << self
+      # Render a note box to the output stream.
+      #
+      # @param message [String] the note content
+      # @param title [String, nil] optional title displayed above the box
+      # @param output [IO] output stream (default: $stdout)
+      # @return [void]
       def render(message = "", title: nil, output: $stdout)
         lines = message.to_s.lines.map(&:chomp)
         # Add empty lines at start and end like original

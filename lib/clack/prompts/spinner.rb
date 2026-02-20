@@ -122,15 +122,11 @@ module Clack
         @output.print Core::Cursor.show
       end
 
-      def cancelled?
-        @cancelled
-      end
+      def cancelled? = @cancelled
 
       private
 
-      def remove_trailing_dots(msg)
-        msg.to_s.sub(/\.+$/, "")
-      end
+      def remove_trailing_dots(msg) = msg.to_s.sub(/\.+$/, "")
 
       def format_timer
         elapsed = Process.clock_gettime(Process::CLOCK_MONOTONIC) - @start_time

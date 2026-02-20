@@ -16,8 +16,8 @@ module Clack
     class Password < Core::Prompt
       # @param message [String] the prompt message
       # @param mask [String, nil] character to display (default: "▪")
-      # @param validate [Proc, nil] validation proc returning error string or nil
-      # @param opts [Hash] additional options passed to {Core::Prompt}
+      # @option opts [Proc, nil] :validate validation proc returning error string or nil
+      # @option opts [Hash] additional options passed to {Core::Prompt}
       def initialize(message:, mask: nil, **opts)
         super(message:, **opts)
         @mask = mask || Symbols::S_PASSWORD_MASK
@@ -27,12 +27,9 @@ module Clack
       protected
 
       def handle_input(key, _action)
-        return unless Core::Settings.printable?(key)
-
         if Core::Settings.backspace?(key)
-          clusters = @value.grapheme_clusters
-          @value = (clusters.length > 0) ? clusters[0..-2].join : ""
-        else
+          @value = @value.grapheme_clusters[..-2].join
+        elsif Core::Settings.printable?(key)
           @value += key
         end
       end
@@ -75,9 +72,7 @@ module Clack
         "#{masked}#{cursor_block}"
       end
 
-      def cursor_block
-        Colors.inverse(Colors.hidden("_"))
-      end
+      def cursor_block = Colors.inverse(Colors.hidden("_"))
     end
   end
 end

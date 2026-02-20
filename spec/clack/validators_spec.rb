@@ -241,6 +241,79 @@ RSpec.describe Clack::Validators do
     end
   end
 
+  describe ".future_date" do
+    let(:validator) { described_class.future_date }
+
+    it "returns nil for future date" do
+      expect(validator.call(Date.today + 1)).to be_nil
+    end
+
+    it "returns error for today" do
+      expect(validator.call(Date.today)).to eq("Date must be in the future")
+    end
+
+    it "returns error for past date" do
+      expect(validator.call(Date.today - 1)).to eq("Date must be in the future")
+    end
+
+    it "accepts custom message" do
+      validator = described_class.future_date("Pick a later date")
+      expect(validator.call(Date.today)).to eq("Pick a later date")
+    end
+  end
+
+  describe ".past_date" do
+    let(:validator) { described_class.past_date }
+
+    it "returns nil for past date" do
+      expect(validator.call(Date.today - 1)).to be_nil
+    end
+
+    it "returns error for today" do
+      expect(validator.call(Date.today)).to eq("Date must be in the past")
+    end
+
+    it "returns error for future date" do
+      expect(validator.call(Date.today + 1)).to eq("Date must be in the past")
+    end
+
+    it "accepts custom message" do
+      validator = described_class.past_date("Pick an earlier date")
+      expect(validator.call(Date.today)).to eq("Pick an earlier date")
+    end
+  end
+
+  describe ".date_range" do
+    let(:min) { Date.new(2024, 1, 1) }
+    let(:max) { Date.new(2024, 12, 31) }
+    let(:validator) { described_class.date_range(min: min, max: max) }
+
+    it "returns nil for date in range" do
+      expect(validator.call(Date.new(2024, 6, 15))).to be_nil
+    end
+
+    it "returns nil for min boundary" do
+      expect(validator.call(min)).to be_nil
+    end
+
+    it "returns nil for max boundary" do
+      expect(validator.call(max)).to be_nil
+    end
+
+    it "returns error for date before range" do
+      expect(validator.call(Date.new(2023, 12, 31))).to eq("Date must be between #{min} and #{max}")
+    end
+
+    it "returns error for date after range" do
+      expect(validator.call(Date.new(2025, 1, 1))).to eq("Date must be between #{min} and #{max}")
+    end
+
+    it "accepts custom message" do
+      validator = described_class.date_range(min: min, max: max, message: "Invalid date")
+      expect(validator.call(Date.new(2023, 1, 1))).to eq("Invalid date")
+    end
+  end
+
   describe ".file_exists_warning" do
     let(:validator) { described_class.file_exists_warning }
 

@@ -7,7 +7,9 @@ module Clack
     # Combines text input with a filtered option list. Type to filter,
     # use arrow keys to navigate matches, Enter to select.
     #
-    # Filtering searches across value, label, and hint fields.
+    # By default, filtering searches across value, label, and hint fields
+    # using a case-insensitive substring match. Supply a custom +filter+
+    # proc to override this behavior.
     #
     # @example Basic usage
     #   color = Clack.autocomplete(
@@ -23,6 +25,13 @@ module Clack
     #     max_items: 10
     #   )
     #
+    # @example Custom filter
+    #   Clack.autocomplete(
+    #     message: "Select command",
+    #     options: commands,
+    #     filter: ->(opt, query) { opt[:label].start_with?(query) }
+    #   )
+    #
     class Autocomplete < Core::Prompt
       include Core::OptionsHelper
       include Core::TextInputHelper
@@ -31,12 +40,16 @@ module Clack
       # @param options [Array<Hash, String>] list of options to filter
       # @param max_items [Integer] max visible options (default: 5)
       # @param placeholder [String, nil] placeholder text when empty
+      # @param filter [Proc, nil] custom filter proc receiving (option_hash, query_string)
+      #   and returning true/false. When nil, the default case-insensitive substring
+      #   match across label, value, and hint is used.
       # @param opts [Hash] additional options passed to {Core::Prompt}
-      def initialize(message:, options:, max_items: 5, placeholder: nil, **opts)
+      def initialize(message:, options:, max_items: 5, placeholder: nil, filter: nil, **opts)
         super(message:, **opts)
         @all_options = normalize_options(options)
         @max_items = max_items
         @placeholder = placeholder
+        @filter = filter
         @value = ""
         @cursor = 0
         @selected_index = 0
@@ -49,7 +62,6 @@ module Clack
       def handle_key(key)
         return if terminal_state?
 
-        @state = :active if @state == :error
         action = Core::Settings.action?(key)
 
         case action
@@ -97,9 +109,11 @@ module Clack
           lines << "#{bar}  #{option_display(opt, actual_idx == @selected_index)}\n"
         end
 
-        lines << "#{bar_end}\n"
-
-        lines[-1] = "#{Colors.yellow(Symbols::S_BAR_END)}  #{Colors.yellow(@error_message)}\n" if @state == :error
+        if @state in :error | :warning
+          lines.concat(validation_message_lines)
+        else
+          lines << "#{bar_end}\n"
+        end
 
         lines.join
       end
@@ -119,11 +133,15 @@ module Clack
       private
 
       def update_filtered
-        query = @value.downcase
-        @filtered = @all_options.select do |opt|
-          opt[:label].downcase.include?(query) ||
-            opt[:value].to_s.downcase.include?(query) ||
-            opt[:hint]&.downcase&.include?(query)
+        @filtered = if @filter
+          @all_options.select { |opt| @filter.call(opt, @value) }
+        else
+          query = @value.downcase
+          @all_options.select do |opt|
+            opt[:label].downcase.include?(query) ||
+              opt[:value].to_s.downcase.include?(query) ||
+              opt[:hint]&.downcase&.include?(query)
+          end
         end
       end
 

@@ -1,5 +1,9 @@
 #!/usr/bin/env ruby
-require_relative "../../lib/clack"
+# frozen_string_literal: true
+
+# Run with: ruby examples/images/spinner_example.rb
+
+require_relative "../../lib/clack" # Or: require "clack" if installed as a gem
 
 spinner = Clack.spinner
 spinner.start("Installing dependencies...")

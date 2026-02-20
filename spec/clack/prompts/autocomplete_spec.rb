@@ -124,4 +124,72 @@ RSpec.describe Clack::Prompts::Autocomplete do
       expect(result).to eq("cherry")
     end
   end
+
+  describe "custom filter" do
+    it "uses the custom filter proc instead of default matching" do
+      # Only match options whose label starts with the query (case-sensitive)
+      starts_with_filter = ->(opt, query) { opt[:label].start_with?(query) }
+      stub_keys("app", :enter)
+      prompt = create_prompt(filter: starts_with_filter)
+      result = prompt.run
+
+      expect(result).to eq("apple")
+    end
+
+    it "excludes options that do not satisfy the custom filter" do
+      # Only match labels starting with the query; "a" matches "apple" but not "banana"
+      starts_with_filter = ->(opt, query) { opt[:label].start_with?(query) }
+      stub_keys("b", :enter)
+      prompt = create_prompt(filter: starts_with_filter)
+      result = prompt.run
+
+      expect(result).to eq("banana")
+    end
+
+    it "shows error when custom filter matches nothing" do
+      reject_all = ->(_opt, _query) { false }
+      stub_keys("x", :enter, :escape)
+      prompt = create_prompt(filter: reject_all)
+      prompt.run
+
+      expect(output.string).to include("No matching option")
+    end
+
+    it "receives the raw query without downcasing" do
+      received_queries = []
+      spy_filter = ->(opt, query) {
+        received_queries << query
+        opt[:label].downcase.include?(query.downcase)
+      }
+      stub_keys("App", :enter)
+      prompt = create_prompt(filter: spy_filter)
+      prompt.run
+
+      # The filter should receive "A", "Ap", "App" -- not downcased
+      expect(received_queries).to include("App")
+    end
+
+    it "receives the full option hash" do
+      opts_with_hints = [
+        {value: "a", label: "Apple", hint: "fruit"},
+        {value: "b", label: "Banana", hint: "fruit"},
+        {value: "c", label: "Carrot", hint: "vegetable"}
+      ]
+      # Filter by hint field
+      hint_filter = ->(opt, _query) { opt[:hint] == "vegetable" }
+      stub_keys("x", :enter)
+      prompt = create_prompt(options: opts_with_hints, filter: hint_filter)
+      result = prompt.run
+
+      expect(result).to eq("c")
+    end
+
+    it "falls back to default behavior when filter is nil" do
+      stub_keys("b", :enter)
+      prompt = create_prompt(filter: nil)
+      result = prompt.run
+
+      expect(result).to eq("banana")
+    end
+  end
 end

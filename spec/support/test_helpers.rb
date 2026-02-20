@@ -114,7 +114,8 @@ module TestHelpers
     left: "\e[D",
     backspace: "\u007F",
     space: " ",
-    tab: "\t"
+    tab: "\t",
+    shift_tab: "\e[Z"
   }.freeze
 
   # Helper to create a key sequence for stubbing KeyReader

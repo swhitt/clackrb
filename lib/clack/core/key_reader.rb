@@ -16,6 +16,11 @@ module Clack
       SEQUENCE_TIMEOUT = 0.01
 
       class << self
+        # Read a single keystroke from the terminal in raw mode.
+        # Handles multi-byte escape sequences (arrow keys, etc.).
+        #
+        # @return [String, nil] the key code, or nil on EOF
+        # @raise [IOError] if no console is available
         def read
           console = IO.console
           raise IOError, "No console available (not a TTY?)" unless console

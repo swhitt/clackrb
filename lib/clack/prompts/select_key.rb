@@ -42,12 +42,11 @@ module Clack
         when :cancel
           @state = :cancel
         else
-          # Check if key matches any option
           opt = @options.find { |o| o[:key]&.downcase == key&.downcase }
-          if opt
-            @value = opt[:value]
-            @state = :submit
-          end
+          return unless opt
+
+          @value = opt[:value]
+          @state = :submit
         end
       end
 
@@ -70,8 +69,7 @@ module Clack
         lines << "#{bar}\n"
         lines << "#{symbol_for_state}  #{@message}\n"
 
-        selected = @options.find { |o| o[:value] == @value }
-        label = selected ? selected[:label] : ""
+        label = @options.find { |o| o[:value] == @value }&.dig(:label).to_s
         display = (@state == :cancel) ? Colors.strikethrough(Colors.dim(label)) : Colors.dim(label)
         lines << "#{bar}  #{display}\n"
 

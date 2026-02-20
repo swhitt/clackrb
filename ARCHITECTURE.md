@@ -12,7 +12,10 @@ lib/
 └── clack/
     ├── version.rb           # Gem version
     ├── colors.rb            # ANSI color helpers
+    ├── environment.rb       # Terminal environment detection
     ├── symbols.rb           # Unicode/ASCII symbols
+    ├── transformers.rb      # Input transformers (symbol shortcuts or procs)
+    ├── validators.rb        # Built-in validation helpers
     ├── core/
     │   ├── prompt.rb        # Base prompt class (state machine, rendering)
     │   ├── options_helper.rb # Shared logic for Select/Multiselect
@@ -27,9 +30,11 @@ lib/
     │   ├── select.rb        # Single choice from list
     │   ├── select_key.rb    # Single choice via key press
     │   ├── multiselect.rb   # Multiple choice with toggle/invert
+    │   ├── multiline_text.rb # Multi-line text input
     │   ├── group_multiselect.rb # Grouped multiple choice
     │   ├── autocomplete.rb  # Type-to-filter single select
     │   ├── autocomplete_multiselect.rb # Type-to-filter multi select
+    │   ├── date.rb          # Date picker prompt
     │   ├── path.rb          # File/directory path input
     │   ├── spinner.rb       # Threaded animation
     │   ├── progress.rb      # Progress bar
@@ -52,11 +57,13 @@ Every prompt follows this state flow:
 initial → active → submit
                  ↘ cancel
          ↖ error ↙
+         ↖ warning → (Enter confirms → submit)
 ```
 
 - **initial**: First render, cursor hidden
 - **active**: Accepting user input
 - **error**: Validation failed (returns to active on next input)
+- **warning**: Soft validation warning, user can press Enter to confirm or edit to clear
 - **submit**: User confirmed, value captured
 - **cancel**: User pressed Escape/Ctrl+C
 
@@ -105,6 +112,13 @@ def read_key
 end
 ```
 
+#### Two-Layer Key Dispatch
+
+The prompt loop calls `dispatch_key` rather than `handle_key` directly. This separation keeps warning confirmation and error clearing in the base class so every prompt participates automatically:
+
+- **`dispatch_key(key)`** — manages warning state (Enter confirms, Escape cancels, any other input clears the warning and falls through), clears error state on any keypress, then delegates to `handle_key`.
+- **`handle_key(key)`** — prompt-specific input handling. Subclasses override this (or the simpler `handle_input`) to customize behavior without worrying about warning/error transitions.
+
 **Key mappings** (defined in `Settings`):
 
 | Key | Action |
@@ -132,6 +146,23 @@ end
 ```
 
 This lets prompts return `nil` or `false` as valid values.
+
+### Validation & Transformation
+
+User input flows through a pipeline before the prompt submits:
+
+```
+User Input → Validate (raw value) → Transform (if valid) → Final Value
+```
+
+**Validation** (`validate:` option) receives the raw value and returns:
+- `nil` — passes, prompt submits
+- `String` — hard error, prompt enters `:error` state
+- `Clack::Warning` — soft warning, prompt enters `:warning` state (user can press Enter to confirm or edit to clear)
+
+Built-in validators live in `Clack::Validators` (required, min_length, format, email, etc.) and can be composed with `Validators.combine`. Any validator can be wrapped with `Validators.as_warning` to make it soft.
+
+**Transformers** (`transform:` option) run after validation passes. They accept a symbol shortcut (`:strip`, `:downcase`, `:to_integer`, etc.) or a proc. Multiple transforms can be chained with `Transformers.chain(:strip, :downcase)`.
 
 ## Visual Design
 
@@ -182,6 +213,7 @@ end
 | submit | ◇ | green |
 | cancel | ■ | red |
 | error | ▲ | yellow |
+| warning | ▲ | yellow |
 
 ## Shared Components
 

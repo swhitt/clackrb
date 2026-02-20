@@ -1,6 +1,31 @@
 # Changelog
 
-## [Unreleased]
+## [0.2.0] - 2026-02-19
+
+### Added
+- `date` prompt for inline segmented date selection with Tab/arrow navigation and digit typing
+- Date min/max enforcement: clamps values to bounds during navigation
+- Date-specific validators: `Validators.future_date`, `Validators.past_date`, `Validators.date_range`
+- `autocomplete` now accepts `filter:` proc for custom matching logic
+- `tasks` now passes a message-update proc to task callbacks for mid-task status updates
+- `tasks` now supports `enabled:` flag to conditionally skip tasks
+- 100% YARD documentation coverage (was 79%)
+- 30 new edge-case tests covering warning validation, transforms, date boundaries, and more
+
+### Changed
+- `Transformers.resolve` now accepts any object responding to `#call` (not just Proc)
+- Standardized required-validation error messages across multiselect variants
+- Extracted `dispatch_key` from `handle_key` in base `Prompt` so warning/error state transitions are handled centrally for all prompts
+- Ruby idiom improvements: pattern matching, endless methods, guard clauses, `find_index`
+- Gemspec now excludes dev-only files (cast, exp, gif, svg) from the gem package
+- Examples include `require "clack"` alternative comment for gem users
+
+### Fixed
+- `Password#handle_input` now correctly handles backspace (was unreachable due to guard order)
+- `Validators.as_warning` no longer double-wraps values that are already `Warning` instances
+- `AutocompleteMultiselect` backspace was dead code (printable guard blocked it)
+- `MultilineText` and `Autocomplete` now render warning validation messages (was error-only)
+- Removed dead `@buffer` and `@name` instance variables from `TaskLogGroup`
 
 ## [0.1.4] - 2026-01-23
 

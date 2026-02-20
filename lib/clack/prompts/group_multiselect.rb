@@ -2,7 +2,46 @@
 
 module Clack
   module Prompts
+    # Multiple-selection prompt with options organized into named groups.
+    #
+    # Navigate with arrow keys or j/k. Toggle selection with Space.
+    # Groups can optionally be toggled as a whole when +selectable_groups+ is enabled.
+    #
+    # @example Basic usage
+    #   features = Clack.group_multiselect(
+    #     message: "Select features",
+    #     options: [
+    #       { label: "Frontend", options: %w[hotwire stimulus] },
+    #       { label: "Backend", options: %w[sidekiq solid_queue] }
+    #     ]
+    #   )
+    #
+    # @example With selectable groups and spacing
+    #   features = Clack.group_multiselect(
+    #     message: "Select features",
+    #     options: [
+    #       { label: "Frontend", options: [
+    #         { value: "hotwire", label: "Hotwire" },
+    #         { value: "stimulus", label: "Stimulus" }
+    #       ]},
+    #       { label: "Background", options: [
+    #         { value: "sidekiq", label: "Sidekiq" },
+    #         { value: "solid_queue", label: "Solid Queue" }
+    #       ]}
+    #     ],
+    #     selectable_groups: true,
+    #     group_spacing: 1
+    #   )
+    #
     class GroupMultiselect < Core::Prompt
+      # @param message [String] the prompt message
+      # @param options [Array<Hash>] groups, each with :label and :options (Array<Hash, String>)
+      # @param initial_values [Array] values to pre-select
+      # @param required [Boolean] require at least one selection (default: true)
+      # @param selectable_groups [Boolean] allow toggling all options in a group at once (default: false)
+      # @param group_spacing [Integer] number of blank lines between groups (default: 0)
+      # @param cursor_at [Object, nil] value to position cursor at initially
+      # @param opts [Hash] additional options passed to {Core::Prompt}
       def initialize(
         message:,
         options:,
@@ -29,7 +68,6 @@ module Clack
       def handle_key(key)
         return if terminal_state?
 
-        @state = :active if @state == :error
         action = Core::Settings.action?(key)
 
         case action
@@ -48,7 +86,7 @@ module Clack
 
       def submit
         if @required && @selected.empty?
-          @error_message = "Please select at least one option."
+          @error_message = "Please select at least one option. Press #{Colors.cyan("space")} to select, #{Colors.cyan("enter")} to submit"
           @state = :error
           return
         end
@@ -67,7 +105,7 @@ module Clack
           is_last_in_group = item[:last_in_group]
 
           # Add group spacing before groups (except first)
-          if is_group && prev_was_group == false && idx.positive? && @group_spacing.positive?
+          if is_group && !prev_was_group && idx.positive? && @group_spacing.positive?
             @group_spacing.times { lines << "#{active_bar}\n" }
           end
 
@@ -102,9 +140,7 @@ module Clack
 
       private
 
-      def normalize_groups(options)
-        options.map { |group| normalize_group(group) }
-      end
+      def normalize_groups(options) = options.map { |group| normalize_group(group) }
 
       def normalize_group(group)
         {
@@ -122,9 +158,7 @@ module Clack
         end
       end
 
-      def build_flat_items
-        @groups.flat_map { |group| flatten_group(group) }
-      end
+      def build_flat_items = @groups.flat_map { |group| flatten_group(group) }
 
       def flatten_group(group)
         group_item = {type: :group, label: group[:label], options: group[:options]}
@@ -138,7 +172,7 @@ module Clack
             last_in_group: idx == group[:options].length - 1
           }
         end
-        [group_item] + option_items
+        [group_item, *option_items]
       end
 
       def selected_options
@@ -153,11 +187,7 @@ module Clack
           return idx if idx
         end
 
-        # Find first selectable item
-        @flat_items.each_with_index do |item, idx|
-          return idx if can_select?(item)
-        end
-        0
+        @flat_items.find_index { |item| can_select?(item) } || 0
       end
 
       def can_select?(item)
@@ -211,9 +241,7 @@ module Clack
         end
       end
 
-      def update_value
-        @value = @selected.to_a
-      end
+      def update_value = @value = @selected.to_a
 
       def group_display(item, active)
         if @selectable_groups

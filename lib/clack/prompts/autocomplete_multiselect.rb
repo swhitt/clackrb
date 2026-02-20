@@ -57,7 +57,6 @@ module Clack
       def handle_key(key)
         return if terminal_state?
 
-        @state = :active if @state == :error
         action = Core::Settings.action?(key)
 
         case action
@@ -123,7 +122,7 @@ module Clack
 
       def submit_selection
         if @required && @selected_values.empty?
-          @error_message = "Please select at least one option"
+          @error_message = "Please select at least one option. Press #{Colors.cyan("space")} to select, #{Colors.cyan("enter")} to submit"
           @state = :error
           return
         end
@@ -193,17 +192,17 @@ module Clack
 
       # Override to work with @search_text instead of @value
       def handle_text_input(key)
-        return false unless Core::Settings.printable?(key)
-
-        chars = @search_text.grapheme_clusters
-
         if Core::Settings.backspace?(key)
           return false if @cursor.zero?
 
+          chars = @search_text.grapheme_clusters
           chars.delete_at(@cursor - 1)
           @search_text = chars.join
           @cursor -= 1
         else
+          return false unless Core::Settings.printable?(key)
+
+          chars = @search_text.grapheme_clusters
           chars.insert(@cursor, key)
           @search_text = chars.join
           @cursor += 1

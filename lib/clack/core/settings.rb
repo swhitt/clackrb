@@ -2,6 +2,7 @@
 
 module Clack
   module Core
+    # Global configuration for key bindings, guide bar display, and input classification.
     module Settings
       # Navigation and control actions
       ACTIONS = %i[up down left right space enter cancel].freeze
@@ -78,6 +79,9 @@ module Clack
           @config_mutex.synchronize { @config[:with_guide] }
         end
 
+        # Look up the action mapped to a key code.
+        # @param key [String] key code from {KeyReader}
+        # @return [Symbol, nil] the action (:up, :down, :enter, etc.) or nil
         def action?(key)
           aliases = @config_mutex.synchronize { @config[:aliases] }
           aliases[key] if ACTIONS.include?(aliases[key])

@@ -44,7 +44,7 @@ module Clack
       # Validates minimum length.
       #
       # @param length [Integer] Minimum length
-      # @param message [String, nil] Custom error message (supports %d placeholder)
+      # @param message [String, nil] Custom error message
       # @return [Proc] Validator proc
       def min_length(length, message = nil)
         msg = message || "Must be at least #{length} characters"
@@ -142,6 +142,35 @@ module Clack
         ->(value) { message unless File.directory?(value.to_s) }
       end
 
+      # Validates that the date is strictly after today.
+      # Today itself is not considered "future" and will fail validation.
+      #
+      # @param message [String] Error message
+      # @return [Proc] Validator proc
+      def future_date(message = "Date must be in the future")
+        ->(date) { message if date <= Date.today }
+      end
+
+      # Validates that the date is strictly before today.
+      # Today itself is not considered "past" and will fail validation.
+      #
+      # @param message [String] Error message
+      # @return [Proc] Validator proc
+      def past_date(message = "Date must be in the past")
+        ->(date) { message if date >= Date.today }
+      end
+
+      # Validates that the date is within a given range.
+      #
+      # @param min [Date] Minimum date
+      # @param max [Date] Maximum date
+      # @param message [String, nil] Custom error message
+      # @return [Proc] Validator proc
+      def date_range(min:, max:, message: nil)
+        msg = message || "Date must be between #{min} and #{max}"
+        ->(date) { msg unless (min..max).cover?(date) }
+      end
+
       # Warning if file exists. Allows user to confirm overwrite.
       #
       # @param message [String] Warning message
@@ -170,7 +199,9 @@ module Clack
       def as_warning(validator)
         lambda do |value|
           result = validator.call(value)
-          Clack::Warning.new(result) if result
+          next if result.nil?
+
+          result.is_a?(Clack::Warning) ? result : Clack::Warning.new(result)
         end
       end
 

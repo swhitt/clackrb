@@ -31,8 +31,8 @@ module Clack
       # @param root [String] starting/base directory (default: ".")
       # @param only_directories [Boolean] only show directories (default: false)
       # @param max_items [Integer] max visible suggestions (default: 5)
-      # @param validate [Proc, nil] validation proc for the final path
-      # @param opts [Hash] additional options passed to {Core::Prompt}
+      # @option opts [Proc, nil] :validate validation proc for the final path
+      # @option opts [Hash] additional options passed to {Core::Prompt}
       def initialize(message:, root: ".", only_directories: false, max_items: 5, **opts)
         super(message:, **opts)
         @root = File.expand_path(root)

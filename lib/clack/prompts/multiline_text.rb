@@ -23,8 +23,8 @@ module Clack
     class MultilineText < Core::Prompt
       # @param message [String] the prompt message
       # @param initial_value [String, nil] pre-filled editable text (can contain newlines)
-      # @param validate [Proc, nil] validation proc returning error string or nil
-      # @param opts [Hash] additional options passed to {Core::Prompt}
+      # @option opts [Proc, nil] :validate validation proc returning error string or nil
+      # @option opts [Hash] additional options passed to {Core::Prompt}
       def initialize(message:, initial_value: nil, **opts)
         super(message:, **opts)
         @lines = parse_initial_value(initial_value)
@@ -36,8 +36,6 @@ module Clack
 
       def handle_key(key)
         return if terminal_state?
-
-        @state = :active if @state == :error
 
         case key
         when Core::Settings::KEY_CTRL_D
@@ -77,8 +75,11 @@ module Clack
           lines << "#{active_bar}  #{display}\n"
         end
 
-        lines << "#{bar_end}\n"
-        lines[-1] = "#{Colors.yellow(Symbols::S_BAR_END)}  #{Colors.yellow(@error_message)}\n" if @state == :error
+        if @state in :error | :warning
+          lines.concat(validation_message_lines)
+        else
+          lines << "#{bar_end}\n"
+        end
 
         lines.join
       end
@@ -105,9 +106,7 @@ module Clack
         value.split("\n", -1) # -1 preserves trailing empty strings
       end
 
-      def current_line
-        @lines[@line_index] || ""
-      end
+      def current_line = @lines[@line_index] || ""
 
       def line_with_cursor(line)
         chars = line.grapheme_clusters

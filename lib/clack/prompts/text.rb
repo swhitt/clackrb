@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 module Clack
+  # Interactive prompt implementations (text, select, confirm, etc.).
   module Prompts
     # Single-line text input prompt with cursor navigation.
     #
@@ -31,8 +32,8 @@ module Clack
       # @param placeholder [String, nil] dim text shown when input is empty
       # @param default_value [String, nil] value used if submitted empty
       # @param initial_value [String, nil] pre-filled editable text
-      # @param validate [Proc, nil] validation proc returning error string or nil
-      # @param opts [Hash] additional options passed to {Core::Prompt}
+      # @option opts [Proc, nil] :validate validation proc returning error string or nil
+      # @option opts [Hash] additional options passed to {Core::Prompt}
       def initialize(message:, placeholder: nil, default_value: nil, initial_value: nil, **opts)
         super(message:, **opts)
         @placeholder = placeholder
@@ -72,7 +73,7 @@ module Clack
         lines << "#{symbol_for_state}  #{@message}\n"
         lines << help_line
         lines << "#{active_bar}  #{input_display}\n"
-        lines << "#{bar_end}\n" if @state == :active || @state == :initial
+        lines << "#{bar_end}\n" if @state in :active | :initial
 
         validation_lines = validation_message_lines
         if validation_lines.any?

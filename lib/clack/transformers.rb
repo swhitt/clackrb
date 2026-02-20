@@ -31,19 +31,20 @@ module Clack
     REGISTRY = {}
 
     class << self
-      # Resolve a transformer from a symbol, proc, or return as-is.
-      # @param transformer [Symbol, Proc, nil] the transformer to resolve
-      # @return [Proc, nil] the resolved transformer proc
+      # Resolve a transformer from a symbol, callable, or return as-is.
+      # @param transformer [Symbol, #call, nil] the transformer to resolve
+      # @return [#call, nil] the resolved transformer
       def resolve(transformer)
         case transformer
         when Symbol
-          REGISTRY[transformer] || raise(ArgumentError, "Unknown transformer: #{transformer}")
-        when Proc
-          transformer
+          REGISTRY[transformer] || raise(ArgumentError,
+            "Unknown transformer: #{transformer.inspect}. Available: #{REGISTRY.keys.map(&:inspect).join(", ")}")
         when nil
           nil
         else
-          raise ArgumentError, "Transform must be a Symbol or Proc, got #{transformer.class}"
+          return transformer if transformer.respond_to?(:call)
+
+          raise ArgumentError, "Transform must be a Symbol or respond to #call, got #{transformer.class}"
         end
       end
 

@@ -4,30 +4,59 @@ require "English"
 require "stringio"
 
 module Clack
-  # Stream logging utility for iterables, enumerables, and IO streams
-  # Similar to Log but works with streaming data in real-time
+  # Stream logging utility for iterables, enumerables, and IO streams.
+  # Similar to Log but works with streaming data in real-time.
   module Stream
     class << self
+      # Stream lines with an info symbol (cyan).
+      # @param source [IO, String, Enumerable] data source to stream
+      # @param output [IO] output stream
+      # @yield [line] optional block called for each line
+      # @return [void]
       def info(source, output: $stdout, &block)
         stream_with_symbol(source, Symbols::S_INFO, :cyan, output, &block)
       end
 
+      # Stream lines with a success symbol (green).
+      # @param source [IO, String, Enumerable] data source to stream
+      # @param output [IO] output stream
+      # @yield [line] optional block called for each line
+      # @return [void]
       def success(source, output: $stdout, &block)
         stream_with_symbol(source, Symbols::S_SUCCESS, :green, output, &block)
       end
 
+      # Stream lines with a step symbol (green).
+      # @param source [IO, String, Enumerable] data source to stream
+      # @param output [IO] output stream
+      # @yield [line] optional block called for each line
+      # @return [void]
       def step(source, output: $stdout, &block)
         stream_with_symbol(source, Symbols::S_STEP_SUBMIT, :green, output, &block)
       end
 
+      # Stream lines with a warning symbol (yellow).
+      # @param source [IO, String, Enumerable] data source to stream
+      # @param output [IO] output stream
+      # @yield [line] optional block called for each line
+      # @return [void]
       def warn(source, output: $stdout, &block)
         stream_with_symbol(source, Symbols::S_WARN, :yellow, output, &block)
       end
 
+      # Stream lines with an error symbol (red).
+      # @param source [IO, String, Enumerable] data source to stream
+      # @param output [IO] output stream
+      # @yield [line] optional block called for each line
+      # @return [void]
       def error(source, output: $stdout, &block)
         stream_with_symbol(source, Symbols::S_ERROR, :red, output, &block)
       end
 
+      # Stream lines with a plain bar prefix (no symbol).
+      # @param source [IO, String, Enumerable] data source to stream
+      # @param output [IO] output stream
+      # @return [void]
       def message(source, output: $stdout)
         each_line(source) do |line|
           output.puts "#{Colors.gray(Symbols::S_BAR)}  #{line.chomp}"
@@ -35,7 +64,7 @@ module Clack
         end
       end
 
-      # Stream from a subprocess command
+      # Stream from a subprocess command.
       # Usage: Clack.stream.command("npm install", type: :info)
       # Returns true on success, false on failure or if command cannot be executed
       def command(cmd, type: :info, output: $stdout)

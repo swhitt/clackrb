@@ -41,6 +41,7 @@ module Clack
           @active_prompts << prompt
         end
 
+        # Unregister a prompt instance from resize notifications.
         def unregister(prompt)
           @active_prompts.delete(prompt)
         end
@@ -109,7 +110,7 @@ module Clack
 
         loop do
           key = KeyReader.read
-          handle_key(key)
+          dispatch_key(key)
           render
 
           break if terminal_state?
@@ -124,17 +125,26 @@ module Clack
 
       protected
 
-      # Process a keypress and update state accordingly.
-      # Delegates to {#handle_input} for prompt-specific behavior.
+      # Dispatch a keypress, handling warning state before delegating to {#handle_key}.
+      #
+      # This method ensures ALL prompts participate in the warning validation flow,
+      # even those that override {#handle_key}. The run loop calls this instead of
+      # handle_key directly.
+      #
+      # Warning state behavior:
+      # - Enter confirms the warning and re-submits
+      # - Cancel (Escape/Ctrl+C) aborts from warning state
+      # - Any other input clears the warning and delegates to handle_key
+      #
+      # Also clears error state on any keypress, so subclasses don't need to
+      # manage error-to-active transitions themselves.
       #
       # @param key [String] the key code from {KeyReader}
-      def handle_key(key)
+      def dispatch_key(key)
         return if terminal_state?
 
-        action = Settings.action?(key)
-
-        # Handle warning state: Enter confirms, Cancel aborts, other input clears warning
         if @state == :warning
+          action = Settings.action?(key)
           case action
           when :enter
             confirm_warning
@@ -143,12 +153,33 @@ module Clack
             @state = :cancel
           else
             clear_warning
-            handle_input(key, action)
+            handle_key(key)
           end
           return
         end
 
         @state = :active if @state == :error
+
+        handle_key(key)
+      end
+
+      # Process a keypress and update state accordingly.
+      # Delegates to {#handle_input} for prompt-specific behavior.
+      #
+      # Override this in subclasses that need custom key dispatch (e.g., Select,
+      # Confirm, Autocomplete). The warning state and error-clearing are handled
+      # by {#dispatch_key} before this method is called, so overrides do not need
+      # to manage those transitions.
+      #
+      # For prompts that only need custom handling of printable/navigation input
+      # (not cancel/enter), override {#handle_input} instead. That is simpler and
+      # preserves the default cancel/enter behavior from this method.
+      #
+      # @param key [String] the key code from {KeyReader}
+      def handle_key(key)
+        return if terminal_state?
+
+        action = Settings.action?(key)
 
         case action
         when :cancel
@@ -161,6 +192,11 @@ module Clack
       end
 
       # Handle prompt-specific input. Override in subclasses.
+      #
+      # This is the simplest extension point for prompts that only need to handle
+      # navigation keys and printable input. Cancel and Enter are handled by
+      # {#handle_key}, and warning/error state transitions are handled by
+      # {#dispatch_key}.
       #
       # @param key [String] the raw key code
       # @param action [Symbol, nil] the mapped action (:up, :down, etc.) or nil
@@ -187,6 +223,14 @@ module Clack
 
       # Validate a value and return the resulting state.
       # Handles errors, warnings, and the warning confirmation flow.
+      #
+      # Validation contract: the validate proc receives the current value and returns:
+      # - nil or false: validation passes, prompt submits
+      # - String: hard error, prompt enters :error state and displays the message
+      # - Exception: hard error, the exception's message is displayed
+      # - Clack::Warning: soft warning, prompt enters :warning state. The user can
+      #   press Enter to confirm and submit, or edit their input to clear the warning.
+      # - Any other truthy value: treated as an error (to_s is called for the message)
       #
       # @param value [Object] the value to validate
       # @return [Symbol] :submit, :warning, or :error

@@ -99,13 +99,9 @@ module Clack
         update_value
       end
 
-      def update_value
-        @value = current_option[:value]
-      end
+      def update_value = @value = current_option[:value]
 
-      def current_option
-        @options[@cursor]
-      end
+      def current_option = @options[@cursor]
 
       def option_display(opt, active)
         return disabled_option_display(opt) if opt[:disabled]

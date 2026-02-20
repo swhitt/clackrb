@@ -74,7 +74,7 @@ module Clack
 
       def submit
         if @required && @selected.empty?
-          @error_message = "Please select at least one option.\nPress #{Colors.cyan("space")} to select, #{Colors.cyan("enter")} to submit"
+          @error_message = "Please select at least one option. Press #{Colors.cyan("space")} to select, #{Colors.cyan("enter")} to submit"
           @state = :error
           return
         end
@@ -92,7 +92,7 @@ module Clack
           lines << "#{active_bar}  #{option_display(opt, actual_idx)}\n"
         end
 
-        if @state == :error || @state == :warning
+        if @state in :error | :warning
           lines.concat(validation_message_lines)
         else
           lines << "#{bar}  #{keyboard_hints}\n"
@@ -152,9 +152,7 @@ module Clack
         update_value
       end
 
-      def update_value
-        @value = @selected.to_a
-      end
+      def update_value = @value = @selected.to_a
 
       def keyboard_hints
         hints = [

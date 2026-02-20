@@ -4,7 +4,7 @@
 # Full demo showcasing Clack Ruby features
 # Run with: ruby examples/full_demo.rb
 
-require_relative "../lib/clack"
+require_relative "../lib/clack" # Or: require "clack" if installed as a gem
 
 Clack.intro "create-service"
 

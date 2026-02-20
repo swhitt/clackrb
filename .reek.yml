@@ -68,7 +68,7 @@ detectors:
     max_ifs: 4
 
   TooManyMethods:
-    max_methods: 27  # Warning validation adds confirm_warning, clear_warning, validate_value
+    max_methods: 28  # Base prompt needs methods for state machine, rendering, validation, key dispatch
 
 exclude_paths:
   - spec

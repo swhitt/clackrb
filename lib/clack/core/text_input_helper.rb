@@ -25,10 +25,14 @@ module Clack
         format_placeholder_with_cursor(text)
       end
 
+      # @return [String, nil] the placeholder text, or nil if none set
       def current_placeholder
         defined?(@placeholder) ? @placeholder : nil
       end
 
+      # Render placeholder text with an inverse cursor on the first character.
+      # @param text [String] placeholder text to format
+      # @return [String] formatted placeholder with cursor highlight
       def format_placeholder_with_cursor(text)
         chars = text.grapheme_clusters
         first = chars.first || ""
