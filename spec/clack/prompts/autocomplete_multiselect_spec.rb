@@ -128,4 +128,45 @@ RSpec.describe Clack::Prompts::AutocompleteMultiselect do
       expect(output.string).to include("2 items selected")
     end
   end
+
+  describe "custom filter" do
+    def create_prompt(**opts)
+      described_class.new(
+        message: "Select fruits:",
+        options: options,
+        output: output,
+        **opts
+      )
+    end
+
+    it "uses the custom filter proc" do
+      starts_with = ->(opt, query) { opt[:label].start_with?(query) }
+      stub_keys("b", :space, :enter)
+      prompt = create_prompt(filter: starts_with)
+      result = prompt.run
+
+      expect(result).to eq(["banana"])
+    end
+
+    it "receives the raw query without downcasing" do
+      received_queries = []
+      spy_filter = ->(opt, query) {
+        received_queries << query
+        opt[:label].downcase.include?(query.downcase)
+      }
+      stub_keys("Ban", :space, :enter)
+      prompt = create_prompt(filter: spy_filter)
+      prompt.run
+
+      expect(received_queries).to include("Ban")
+    end
+
+    it "falls back to default behavior when filter is nil" do
+      stub_keys("b", :space, :enter)
+      prompt = create_prompt(filter: nil)
+      result = prompt.run
+
+      expect(result).to eq(["banana"])
+    end
+  end
 end

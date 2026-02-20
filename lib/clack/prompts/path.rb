@@ -26,6 +26,7 @@ module Clack
     #
     class Path < Core::Prompt
       include Core::TextInputHelper
+      include Core::ScrollHelper
 
       # @param message [String] the prompt message
       # @param root [String] starting/base directory (default: ".")
@@ -43,6 +44,8 @@ module Clack
         @selected_index = 0
         @scroll_offset = 0
         @suggestions = []
+        @dir_cache = {}     # directory path => sorted entries array
+        @dir_cache_key = nil # current cached directory
         update_suggestions
       end
 
@@ -106,7 +109,7 @@ module Clack
         lines << help_line
         lines << "#{active_bar}  #{input_display}\n"
 
-        visible_suggestions.each_with_index do |path, idx|
+        visible_items.each_with_index do |path, idx|
           actual_idx = @scroll_offset + idx
           lines << "#{bar}  #{suggestion_display(path, actual_idx == @selected_index)}\n"
         end
@@ -155,10 +158,26 @@ module Clack
       def list_entries(dir, prefix)
         return [] unless File.directory?(dir)
 
+        entries = cached_entries(dir)
+        entries = entries.select { |entry| entry.downcase.start_with?(prefix) } unless prefix.empty?
+        entries.first(@max_items * 2).map { |entry| format_entry(dir, entry) }
+      end
+
+      # Cache directory listings to avoid repeated filesystem scans while
+      # the user types within the same directory. Cache is invalidated
+      # when the directory changes (e.g., after tab-completing into a subdirectory).
+      def cached_entries(dir)
+        return @dir_cache[dir] if @dir_cache.key?(dir)
+
+        # Only keep one directory cached at a time
+        @dir_cache.clear
+
         entries = Dir.entries(dir) - [".", ".."]
         entries = entries.select { |entry| File.directory?(File.join(dir, entry)) } if @only_directories
-        entries = entries.select { |entry| entry.downcase.start_with?(prefix) } unless prefix.empty?
-        entries.sort.first(@max_items * 2).map { |entry| format_entry(dir, entry) }
+        entries.sort!
+
+        @dir_cache[dir] = entries
+        entries
       end
 
       def format_entry(dir, entry)
@@ -195,28 +214,7 @@ module Clack
         expanded == @root || expanded.start_with?("#{@root}/")
       end
 
-      def visible_suggestions
-        return @suggestions if @suggestions.length <= @max_items
-
-        @suggestions[@scroll_offset, @max_items]
-      end
-
-      def move_selection(delta)
-        return if @suggestions.empty?
-
-        @selected_index = (@selected_index + delta) % @suggestions.length
-        update_scroll
-      end
-
-      def update_scroll
-        return unless @suggestions.length > @max_items
-
-        if @selected_index < @scroll_offset
-          @scroll_offset = @selected_index
-        elsif @selected_index >= @scroll_offset + @max_items
-          @scroll_offset = @selected_index - @max_items + 1
-        end
-      end
+      def scroll_items = @suggestions
 
       # Override to use @root as placeholder
       def placeholder_display

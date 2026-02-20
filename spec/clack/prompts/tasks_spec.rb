@@ -91,8 +91,9 @@ RSpec.describe Clack::Prompts::Tasks do
 
         tasks.run
 
-        expect(output.string).to include("Step 1...")
-        expect(output.string).to include("Step 2...")
+        # Core::Spinner strips trailing dots and animates them separately
+        expect(output.string).to include("Step 1")
+        expect(output.string).to include("Step 2")
       end
 
       it "still works with task procs that take no arguments" do

@@ -7,8 +7,8 @@ module Clack
     # Combines text input with a filtered option list. Type to filter,
     # use arrow keys to navigate matches, Enter to select.
     #
-    # By default, filtering searches across value, label, and hint fields
-    # using a case-insensitive substring match. Supply a custom +filter+
+    # By default, filtering uses fuzzy matching across value, label, and
+    # hint fields, sorted by relevance score. Supply a custom +filter+
     # proc to override this behavior.
     #
     # @example Basic usage
@@ -35,6 +35,7 @@ module Clack
     class Autocomplete < Core::Prompt
       include Core::OptionsHelper
       include Core::TextInputHelper
+      include Core::ScrollHelper
 
       # @param message [String] the prompt message
       # @param options [Array<Hash, String>] list of options to filter
@@ -104,7 +105,7 @@ module Clack
         lines << help_line
         lines << "#{active_bar}  #{input_display}\n"
 
-        visible_options.each_with_index do |opt, idx|
+        visible_items.each_with_index do |opt, idx|
           actual_idx = @scroll_offset + idx
           lines << "#{bar}  #{option_display(opt, actual_idx == @selected_index)}\n"
         end
@@ -136,37 +137,11 @@ module Clack
         @filtered = if @filter
           @all_options.select { |opt| @filter.call(opt, @value) }
         else
-          query = @value.downcase
-          @all_options.select do |opt|
-            opt[:label].downcase.include?(query) ||
-              opt[:value].to_s.downcase.include?(query) ||
-              opt[:hint]&.downcase&.include?(query)
-          end
+          Core::FuzzyMatcher.filter(@all_options, @value)
         end
       end
 
-      def visible_options
-        return @filtered if @filtered.length <= @max_items
-
-        @filtered[@scroll_offset, @max_items]
-      end
-
-      def move_selection(delta)
-        return if @filtered.empty?
-
-        @selected_index = (@selected_index + delta) % @filtered.length
-        update_scroll
-      end
-
-      def update_scroll
-        return unless @filtered.length > @max_items
-
-        if @selected_index < @scroll_offset
-          @scroll_offset = @selected_index
-        elsif @selected_index >= @scroll_offset + @max_items
-          @scroll_offset = @selected_index - @max_items + 1
-        end
-      end
+      def scroll_items = @filtered
 
       def option_display(opt, active)
         hint = (opt[:hint] && active) ? Colors.dim(" (#{opt[:hint]})") : ""

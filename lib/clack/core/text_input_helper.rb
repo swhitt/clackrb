@@ -4,12 +4,16 @@ module Clack
   module Core
     # Shared functionality for text input prompts (Text, Autocomplete, Path).
     # Handles cursor display, placeholder rendering, and text manipulation.
+    #
+    # By default operates on +@value+ and +@cursor+. Override
+    # +text_value+ and +text_value=+ in your class to use a different
+    # backing store (e.g. +@search_text+ in AutocompleteMultiselect).
     module TextInputHelper
       # Display the input field with cursor or placeholder.
       #
       # @return [String] Formatted input display
       def input_display
-        return placeholder_display if @value.empty?
+        return placeholder_display if text_value.empty?
 
         value_with_cursor
       end
@@ -45,8 +49,9 @@ module Clack
       #
       # @return [String] Value with cursor
       def value_with_cursor
-        chars = @value.grapheme_clusters
-        return "#{@value}#{cursor_block}" if @cursor >= chars.length
+        val = text_value
+        chars = val.grapheme_clusters
+        return "#{val}#{cursor_block}" if @cursor >= chars.length
 
         before = chars[0...@cursor].join
         current = Colors.inverse(chars[@cursor])
@@ -55,7 +60,6 @@ module Clack
       end
 
       # Handle text input key (backspace/delete or printable character).
-      # Requires @value and @cursor instance variables.
       # Uses grapheme clusters for proper Unicode handling.
       #
       # @param key [String] The key pressed
@@ -64,11 +68,23 @@ module Clack
         return handle_backspace if Core::Settings.backspace?(key)
         return false unless Core::Settings.printable?(key)
 
-        chars = @value.grapheme_clusters
+        chars = text_value.grapheme_clusters
         chars.insert(@cursor, key)
-        @value = chars.join
+        self.text_value = chars.join
         @cursor += 1
         true
+      end
+
+      # The text value being edited. Override to use a different backing store.
+      # @return [String]
+      def text_value
+        @value
+      end
+
+      # Set the text value. Override to use a different backing store.
+      # @param val [String]
+      def text_value=(val)
+        @value = val
       end
 
       private
@@ -76,9 +92,9 @@ module Clack
       def handle_backspace
         return false if @cursor.zero?
 
-        chars = @value.grapheme_clusters
+        chars = text_value.grapheme_clusters
         chars.delete_at(@cursor - 1)
-        @value = chars.join
+        self.text_value = chars.join
         @cursor -= 1
         true
       end

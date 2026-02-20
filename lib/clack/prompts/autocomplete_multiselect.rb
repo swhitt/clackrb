@@ -30,6 +30,7 @@ module Clack
     class AutocompleteMultiselect < Core::Prompt
       include Core::OptionsHelper
       include Core::TextInputHelper
+      include Core::ScrollHelper
 
       # @param message [String] the prompt message
       # @param options [Array<Hash, String>] list of options to filter
@@ -37,13 +38,17 @@ module Clack
       # @param placeholder [String, nil] placeholder text when empty
       # @param required [Boolean] require at least one selection (default: true)
       # @param initial_values [Array, nil] values to pre-select
+      # @param filter [Proc, nil] custom filter proc receiving (option_hash, query_string)
+      #   and returning true/false. When nil, the default case-insensitive substring
+      #   match across label, value, and hint is used.
       # @param opts [Hash] additional options passed to {Core::Prompt}
-      def initialize(message:, options:, max_items: 5, placeholder: nil, required: true, initial_values: nil, **opts)
+      def initialize(message:, options:, max_items: 5, placeholder: nil, required: true, initial_values: nil, filter: nil, **opts)
         super(message:, **opts)
         @all_options = normalize_options(options)
         @max_items = max_items
         @placeholder = placeholder
         @required = required
+        @filter = filter
         @search_text = ""
         @cursor = 0
         @selected_index = 0
@@ -136,9 +141,9 @@ module Clack
         lines << "#{bar}\n"
         lines << "#{symbol_for_state}  #{@message}\n"
         lines << help_line
-        lines << "#{active_bar}  #{Colors.dim("Search:")} #{search_input_display}#{match_count}\n"
+        lines << "#{active_bar}  #{Colors.dim("Search:")} #{input_display}#{match_count}\n"
 
-        visible_options.each_with_index do |opt, idx|
+        visible_items.each_with_index do |opt, idx|
           actual_idx = @scroll_offset + idx
           lines << "#{active_bar}  #{option_display(opt, actual_idx == @selected_index)}\n"
         end
@@ -173,45 +178,19 @@ module Clack
 
       private
 
-      # Override TextInputHelper methods to use @search_text instead of @value
-      def search_input_display
-        return placeholder_display if @search_text.empty?
+      # Use @search_text as text input backing store
+      def text_value = @search_text
 
-        search_value_with_cursor
+      def text_value=(val)
+        @search_text = val
       end
 
-      def search_value_with_cursor
-        chars = @search_text.grapheme_clusters
-        return "#{@search_text}#{cursor_block}" if @cursor >= chars.length
-
-        before = chars[0...@cursor].join
-        current = Colors.inverse(chars[@cursor])
-        after = chars[(@cursor + 1)..].join
-        "#{before}#{current}#{after}"
-      end
-
-      # Override to work with @search_text instead of @value
       def handle_text_input(key)
-        if Core::Settings.backspace?(key)
-          return false if @cursor.zero?
-
-          chars = @search_text.grapheme_clusters
-          chars.delete_at(@cursor - 1)
-          @search_text = chars.join
-          @cursor -= 1
-        else
-          return false unless Core::Settings.printable?(key)
-
-          chars = @search_text.grapheme_clusters
-          chars.insert(@cursor, key)
-          @search_text = chars.join
-          @cursor += 1
-        end
+        return unless super
 
         @selected_index = 0
         @scroll_offset = 0
         update_filtered
-        true
       end
 
       def match_count
@@ -231,36 +210,14 @@ module Clack
       end
 
       def update_filtered
-        query = @search_text.downcase
-        @filtered = @all_options.select do |opt|
-          opt[:label].downcase.include?(query) ||
-            opt[:value].to_s.downcase.include?(query) ||
-            opt[:hint]&.downcase&.include?(query)
+        @filtered = if @filter
+          @all_options.select { |opt| @filter.call(opt, @search_text) }
+        else
+          Core::FuzzyMatcher.filter(@all_options, @search_text)
         end
       end
 
-      def visible_options
-        return @filtered if @filtered.length <= @max_items
-
-        @filtered[@scroll_offset, @max_items]
-      end
-
-      def move_selection(delta)
-        return if @filtered.empty?
-
-        @selected_index = (@selected_index + delta) % @filtered.length
-        update_scroll
-      end
-
-      def update_scroll
-        return unless @filtered.length > @max_items
-
-        if @selected_index < @scroll_offset
-          @scroll_offset = @selected_index
-        elsif @selected_index >= @scroll_offset + @max_items
-          @scroll_offset = @selected_index - @max_items + 1
-        end
-      end
+      def scroll_items = @filtered
 
       def option_display(opt, active)
         is_selected = @selected_values.include?(opt[:value])

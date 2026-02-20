@@ -28,7 +28,6 @@ module Clack
       def initialize(message:, options:, **opts)
         super(message:, **opts)
         @options = normalize_options(options)
-        @value = nil
       end
 
       protected

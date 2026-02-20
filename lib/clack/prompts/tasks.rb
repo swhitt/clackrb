@@ -8,11 +8,11 @@ module Clack
     # Displays success/error status after each task completes.
     #
     # Each task is a hash with:
-    # - `:title` - display title
-    # - `:task` - Proc to execute (exceptions are caught).
+    # - +:title+ - display title
+    # - +:task+ - Proc to execute (exceptions are caught).
     #     Optionally accepts a message-update callable to change
     #     the spinner message mid-execution.
-    # - `:enabled` - optional boolean (default true). When false,
+    # - +:enabled+ - optional boolean (default true). When false,
     #     the task is skipped entirely.
     #
     # @example Basic usage
@@ -75,11 +75,6 @@ module Clack
         end
         @output = output
         @results = []
-        @current_index = 0
-        @frame_index = 0
-        @spinning = false
-        @spinner_title = nil
-        @mutex = Mutex.new
       end
 
       # Run all tasks sequentially.
@@ -87,10 +82,9 @@ module Clack
       # @return [Array<TaskResult>] results for each task
       def run
         @output.print Core::Cursor.hide
-        @tasks.each_with_index do |task, idx|
+        @tasks.each do |task|
           next unless task.enabled
 
-          @current_index = idx
           run_task(task)
         end
         @output.print Core::Cursor.show
@@ -100,72 +94,22 @@ module Clack
       private
 
       def run_task(task)
-        render_pending(task.title)
+        spinner = Spinner.new(output: @output)
+        spinner.start(task.title)
 
         begin
           if task.task.arity.zero?
             task.task.call
           else
-            task.task.call(method(:update_spinner_message))
+            task.task.call(spinner.method(:message))
           end
+          spinner.stop(task.title)
           @results << TaskResult.new(title: task.title, status: :success, error: nil)
-          render_success(task.title)
         rescue => exception
+          spinner.error(task.title)
+          @output.puts "#{Colors.gray(Symbols::S_BAR)}  #{Colors.red(exception.message)}"
           @results << TaskResult.new(title: task.title, status: :error, error: exception.message)
-          render_error(task.title, exception.message)
         end
-      end
-
-      def render_pending(title)
-        @mutex.synchronize { @spinner_title = title }
-        @output.print "\r#{Core::Cursor.clear_to_end}"
-        @output.print "#{Colors.magenta(spinner_frame)}  #{title}"
-        @spinner_thread = start_spinner
-      end
-
-      def update_spinner_message(new_message)
-        @mutex.synchronize { @spinner_title = new_message }
-      end
-
-      def render_success(title)
-        stop_spinner
-        @output.print "\r#{Core::Cursor.clear_to_end}"
-        @output.puts "#{Colors.green(Symbols::S_STEP_SUBMIT)}  #{title}"
-      end
-
-      def render_error(title, message)
-        stop_spinner
-        @output.print "\r#{Core::Cursor.clear_to_end}"
-        @output.puts "#{Colors.red(Symbols::S_STEP_CANCEL)}  #{title}"
-        @output.puts "#{Colors.gray(Symbols::S_BAR)}  #{Colors.red(message)}"
-      end
-
-      def start_spinner
-        @mutex.synchronize do
-          @spinning = true
-          @frame_index = 0
-        end
-        Thread.new do
-          while @mutex.synchronize { @spinning }
-            frame, title = @mutex.synchronize do
-              current_frame = Symbols::SPINNER_FRAMES[@frame_index]
-              @frame_index = (@frame_index + 1) % Symbols::SPINNER_FRAMES.length
-              [current_frame, @spinner_title]
-            end
-            @output.print "\r#{Core::Cursor.clear_to_end}"
-            @output.print "#{Colors.magenta(frame)}  #{title}"
-            sleep Symbols::SPINNER_DELAY
-          end
-        end
-      end
-
-      def stop_spinner
-        @mutex.synchronize { @spinning = false }
-        @spinner_thread&.join
-      end
-
-      def spinner_frame
-        @mutex.synchronize { Symbols::SPINNER_FRAMES[@frame_index] }
       end
     end
   end
