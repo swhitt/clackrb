@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "clack/testing"
+
 RSpec.describe Clack::Prompts::Text do
   let(:output) { StringIO.new }
   subject { described_class.new(message: "Name?", output: output) }
@@ -214,5 +216,111 @@ RSpec.describe Clack::Prompts::Text do
     let(:edit_keys) { [:backspace, :backspace, :backspace, :backspace, "ok"] }
 
     it_behaves_like "a text prompt with warning validation"
+  end
+
+  describe "tab completion" do
+    let(:completions) { %w[build test deploy lint format] }
+
+    it "completes single match" do
+      result = Clack::Testing.simulate(
+        Clack.method(:text),
+        message: "Command?",
+        completions: completions
+      ) do |p|
+        p.type("bu")
+        p.tab
+        p.submit
+      end
+
+      expect(result).to eq("build")
+    end
+
+    it "completes common prefix for multiple matches" do
+      # "de" matches "deploy" only, so it should complete to "deploy"
+      result = Clack::Testing.simulate(
+        Clack.method(:text),
+        message: "Command?",
+        completions: completions
+      ) do |p|
+        p.type("de")
+        p.tab
+        p.submit
+      end
+
+      expect(result).to eq("deploy")
+    end
+
+    it "does nothing when no matches" do
+      result = Clack::Testing.simulate(
+        Clack.method(:text),
+        message: "Command?",
+        completions: completions
+      ) do |p|
+        p.type("xyz")
+        p.tab
+        p.submit
+      end
+
+      expect(result).to eq("xyz")
+    end
+
+    it "is case insensitive" do
+      result = Clack::Testing.simulate(
+        Clack.method(:text),
+        message: "Command?",
+        completions: completions
+      ) do |p|
+        p.type("BU")
+        p.tab
+        p.submit
+      end
+
+      expect(result).to eq("build")
+    end
+
+    it "supports proc completions" do
+      dynamic = ->(input) { %w[foo foobar foobaz].select { |c| c.start_with?(input) } }
+
+      result = Clack::Testing.simulate(
+        Clack.method(:text),
+        message: "Input?",
+        completions: dynamic
+      ) do |p|
+        p.type("foob")
+        p.tab
+        p.submit
+      end
+
+      # "foobar" and "foobaz" match, common prefix is "fooba"
+      expect(result).to eq("fooba")
+    end
+
+    it "fills common prefix for ambiguous matches" do
+      result = Clack::Testing.simulate(
+        Clack.method(:text),
+        message: "Command?",
+        completions: %w[format force forward]
+      ) do |p|
+        p.type("f")
+        p.tab
+        p.submit
+      end
+
+      expect(result).to eq("for")
+    end
+
+    it "ignores tab when no completions configured" do
+      result = Clack::Testing.simulate(
+        Clack.method(:text),
+        message: "Input?"
+      ) do |p|
+        p.type("he")
+        p.tab
+        p.type("llo")
+        p.submit
+      end
+
+      expect(result).to eq("hello")
+    end
   end
 end

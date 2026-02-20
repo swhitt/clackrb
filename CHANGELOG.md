@@ -1,5 +1,37 @@
 # Changelog
 
+## [0.4.0] - 2026-02-19
+
+### Added
+- `range` slider prompt for numeric selection (`Clack.range(message:, min:, max:, step:, default:)`)
+- Tab completion on `text` prompt via `completions:` parameter (array or proc)
+- Minimum terminal width warning (non-blocking, 40 columns)
+
+### Changed
+- Path prompt caches directory listings to avoid repeated filesystem scans on every keystroke
+
+## [0.3.0] - 2026-02-19
+
+### Added
+- `Clack::Testing` module with first-class test helpers (`simulate`, `simulate_with_output`, `PromptDriver`)
+- `Clack::Core::FuzzyMatcher` with scored fuzzy matching (consecutive/boundary/start bonuses)
+- CI / non-interactive mode: `Clack.update_settings(ci_mode: true)` or `:auto` to auto-detect
+- `autocomplete_multiselect` now accepts `filter:` proc for custom matching logic
+
+### Changed
+- Autocomplete prompts default to fuzzy matching instead of substring matching
+- Spinner is now thread-safe: guards against double-finish, protects `@cancelled` reads with mutex
+
+## [0.2.1] - 2026-02-19
+
+### Added
+- `Core::ScrollHelper` mixin extracted from scroll/filter logic across 3 prompts
+
+### Changed
+- `TextInputHelper` parameterized via `text_value`/`text_value=` for custom backing stores
+- Tasks prompt now reuses `Core::Spinner` instead of inline spinner implementation
+- Removed redundant `@value = nil` from SelectKey
+
 ## [0.2.0] - 2026-02-19
 
 ### Added
