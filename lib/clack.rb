@@ -11,6 +11,9 @@ require_relative "clack/core/key_reader"
 require_relative "clack/core/prompt"
 require_relative "clack/core/options_helper"
 require_relative "clack/core/text_input_helper"
+require_relative "clack/core/scroll_helper"
+require_relative "clack/core/fuzzy_matcher"
+require_relative "clack/core/ci_mode"
 require_relative "clack/prompts/text"
 require_relative "clack/prompts/multiline_text"
 require_relative "clack/prompts/password"
@@ -26,6 +29,7 @@ require_relative "clack/prompts/select_key"
 require_relative "clack/prompts/tasks"
 require_relative "clack/prompts/group_multiselect"
 require_relative "clack/prompts/date"
+require_relative "clack/prompts/range"
 require_relative "clack/log"
 require_relative "clack/note"
 require_relative "clack/box"
@@ -147,6 +151,7 @@ module Clack
     # @option opts [String, nil] :placeholder dim text shown when input is empty
     # @option opts [String, nil] :default_value value used if submitted empty
     # @option opts [String, nil] :initial_value pre-filled editable text
+    # @option opts [Array<String>, Proc, nil] :completions tab completion candidates (array or proc)
     # @option opts [Proc, nil] :validate validation function returning error string, Warning, or nil
     # @option opts [Symbol, Proc, nil] :transform transform function to normalize the value
     # @option opts [String, nil] :help help text shown below the message
@@ -275,6 +280,9 @@ module Clack
     # @option opts [String, nil] :placeholder placeholder text
     # @option opts [Boolean] :required require at least one selection (default: true)
     # @option opts [Array, nil] :initial_values initially selected values
+    # @option opts [Proc, nil] :filter custom filter proc receiving (option_hash, query_string)
+    #   and returning true/false. Defaults to case-insensitive substring match
+    #   across label, value, and hint.
     # @return [Array, CANCEL] selected values or CANCEL if cancelled
     def autocomplete_multiselect(message:, options:, **opts)
       Prompts::AutocompleteMultiselect.new(message:, options: options, **opts).run
@@ -344,6 +352,25 @@ module Clack
       Prompts::Date.new(message:, **opts).run
     end
 
+    # Prompt for a numeric value using a slider.
+    #
+    # Navigate with left/right or up/down arrow keys. Press Enter to confirm.
+    #
+    # @param message [String] the prompt message
+    # @option opts [Numeric] :min minimum value (default: 0)
+    # @option opts [Numeric] :max maximum value (default: 100)
+    # @option opts [Numeric] :step increment size (default: 1)
+    # @option opts [Numeric, nil] :default initial value (defaults to min)
+    # @option opts [Proc, nil] :validate validation proc
+    # @option opts [String, nil] :help help text shown below the message
+    # @return [Numeric, CANCEL] selected value or CANCEL if cancelled
+    #
+    # @example Basic usage
+    #   volume = Clack.range(message: "Volume", min: 0, max: 100, step: 5)
+    def range(message:, **opts)
+      Prompts::Range.new(message:, **opts).run
+    end
+
     # Access the Log module for styled console output.
     #
     # @return [Module] the Log module
@@ -401,6 +428,7 @@ module Clack
     # Update global settings
     # @option opts [Hash, nil] :aliases Custom key to action mappings
     # @option opts [Boolean, nil] :with_guide Whether to show guide bars
+    # @option opts [Boolean, Symbol, nil] :ci_mode CI mode: true (always), :auto (detect non-TTY/CI env), false (never)
     # @return [Hash] Updated configuration
     #
     # @example Custom key bindings
@@ -408,6 +436,12 @@ module Clack
     #
     # @example Disable guide bars
     #   Clack.update_settings(with_guide: false)
+    #
+    # @example Enable CI mode (auto-submit with defaults)
+    #   Clack.update_settings(ci_mode: true)
+    #
+    # @example Auto-detect CI mode (non-TTY or CI environment)
+    #   Clack.update_settings(ci_mode: :auto)
     def update_settings(**opts)
       Core::Settings.update(**opts)
     end

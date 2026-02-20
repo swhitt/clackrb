@@ -27,6 +27,10 @@ module Clack
     #   end
     #
     class Prompt
+      # Minimum terminal width for clean rendering.
+      # Prompts warn (non-blocking) if the terminal is narrower.
+      MIN_TERMINAL_WIDTH = 40
+
       # Track active prompts for SIGWINCH notification.
       # Signal handler may fire during register/unregister. We can't use
       # .dup (allocates, forbidden in trap context) so we accept a benign
@@ -103,7 +107,10 @@ module Clack
       #
       # @return [Object, Clack::CANCEL] the submitted value or CANCEL sentinel
       def run
+        return run_ci_mode if CiMode.active?
+
         Prompt.register(self)
+        warn_narrow_terminal
         setup_terminal
         render
         @state = :active
@@ -321,7 +328,26 @@ module Clack
         %i[submit cancel].include?(@state)
       end
 
+      # Auto-submit with current defaults in CI/non-interactive mode.
+      # Subclass submit overrides (e.g., Text applying default_value) run normally.
+      # Validation and transforms are applied. Returns the value regardless of
+      # validation outcome since there's no interactive way to fix input.
+      def run_ci_mode
+        submit
+        @value
+      end
+
       private
+
+      def warn_narrow_terminal
+        return unless Environment.tty?(@output)
+
+        cols = Environment.columns(@output)
+        return if cols >= MIN_TERMINAL_WIDTH
+
+        @output.print "#{Colors.yellow("!")}  #{Colors.yellow("Terminal is narrow")} " \
+                       "(#{cols} cols, #{MIN_TERMINAL_WIDTH} recommended)\n"
+      end
 
       def setup_terminal
         @output.print Cursor.hide

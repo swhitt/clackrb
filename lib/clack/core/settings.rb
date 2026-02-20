@@ -40,7 +40,8 @@ module Clack
       # Global configuration (mutable)
       @config = {
         aliases: ALIASES.dup,
-        with_guide: true
+        with_guide: true,
+        ci_mode: false
       }
       @config_mutex = Mutex.new
 
@@ -54,11 +55,13 @@ module Clack
         # Update global settings
         # @param aliases [Hash, nil] Custom key to action mappings (merged with defaults)
         # @param with_guide [Boolean, nil] Whether to show guide bars
+        # @param ci_mode [Boolean, Symbol, nil] CI mode: true (always), :auto (detect), false (never)
         # @return [Hash] Updated configuration
-        def update(aliases: nil, with_guide: nil)
+        def update(aliases: nil, with_guide: nil, ci_mode: nil)
           @config_mutex.synchronize do
             @config[:aliases] = ALIASES.merge(aliases) if aliases
             @config[:with_guide] = with_guide unless with_guide.nil?
+            @config[:ci_mode] = ci_mode unless ci_mode.nil?
             @config.dup
           end
         end
@@ -68,7 +71,8 @@ module Clack
           @config_mutex.synchronize do
             @config = {
               aliases: ALIASES.dup,
-              with_guide: true
+              with_guide: true,
+              ci_mode: false
             }
           end
         end

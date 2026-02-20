@@ -4,7 +4,7 @@ detectors:
     enabled: false  # We use YARD for documentation, not inline comments
 
   TooManyStatements:
-    max_statements: 18  # Render methods building UI are inherently sequential
+    max_statements: 20  # Render methods building UI and test setup are inherently sequential
 
   ManualDispatch:
     enabled: false  # respond_to? checks on IO objects are defensive Ruby practice
@@ -68,7 +68,7 @@ detectors:
     max_ifs: 4
 
   TooManyMethods:
-    max_methods: 28  # Base prompt needs methods for state machine, rendering, validation, key dispatch
+    max_methods: 30  # Base prompt needs methods for state machine, rendering, validation, key dispatch, CI mode
 
 exclude_paths:
   - spec

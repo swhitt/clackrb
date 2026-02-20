@@ -51,10 +51,10 @@ module Clack
         @style_frame = style_frame || ->(frame) { Colors.magenta(frame) }
         @running = false
         @cancelled = false
+        @finished = false
         @message = ""
         @thread = nil
         @frame_idx = 0
-        @dot_idx = 0
         @prev_frame = nil
         @start_time = nil
         @mutex = Mutex.new
@@ -71,6 +71,7 @@ module Clack
           @message = remove_trailing_dots(message || "")
           @running = true
           @cancelled = false
+          @finished = false
           @prev_frame = nil
           @start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
           @dot_idx = 0
@@ -122,7 +123,7 @@ module Clack
         @output.print Core::Cursor.show
       end
 
-      def cancelled? = @cancelled
+      def cancelled? = @mutex.synchronize { @cancelled }
 
       private
 
@@ -170,13 +171,18 @@ module Clack
       end
 
       def finish(state, message)
+        thread_to_join = nil
         msg, timer_suffix = @mutex.synchronize do
+          return if @finished
+
+          @finished = true
           @running = false
+          thread_to_join = @thread
           suffix = (@indicator == :timer) ? " #{format_timer}" : ""
           [message || @message, suffix]
         end
 
-        @thread&.join
+        thread_to_join&.join
 
         @output.print "\r#{Core::Cursor.clear_to_end}"
 
@@ -184,7 +190,7 @@ module Clack
         when :success then Colors.green(Symbols::S_STEP_SUBMIT)
         when :error then Colors.red(Symbols::S_STEP_ERROR)
         when :cancel
-          @cancelled = true
+          @mutex.synchronize { @cancelled = true }
           Colors.red(Symbols::S_STEP_CANCEL)
         end
 
