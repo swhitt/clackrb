@@ -18,11 +18,14 @@ lib/
     ├── validators.rb        # Built-in validation helpers
     ├── core/
     │   ├── prompt.rb        # Base prompt class (state machine, rendering)
-    │   ├── options_helper.rb # Shared logic for Select/Multiselect
-    │   ├── text_input_helper.rb # Shared cursor/placeholder for text inputs
+    │   ├── ci_mode.rb       # Non-interactive CI/piped-input mode
     │   ├── cursor.rb        # ANSI cursor control sequences
+    │   ├── fuzzy_matcher.rb # Scored fuzzy matching for autocomplete
     │   ├── key_reader.rb    # Raw terminal input handling
-    │   └── settings.rb      # Key mappings and constants
+    │   ├── options_helper.rb # Shared logic for Select/Multiselect
+    │   ├── scroll_helper.rb # Scroll/filter behavior for dynamic lists
+    │   ├── settings.rb      # Key mappings and constants
+    │   └── text_input_helper.rb # Shared cursor/placeholder for text inputs
     ├── prompts/
     │   ├── text.rb          # Text input with cursor navigation
     │   ├── password.rb      # Masked input
@@ -36,6 +39,7 @@ lib/
     │   ├── autocomplete_multiselect.rb # Type-to-filter multi select
     │   ├── date.rb          # Date picker prompt
     │   ├── path.rb          # File/directory path input
+    │   ├── range.rb         # Range/slider numeric selection
     │   ├── spinner.rb       # Threaded animation
     │   ├── progress.rb      # Progress bar
     │   └── tasks.rb         # Sequential task runner
@@ -44,7 +48,8 @@ lib/
     ├── note.rb              # Boxed messages
     ├── box.rb               # Customizable box rendering
     ├── stream.rb            # Streaming output with symbols
-    └── task_log.rb          # Build-style streaming log
+    ├── task_log.rb          # Build-style streaming log
+    └── testing.rb           # Test helpers (loaded on demand)
 ```
 
 ## Core Concepts
@@ -232,35 +237,72 @@ module Core::OptionsHelper
 end
 ```
 
+### ScrollHelper
+
+A mixin for scroll/filter behavior used by `Autocomplete`, `AutocompleteMultiselect`, and `Path`. These prompts display a dynamically filtered list that changes as the user types.
+
+Including classes implement `scroll_items` to return their current filterable list. The helper provides:
+
+- **`visible_items`** — returns the visible slice based on `@scroll_offset` and `@max_items`
+- **`move_selection(delta)`** — moves `@selected_index` with wrapping
+- **`update_selection_scroll`** — adjusts `@scroll_offset` to keep the selection visible
+
+Uses `@max_items`, `@selected_index`, and `@scroll_offset` instance variables from the including class.
+
+### FuzzyMatcher
+
+Pure utility module for scored fuzzy matching. Used as the default filter for `Autocomplete` and `AutocompleteMultiselect`.
+
+Matches query characters in order within the target string, scoring higher for better positions:
+
+- `START_BONUS` — match at position zero
+- `CONSECUTIVE_BONUS` — match immediately after the previous match
+- `BOUNDARY_BONUS` — match at a word boundary (after space, `_`, `-`, `/`)
+
+API:
+
+- **`match?(query, target)`** — boolean check (characters appear in order)
+- **`score(query, target)`** — numeric relevance score (0 = no match)
+- **`filter(options, query)`** — filter and sort option hashes by best score across label, value, and hint
+
+### TextInputHelper
+
+Shared cursor, placeholder rendering, and text manipulation for prompts that accept typed input (`Text`, `Password`, `Autocomplete`, `AutocompleteMultiselect`, `Path`).
+
+By default operates on `@value` and `@cursor`. Override `text_value` / `text_value=` to redirect to a different backing store (e.g. `@search_text` in `AutocompleteMultiselect`).
+
+Key responsibilities:
+
+- **`input_display`** — renders the value with an inverse cursor or a dimmed placeholder
+- **`handle_text_input(key)`** — backspace, printable character insertion, cursor advancement
+- Uses grapheme clusters for proper Unicode/emoji handling
+
 ### Spinner Threading
 
-The spinner runs in a background thread:
+The spinner runs in a background thread. All shared state is protected by `@mutex`, and a `@finished` flag guards against double-finish:
 
 ```ruby
 class Spinner
   def start(message)
-    @running = true
-    @thread = Thread.new { animation_loop }
+    @mutex.synchronize { @running = true; @finished = false }
+    @thread = Thread.new { spin_loop }
   end
 
-  def stop(message)
-    @running = false
-    @thread.join
-    render_final(:success, message)
-  end
-
-  private
-
-  def animation_loop
-    idx = 0
-    while @running
-      render_frame(FRAMES[idx])
-      idx = (idx + 1) % FRAMES.size
-      sleep 0.08
+  def finish(state, message)
+    thread_to_join = nil
+    @mutex.synchronize do
+      return if @finished
+      @finished = true
+      @running = false
+      thread_to_join = @thread
     end
+    thread_to_join&.join        # join outside the mutex
+    render_final(state, message)
   end
 end
 ```
+
+The `thread_to_join` pattern avoids holding the mutex during `Thread#join`. Reads of `@cancelled` are also mutex-protected.
 
 ## Terminal Safety
 
@@ -277,6 +319,53 @@ end
 # Global safety net
 at_exit { print "\e[?25h" }  # Show cursor
 ```
+
+A `MIN_TERMINAL_WIDTH = 40` constant is defined on `Prompt`. Before entering the input loop, `warn_narrow_terminal` prints a non-blocking yellow warning if the terminal is narrower than this threshold. The prompt continues to run regardless.
+
+## CI Mode
+
+`CiMode` allows prompts to run non-interactively in CI pipelines or when stdin is piped.
+
+At the top of `Prompt#run`, `CiMode.active?` is checked before any terminal setup. When active, the prompt calls `submit` (reusing the subclass default/validation logic) and returns `@value` immediately.
+
+Activation via settings:
+
+- **`ci_mode: true`** — always active
+- **`ci_mode: :auto`** — active when stdin is not a TTY or a CI environment variable is detected
+
+If validation fails in CI mode, a warning is printed to the output but the value is still returned since there is no interactive way to fix the input.
+
+## Testing
+
+`Clack::Testing` provides first-class test helpers loaded on demand:
+
+```ruby
+require "clack/testing"
+```
+
+Two entry points:
+
+- **`simulate(prompt_method, **kwargs, &block)`** — returns the prompt result
+- **`simulate_with_output(prompt_method, **kwargs, &block)`** — returns `[result, output_string]`
+
+The block receives a `PromptDriver` DSL for scripting interactions:
+
+```ruby
+result = Clack::Testing.simulate(Clack.method(:text), message: "Name?") do |p|
+  p.type("Alice")
+  p.submit
+end
+```
+
+`PromptDriver` methods: `type`, `submit`, `cancel`, `up`, `down`, `left`, `right`, `toggle`, `tab`, `backspace`, `ctrl_d`, `key`.
+
+Under the hood, `simulate` stubs `KeyReader.read` with a queue of pre-programmed inputs and directs prompt output to a `StringIO`. A safety counter raises after 100 reads to catch infinite loops.
+
+## Prompt Implementations
+
+### Range
+
+Range/slider prompt for numeric selection. Displays a horizontal track using Unicode characters (`━` track, `●` handle) with the current value shown to the right. Navigate with arrow keys; step size and min/max bounds are configurable. Values are clamped and snapped to the step grid.
 
 ## API Surface
 

@@ -193,7 +193,24 @@ name = Clack.text(
   placeholder: "my-project",       # Shown when empty (dim)
   default_value: "untitled",       # Used if submitted empty
   initial_value: "hello-world",    # Pre-filled, editable
-  validate: ->(v) { "Required!" if v.empty? }
+  validate: ->(v) { "Required!" if v.empty? },
+  help: "Letters, numbers, and dashes only"  # Contextual help text
+)
+```
+
+**Tab completion** - press `Tab` to cycle through matching candidates:
+
+```ruby
+# Tab completion from a static list
+cmd = Clack.text(
+  message: "Command?",
+  completions: %w[build test deploy lint format]
+)
+
+# Dynamic tab completion
+file = Clack.text(
+  message: "File?",
+  completions: ->(input) { Dir.glob("#{input}*") }
 )
 ```
 
@@ -276,7 +293,7 @@ features = Clack.multiselect(
 
 ### Autocomplete
 
-Type to filter from a list of options.
+Type to filter from a list of options. Filtering uses **fuzzy matching** by default -- characters must appear in order but don't need to be consecutive (e.g. "fb" matches "foobar"). Pass `filter:` to override with custom logic.
 
 ```ruby
 color = Clack.autocomplete(
@@ -339,6 +356,20 @@ date = Clack.date(
 ```
 
 **Navigation:** `Tab`/`←→` between segments | `↑↓` adjust value | type digits directly
+
+### Range
+
+Numeric selection with a visual slider track. Navigate with `←→` or `↑↓` arrow keys (or `hjkl`).
+
+```ruby
+volume = Clack.range(
+  message: "Set volume",
+  min: 0,
+  max: 100,
+  step: 5,
+  default: 50
+)
+```
 
 ### Select Key
 
@@ -583,7 +614,50 @@ Clack.update_settings(aliases: { "y" => :enter, "n" => :cancel })
 
 # Disable guide bars
 Clack.update_settings(with_guide: false)
+
+# CI / non-interactive mode (prompts auto-submit with defaults)
+Clack.update_settings(ci_mode: true)       # Always on
+Clack.update_settings(ci_mode: :auto)      # Auto-detect (non-TTY or CI env vars)
 ```
+
+When CI mode is active, prompts immediately submit with their default values instead of waiting for input. Useful for CI pipelines and scripted environments where stdin is not a TTY.
+
+Clack also warns when terminal width is below 40 columns, since prompts may not render cleanly in very narrow terminals.
+
+## Testing
+
+Clack ships with first-class test helpers. Require `clack/testing` explicitly (it is not auto-loaded):
+
+```ruby
+require "clack/testing"
+
+# Simulate a text prompt
+result = Clack::Testing.simulate(Clack.method(:text), message: "Name?") do |prompt|
+  prompt.type("Alice")
+  prompt.submit
+end
+# => "Alice"
+
+# Capture rendered output alongside the result
+result, output = Clack::Testing.simulate_with_output(Clack.method(:confirm), message: "Sure?") do |prompt|
+  prompt.left   # switch to "No"
+  prompt.submit
+end
+```
+
+The `PromptDriver` yielded to the block provides these methods:
+
+| Method | Description |
+|---|---|
+| `type(text)` | Type a string character by character |
+| `submit` | Press Enter |
+| `cancel` | Press Escape |
+| `up` / `down` / `left` / `right` | Arrow keys |
+| `toggle` | Press Space (for multiselect) |
+| `tab` | Press Tab |
+| `backspace` | Press Backspace |
+| `ctrl_d` | Press Ctrl+D (submit multiline text) |
+| `key(sym_or_char)` | Press an arbitrary key by symbol (e.g. `:escape`) or raw character |
 
 ## Requirements
 
