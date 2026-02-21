@@ -152,9 +152,9 @@ module Clack
       def normalize_option(opt)
         case opt
         when Hash
-          {value: opt[:value], label: opt[:label] || opt[:value].to_s, disabled: opt[:disabled] || false}
+          {value: opt[:value], label: opt[:label] || opt[:value].to_s, hint: opt[:hint], disabled: opt[:disabled] || false}
         else
-          {value: opt, label: opt.to_s, disabled: false}
+          {value: opt, label: opt.to_s, hint: nil, disabled: false}
         end
       end
 
@@ -261,13 +261,14 @@ module Clack
         else
           "  "
         end
+        hint = (item[:hint] && active) ? " #{Colors.dim("(#{item[:hint]})")}" : ""
 
         if item[:disabled]
           "#{active_bar}  #{Colors.dim(prefix)}#{Colors.dim(Symbols::S_CHECKBOX_INACTIVE)} #{Colors.strikethrough(Colors.dim(item[:label]))}\n"
         elsif active && selected
-          "#{active_bar}  #{Colors.dim(prefix)}#{Colors.green(Symbols::S_CHECKBOX_SELECTED)} #{item[:label]}\n"
+          "#{active_bar}  #{Colors.dim(prefix)}#{Colors.green(Symbols::S_CHECKBOX_SELECTED)} #{item[:label]}#{hint}\n"
         elsif active
-          "#{active_bar}  #{Colors.dim(prefix)}#{Colors.cyan(Symbols::S_CHECKBOX_ACTIVE)} #{item[:label]}\n"
+          "#{active_bar}  #{Colors.dim(prefix)}#{Colors.cyan(Symbols::S_CHECKBOX_ACTIVE)} #{item[:label]}#{hint}\n"
         elsif selected
           "#{active_bar}  #{Colors.dim(prefix)}#{Colors.green(Symbols::S_CHECKBOX_SELECTED)} #{Colors.dim(item[:label])}\n"
         else

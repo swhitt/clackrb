@@ -10,11 +10,11 @@ module Clack
     # @example Basic usage
     #   level = Clack.range(message: "Volume", min: 0, max: 100, step: 5)
     #
-    # @example With default value
+    # @example With initial value
     #   workers = Clack.range(
     #     message: "Concurrency",
     #     min: 1, max: 16,
-    #     step: 1, default: 4
+    #     step: 1, initial_value: 4
     #   )
     #
     class Range < Core::Prompt
@@ -26,9 +26,10 @@ module Clack
       # @param min [Numeric] minimum value (default: 0)
       # @param max [Numeric] maximum value (default: 100)
       # @param step [Numeric] increment size (default: 1)
-      # @param default [Numeric, nil] initial value (defaults to min)
+      # @param initial_value [Numeric, nil] initial value (defaults to min)
+      # @param default [Numeric, nil] deprecated alias for initial_value
       # @param opts [Hash] additional options passed to {Core::Prompt}
-      def initialize(message:, min: 0, max: 100, step: 1, default: nil, **opts)
+      def initialize(message:, min: 0, max: 100, step: 1, initial_value: nil, default: nil, **opts)
         super(message:, **opts)
 
         raise ArgumentError, "min must be less than max" if min >= max
@@ -37,7 +38,7 @@ module Clack
         @min = min
         @max = max
         @step = step
-        @value = clamp(default || min)
+        @value = clamp(initial_value || default || min)
       end
 
       protected

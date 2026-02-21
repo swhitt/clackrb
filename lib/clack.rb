@@ -343,7 +343,7 @@ module Clack
     # @option opts [Array, nil] :initial_values initially selected values
     # @option opts [Boolean] :required require at least one selection (default: true)
     # @option opts [Object, nil] :cursor_at value of initially focused option
-    # @option opts [Boolean] :selectable_groups allow toggling entire groups (default: true)
+    # @option opts [Boolean] :selectable_groups allow toggling entire groups (default: false)
     # @option opts [Integer] :group_spacing lines between groups (default: 0)
     # @return [Array, CANCEL] selected values or CANCEL if cancelled
     def group_multiselect(message:, options:, **opts)
@@ -375,7 +375,7 @@ module Clack
     # @option opts [Numeric] :min minimum value (default: 0)
     # @option opts [Numeric] :max maximum value (default: 100)
     # @option opts [Numeric] :step increment size (default: 1)
-    # @option opts [Numeric, nil] :default initial value (defaults to min)
+    # @option opts [Numeric, nil] :initial_value initial value (defaults to min)
     # @option opts [Proc, nil] :validate validation proc
     # @option opts [String, nil] :help help text shown below the message
     # @return [Numeric, CANCEL] selected value or CANCEL if cancelled

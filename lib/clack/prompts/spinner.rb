@@ -178,7 +178,7 @@ module Clack
           @finished = true
           @running = false
           thread_to_join = @thread
-          suffix = (@indicator == :timer) ? " #{format_timer}" : ""
+          suffix = (@indicator == :timer && @start_time) ? " #{format_timer}" : ""
           [message || @message, suffix]
         end
 
