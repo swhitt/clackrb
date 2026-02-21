@@ -15,6 +15,7 @@ lib/
     ├── environment.rb       # Terminal environment detection
     ├── symbols.rb           # Unicode/ASCII symbols
     ├── transformers.rb      # Input transformers (symbol shortcuts or procs)
+    ├── utils.rb             # Text manipulation helpers (ANSI stripping, wrapping, truncation)
     ├── validators.rb        # Built-in validation helpers
     ├── core/
     │   ├── prompt.rb        # Base prompt class (state machine, rendering)

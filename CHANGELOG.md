@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.4.2] - 2026-02-20
+
+### Fixed
+- `GroupMultiselect` now preserves `:hint` on options (was silently dropped during normalization)
+- `GroupMultiselect` renders hints on active options, matching `Select` behavior
+- `Spinner` no longer raises when finished in timer mode before the animation thread starts
+- YARD docs: corrected `selectable_groups` default from `true` to `false`
+
+### Changed
+- `Range` prompt now accepts `initial_value:` for consistency with all other prompts (`default:` still works)
+- README: corrected Range example to use `initial_value:` and tab completion description
+
 ## [0.4.1] - 2026-02-20
 
 ### Fixed
@@ -21,7 +33,7 @@
 ## [0.4.0] - 2026-02-19
 
 ### Added
-- `range` slider prompt for numeric selection (`Clack.range(message:, min:, max:, step:, default:)`)
+- `range` slider prompt for numeric selection (`Clack.range(message:, min:, max:, step:, initial_value:)`)
 - Tab completion on `text` prompt via `completions:` parameter (array or proc)
 - Minimum terminal width warning (non-blocking, 40 columns)
 

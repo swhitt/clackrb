@@ -198,7 +198,7 @@ name = Clack.text(
 )
 ```
 
-**Tab completion** - press `Tab` to cycle through matching candidates:
+**Tab completion** - press `Tab` to fill the longest common prefix of matching candidates:
 
 ```ruby
 # Tab completion from a static list
@@ -367,7 +367,7 @@ volume = Clack.range(
   min: 0,
   max: 100,
   step: 5,
-  default: 50
+  initial_value: 50
 )
 ```
 
