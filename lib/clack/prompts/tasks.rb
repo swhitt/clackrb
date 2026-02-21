@@ -51,7 +51,7 @@ module Clack
       #   @return [Proc] the task to execute
       # @!attribute [r] enabled
       #   @return [Boolean] whether the task should run (default: true)
-      Task = Struct.new(:title, :task, :enabled, keyword_init: true)
+      Task = Data.define(:title, :task, :enabled)
 
       # Result of a completed task, including status and any error.
       #
@@ -61,7 +61,7 @@ module Clack
       #   @return [Symbol] :success or :error
       # @!attribute [r] error
       #   @return [String, nil] error message if failed
-      TaskResult = Struct.new(:title, :status, :error, keyword_init: true)
+      TaskResult = Data.define(:title, :status, :error)
 
       # @param tasks [Array<Hash>] tasks with :title, :task, and optional :enabled keys
       # @param output [IO] output stream (default: $stdout)

@@ -515,12 +515,31 @@ end
 
 # Chain INT handler to restore cursor before passing to previous handler
 previous_int_handler = trap("INT") do
-  print "\e[?25h"
+  begin
+    print "\e[?25h"
+  rescue IOError, SystemCallError
+    # Output unavailable — nothing we can do
+  end
   case previous_int_handler
-  when Proc then previous_int_handler.call
+  when Proc
+    begin
+      previous_int_handler.call
+    rescue
+      exit(130)
+    end
   when "DEFAULT", "SYSTEM_DEFAULT" then exit(130)
   else exit(130)
   end
+end
+
+# Handle SIGTERM similarly to INT — restore cursor on graceful kill
+trap("TERM") do
+  begin
+    print "\e[?25h"
+  rescue IOError, SystemCallError
+    # Output unavailable
+  end
+  exit(143)
 end
 
 # Set up SIGWINCH handler for terminal resize

@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.4.4] - 2026-02-21
+
+### Fixed
+- INT handler is now exception-safe (catches IOError/SystemCallError when output is unavailable)
+
+### Added
+- SIGTERM handler restores cursor on graceful kill, matching INT handler behavior
+- `Cursor.enabled?` now respects `FORCE_COLOR` environment variable, consistent with Colors module
+- `Spinner#message` returns `self` for method chaining
+
+### Changed
+- `Task` and `TaskResult` now use `Data.define` instead of `Struct.new` (Ruby 3.2+ idiom)
+
 ## [0.4.3] - 2026-02-21
 
 ### Fixed

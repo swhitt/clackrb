@@ -110,6 +110,7 @@ module Clack
       # @param msg [String] new message to display
       def message(msg)
         @mutex.synchronize { @message = remove_trailing_dots(msg) }
+        self
       end
 
       # Clear the spinner without showing a final message.
