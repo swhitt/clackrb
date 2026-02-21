@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.4.1] - 2026-02-20
+
+### Fixed
+- `AutocompleteMultiselect` now renders warning validation messages (was error-only)
+- CI mode no longer writes ANSI escape codes to non-TTY output
+- CI mode prints a warning when validation fails instead of silently returning
+- Spinner animation restarts from frame 0 when reused
+- `Environment.raw_mode_supported?` catches specific exceptions instead of bare rescue
+- `FuzzyMatcher.filter` pre-computes downcased query (performance optimization for large lists)
+- Removed dead instance variables in Path, Testing, and Spinner
+- Simplified `Range#clamp` by removing unreachable branch
+
+### Changed
+- Updated gem dependencies (rubocop 1.84, standard 1.54, prism 1.9, bigdecimal 4.0)
+- Autocomplete YARD docs corrected: default filter is fuzzy matching, not substring
+- Expanded YARD `@option` documentation for spinner, multiselect, group_multiselect, path, tasks
+- README and ARCHITECTURE.md updated to cover all v0.3.0-v0.4.0 features
+
 ## [0.4.0] - 2026-02-19
 
 ### Added
