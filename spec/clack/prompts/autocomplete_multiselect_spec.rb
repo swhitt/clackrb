@@ -121,11 +121,11 @@ RSpec.describe Clack::Prompts::AutocompleteMultiselect do
       expect(output.string).to include("match")
     end
 
-    it "shows selected count in final frame" do
+    it "shows selected labels in final frame" do
       stub_keys(:space, :down, :space, :enter)
       subject.run
 
-      expect(output.string).to include("2 items selected")
+      expect(output.string).to include("apple, banana")
     end
   end
 

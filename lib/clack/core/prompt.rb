@@ -32,9 +32,6 @@ module Clack
       MIN_TERMINAL_WIDTH = 40
 
       # Track active prompts for SIGWINCH notification.
-      # Signal handler may fire during register/unregister. We can't use
-      # .dup (allocates, forbidden in trap context) so we accept a benign
-      # race: worst case, a prompt misses one resize notification.
       @active_prompts = []
 
       class << self
@@ -57,7 +54,7 @@ module Clack
           return unless Signal.list.key?("WINCH")
 
           Signal.trap("WINCH") do
-            @active_prompts.each(&:request_redraw)
+            @active_prompts.dup.each(&:request_redraw)
           end
         end
       end

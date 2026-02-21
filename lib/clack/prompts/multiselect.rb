@@ -40,7 +40,8 @@ module Clack
       def initialize(message:, options:, initial_values: [], required: true, max_items: nil, cursor_at: nil, **opts)
         super(message:, **opts)
         @options = normalize_options(options)
-        @selected = Set.new(initial_values)
+        valid_values = Set.new(@options.map { |o| o[:value] })
+        @selected = Set.new(initial_values) & valid_values
         @required = required
         @max_items = max_items
         @scroll_offset = 0

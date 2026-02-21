@@ -53,7 +53,8 @@ module Clack
         @cursor = 0
         @selected_index = 0
         @scroll_offset = 0
-        @selected_values = Set.new(initial_values || [])
+        valid_values = Set.new(@all_options.map { |o| o[:value] })
+        @selected_values = Set.new(initial_values || []) & valid_values
         update_filtered
       end
 
@@ -167,11 +168,9 @@ module Clack
         lines << "#{bar}\n"
         lines << "#{symbol_for_state}  #{@message}\n"
 
-        display = if @state == :cancel
-          Colors.strikethrough(Colors.dim("cancelled"))
-        else
-          Colors.dim("#{@selected_values.size} items selected")
-        end
+        labels = @all_options.select { |o| @selected_values.include?(o[:value]) }.map { |o| o[:label] }
+        display_text = labels.join(", ")
+        display = (@state == :cancel) ? Colors.strikethrough(Colors.dim(display_text)) : Colors.dim(display_text)
         lines << "#{bar}  #{display}\n"
 
         lines.join

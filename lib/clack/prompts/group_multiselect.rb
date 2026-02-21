@@ -55,7 +55,8 @@ module Clack
         super(message:, **opts)
         @groups = normalize_groups(options)
         @flat_items = build_flat_items
-        @selected = Set.new(initial_values)
+        valid_values = Set.new(@flat_items.select { |item| item[:type] == :option }.map { |item| item[:value] })
+        @selected = Set.new(initial_values) & valid_values
         @required = required
         @selectable_groups = selectable_groups
         @group_spacing = group_spacing
@@ -167,6 +168,7 @@ module Clack
             type: :option,
             value: opt[:value],
             label: opt[:label],
+            hint: opt[:hint],
             disabled: opt[:disabled],
             group: group,
             last_in_group: idx == group[:options].length - 1

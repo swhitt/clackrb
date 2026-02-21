@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.4.3] - 2026-02-21
+
+### Fixed
+- Multiselect variants now ignore `initial_values` that don't match any option (prevents phantom values in return)
+- SIGWINCH handler now uses `.dup` for safe array iteration inside signal trap
+- `GroupMultiselect` propagates `:hint` into flat items so hints actually render
+
+### Changed
+- `AutocompleteMultiselect` final frame now shows selected labels instead of "N items selected", matching `Multiselect` behavior
+- Removed dead `@mutex` from `Testing` module
+- Removed unused `raw:` parameter from `TaskLog` and `TaskLogGroup` message methods
+
 ## [0.4.2] - 2026-02-20
 
 ### Fixed

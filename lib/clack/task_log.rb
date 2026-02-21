@@ -32,8 +32,7 @@ module Clack
 
     # Add a message to the log
     # @param msg [String] Message to display
-    # @param raw [Boolean] If true, don't add newline between messages
-    def message(msg, raw: false)
+    def message(msg)
       clear_buffer
       @buffer << msg.to_s.gsub(/\e\[[\d;]*[ABCDEFGHfJKSTsu]/, "") # Strip cursor movement codes
       apply_limit
@@ -155,7 +154,7 @@ module Clack
     end
 
     # Add a message to this group
-    def message(msg, raw: false)
+    def message(msg)
       @parent.add_group_message(self, msg)
     end
 

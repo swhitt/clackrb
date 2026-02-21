@@ -105,8 +105,6 @@ module Clack
       end
     end
 
-    @mutex = Mutex.new
-
     class << self
       # Simulate a prompt interaction by feeding a predefined key sequence.
       #
