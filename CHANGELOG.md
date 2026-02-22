@@ -7,6 +7,9 @@
 - `AutocompleteMultiselect` no longer intercepts `a`/`i` keys as shortcuts — they conflicted with typing in the search field
 - `AutocompleteMultiselect#toggle_current` now respects `:disabled` options, matching `Multiselect` behavior
 
+### Changed
+- `AutocompleteMultiselect` internals aligned with `Multiselect`: `@selected` naming, `submit` override pattern, `keyboard_hints` method, `build_frame` validation rendering, `initial_values: []` default
+
 ### Added
 - `examples/showcase.rb` — full-featured demo with branching, autocomplete, date, range, group multiselect, tasks
 

@@ -36,12 +36,12 @@ module Clack
       # @param max_items [Integer] max visible options (default: 5)
       # @param placeholder [String, nil] placeholder text when empty
       # @param required [Boolean] require at least one selection (default: true)
-      # @param initial_values [Array, nil] values to pre-select
+      # @param initial_values [Array] values to pre-select
       # @param filter [Proc, nil] custom filter proc receiving (option_hash, query_string)
       #   and returning true/false. When nil, the default fuzzy matching
       #   across label, value, and hint is used.
       # @param opts [Hash] additional options passed to {Core::Prompt}
-      def initialize(message:, options:, max_items: 5, placeholder: nil, required: true, initial_values: nil, filter: nil, **opts)
+      def initialize(message:, options:, max_items: 5, placeholder: nil, required: true, initial_values: [], filter: nil, **opts)
         super(message:, **opts)
         @all_options = normalize_options(options)
         @max_items = max_items
@@ -53,7 +53,7 @@ module Clack
         @selected_index = 0
         @scroll_offset = 0
         valid_values = Set.new(@all_options.map { |o| o[:value] })
-        @selected_values = Set.new(initial_values || []) & valid_values
+        @selected = Set.new(initial_values) & valid_values
         update_filtered
       end
 
@@ -73,7 +73,7 @@ module Clack
 
         case action
         when :cancel then @state = :cancel
-        when :enter then submit_selection
+        when :enter then submit
         when :up then move_selection(-1)
         when :down then move_selection(1)
         when :space then toggle_current
@@ -87,22 +87,22 @@ module Clack
         opt = @filtered[@selected_index]
         return if opt[:disabled]
 
-        if @selected_values.include?(opt[:value])
-          @selected_values.delete(opt[:value])
+        if @selected.include?(opt[:value])
+          @selected.delete(opt[:value])
         else
-          @selected_values.add(opt[:value])
+          @selected.add(opt[:value])
         end
       end
 
-      def submit_selection
-        if @required && @selected_values.empty?
+      def submit
+        if @required && @selected.empty?
           @error_message = "Please select at least one option. Press #{Colors.cyan("space")} to select, #{Colors.cyan("enter")} to submit"
           @state = :error
           return
         end
 
-        @value = @selected_values.to_a
-        submit
+        @value = @selected.to_a
+        super
       end
 
       def build_frame
@@ -119,13 +119,12 @@ module Clack
 
         lines << "#{active_bar}  #{Colors.yellow("No matches found")}\n" if @filtered.empty? && !@search_text.empty?
 
-        lines << "#{active_bar}  #{instructions}\n"
-        lines << "#{bar_end}\n"
+        lines << "#{active_bar}  #{keyboard_hints}\n"
 
-        validation_lines = validation_message_lines
-        if validation_lines.any?
-          lines[-1] = validation_lines.first
-          lines.concat(validation_lines[1..])
+        if @state in :error | :warning
+          lines.concat(validation_message_lines)
+        else
+          lines << "#{bar_end}\n"
         end
 
         lines.join
@@ -136,7 +135,7 @@ module Clack
         lines << "#{bar}\n"
         lines << "#{symbol_for_state}  #{@message}\n"
 
-        labels = @all_options.select { |o| @selected_values.include?(o[:value]) }.map { |o| o[:label] }
+        labels = @all_options.select { |o| @selected.include?(o[:value]) }.map { |o| o[:label] }
         display_text = labels.join(", ")
         display = (@state == :cancel) ? Colors.strikethrough(Colors.dim(display_text)) : Colors.dim(display_text)
         lines << "#{bar}  #{display}\n"
@@ -167,7 +166,7 @@ module Clack
         Colors.dim(" (#{@filtered.size} match#{"es" unless @filtered.size == 1})")
       end
 
-      def instructions
+      def keyboard_hints
         Colors.dim([
           "up/down: navigate",
           "space: select",
@@ -186,7 +185,7 @@ module Clack
       def scroll_items = @filtered
 
       def option_display(opt, active)
-        selected = @selected_values.include?(opt[:value])
+        selected = @selected.include?(opt[:value])
         checkbox = if selected
           Colors.green(Symbols::S_CHECKBOX_SELECTED)
         else

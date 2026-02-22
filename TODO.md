@@ -1,6 +1,16 @@
 # Clack Ruby — TODO
 
-Findings from 5-agent review (Ruby Master, Anti-Overengineering Architect, API Design Expert, New User, Terminal/CLI UX Specialist). Last updated: 2026-02-21.
+Consolidated from 5-agent review + 4-agent iterative reviews. Last updated: 2026-02-22.
+
+## Done (v0.4.4+)
+
+- [x] Fix `a`/`i` shortcuts hijacking search in AutocompleteMultiselect
+- [x] Fix `j`/`k`/`h`/`l` vim aliases hijacking search in both Autocomplete prompts
+- [x] Add disabled option guard to AutocompleteMultiselect `toggle_current`
+- [x] Add regression tests for a/i/j/k as search chars
+- [x] Add cross-filter selection retention test
+- [x] Document shortcut asymmetry in docstring + README
+- [x] Add `examples/showcase.rb` demo
 
 ## v1.0 API Changes
 
@@ -8,6 +18,16 @@ Findings from 5-agent review (Ruby Master, Anti-Overengineering Architect, API D
 - [ ] Add `cursor_at` to Select and Autocomplete for consistency with Multiselect
 - [ ] Document `initial_value` (singular) vs `initial_values` (plural) convention clearly
 - [ ] Standardize `max_items` defaults (nil for show-all vs 5 for autocomplete) — at minimum document why
+- [ ] Wizard mode — declarative multi-step flows with back navigation (`Clack.wizard`)
+
+## Internal Consistency (AutocompleteMultiselect ↔ Multiselect alignment)
+
+- [x] Unify `build_frame` validation: use `if @state in :error | :warning` pattern (not `lines[-1]` splice)
+- [x] Change `initial_values` default from `nil` to `[]` to match Multiselect/GroupMultiselect
+- [x] Rename `submit_selection` → override `submit` (match Multiselect pattern)
+- [x] Rename `@selected_values` → `@selected` (match Multiselect naming)
+- [x] Rename `instructions` → `keyboard_hints` (match Multiselect method name)
+- [ ] Extract shared toggle-membership idiom from Multiselect + AutocompleteMultiselect
 
 ## Code Quality
 
@@ -24,8 +44,20 @@ Findings from 5-agent review (Ruby Master, Anti-Overengineering Architect, API D
 - [ ] Add quick reference table of all prompt types with key options and defaults
 - [ ] Document Ctrl+D for multiline_text submission prominently (non-standard gesture)
 - [ ] Document cancellation helper pattern for long flows
+- [ ] Add j/k unavailable note to Autocomplete README section (not just AutocompleteMultiselect)
+- [ ] Document `max_items` default (5) in autocomplete README sections
 - [ ] Add `examples/migration_from_tty_prompt.rb`
 - [ ] Add TL;DR at top of README
+
+## Test Coverage Gaps
+
+- [ ] `h`/`l` vim aliases as text input chars (untested in both autocomplete specs)
+- [ ] Cancel-while-no-filter-results in Autocomplete (`build_final_frame` fallback to `@value`)
+- [ ] `@selected_index` reset on filter change (implicit, not explicit test)
+- [ ] Match count `"0 matches"` string format when filter is empty
+- [ ] Empty `options: []` passed to AutocompleteMultiselect
+- [ ] Warning validation state in AutocompleteMultiselect (tested in Multiselect, not here)
+- [ ] Remove unused `let(:input)` from autocomplete_spec (or add to multiselect_spec for consistency)
 
 ## Edge Cases
 
