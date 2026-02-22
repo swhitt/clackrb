@@ -12,6 +12,8 @@
 
 ### Added
 - `examples/showcase.rb` — full-featured demo with branching, autocomplete, date, range, group multiselect, tasks
+- `examples/migration_from_tty_prompt.rb` — side-by-side migration guide from tty-prompt
+- README: "Why Clack?" comparison table vs tty-prompt/highline, quick reference table, TL;DR tagline, vim key notes on autocomplete sections
 
 ## [0.4.4] - 2026-02-21
 

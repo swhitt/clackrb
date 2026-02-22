@@ -40,14 +40,14 @@ Consolidated from 5-agent review + 4-agent iterative reviews. Last updated: 2026
 
 ## Documentation
 
-- [ ] Add "Why Clack?" comparison section vs tty-prompt/highline in README
-- [ ] Add quick reference table of all prompt types with key options and defaults
-- [ ] Document Ctrl+D for multiline_text submission prominently (non-standard gesture)
+- [x] Add "Why Clack?" comparison section vs tty-prompt/highline in README
+- [x] Add quick reference table of all prompt types with key options and defaults
+- [x] Document Ctrl+D for multiline_text submission prominently (in quick ref table)
 - [ ] Document cancellation helper pattern for long flows
-- [ ] Add j/k unavailable note to Autocomplete README section (not just AutocompleteMultiselect)
-- [ ] Document `max_items` default (5) in autocomplete README sections
-- [ ] Add `examples/migration_from_tty_prompt.rb`
-- [ ] Add TL;DR at top of README
+- [x] Add j/k unavailable note to Autocomplete README section (not just AutocompleteMultiselect)
+- [x] Document `max_items` default (5) in autocomplete README sections
+- [x] Add `examples/migration_from_tty_prompt.rb`
+- [x] Add TL;DR at top of README
 
 ## Test Coverage Gaps
 

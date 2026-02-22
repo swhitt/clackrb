@@ -2,7 +2,7 @@
 
 **Effortlessly beautiful CLI prompts for Ruby.**
 
-A faithful Ruby port of [@clack/prompts](https://github.com/bombshell-dev/clack).
+A faithful Ruby port of [@clack/prompts](https://github.com/bombshell-dev/clack). 16+ prompt types, zero dependencies, Ruby 3.2+. `gem "clack"` and go.
 
 <p align="center">
   <img src="examples/demo.gif?v=2" width="640" alt="Clack demo">
@@ -10,10 +10,11 @@ A faithful Ruby port of [@clack/prompts](https://github.com/bombshell-dev/clack)
 
 ## Why Clack?
 
-- **Beautiful by default** - Thoughtfully designed prompts that just look right
-- **Vim-friendly** - Navigate with `hjkl` or arrow keys
-- **Accessible** - Graceful ASCII fallbacks for limited terminals
-- **Composable** - Group prompts together with `Clack.group`
+- **Beautiful by default** — Thoughtfully designed prompts that just look right
+- **Vim-friendly** — Navigate with `hjkl` or arrow keys
+- **Accessible** — Graceful ASCII fallbacks for limited terminals
+- **Composable** — Group prompts together with `Clack.group`
+- **Zero dependencies** — Everything in one gem
 
 ## Installation
 
@@ -299,7 +300,8 @@ Type to filter from a list of options. Filtering uses **fuzzy matching** by defa
 color = Clack.autocomplete(
   message: "Pick a color",
   options: %w[red orange yellow green blue indigo violet],
-  placeholder: "Type to search..."
+  placeholder: "Type to search...",
+  max_items: 5  # Default; scrollable via ↑↓
 )
 
 # Custom filter logic (receives option hash and query string)
@@ -309,6 +311,8 @@ cmd = Clack.autocomplete(
   filter: ->(opt, query) { opt[:label].start_with?(query) }
 )
 ```
+
+> Vim-style `j`/`k`/`h`/`l` navigation is not available — all keyboard input feeds into the search field. Use `↑↓` arrow keys to navigate results.
 
 ### Autocomplete Multiselect
 
@@ -320,13 +324,14 @@ colors = Clack.autocomplete_multiselect(
   options: %w[red orange yellow green blue indigo violet],
   placeholder: "Type to filter...",
   required: true,              # At least one selection required
-  initial_values: ["red"]      # Pre-selected values
+  initial_values: ["red"],     # Pre-selected values
+  max_items: 5                 # Default; scrollable via ↑↓
 )
 ```
 
 **Shortcuts:** `Space` toggle | `Enter` confirm
 
-> The `a` (select all) and `i` (invert) shortcuts from `Multiselect` are not available here — those keys feed into the search field instead.
+> The `a` (select all), `i` (invert), and `j`/`k`/`h`/`l` shortcuts from `Multiselect` are not available here — all keyboard input feeds into the search field instead. Use `↑↓` arrow keys to navigate.
 
 ### Path
 
@@ -494,6 +499,32 @@ features = Clack.group_multiselect(
   group_spacing: 1          # Blank lines between groups
 )
 ```
+
+<details>
+<summary><h3 style="display:inline">Quick Reference</h3></summary>
+
+| Prompt | Method | Key Options | Defaults |
+|--------|--------|-------------|----------|
+| Text | `Clack.text` | `placeholder:`, `default_value:`, `initial_value:`, `completions:` | — |
+| Password | `Clack.password` | `mask:`, `validate:` | `mask: "▪"` |
+| Confirm | `Clack.confirm` | `active:`, `inactive:`, `initial_value:` | `active: "Yes"`, `inactive: "No"`, `initial_value: true` |
+| Select | `Clack.select` | `options:`, `initial_value:`, `max_items:` | — |
+| Multiselect | `Clack.multiselect` | `options:`, `initial_values:`, `required:`, `cursor_at:` | `required: true` |
+| Group Multiselect | `Clack.group_multiselect` | `options:` (nested), `selectable_groups:`, `group_spacing:` | `selectable_groups: false` |
+| Autocomplete | `Clack.autocomplete` | `options:`, `placeholder:`, `filter:`, `max_items:` | `max_items: 5` |
+| Autocomplete Multiselect | `Clack.autocomplete_multiselect` | `options:`, `required:`, `initial_values:`, `filter:` | `required: true`, `max_items: 5` |
+| Select Key | `Clack.select_key` | `options:` (with `:key`) | — |
+| Path | `Clack.path` | `root:`, `only_directories:` | `root: "."` |
+| Date | `Clack.date` | `format:`, `initial_value:`, `min:`, `max:` | `format: :iso` |
+| Range | `Clack.range` | `min:`, `max:`, `step:`, `initial_value:` | `min: 0`, `max: 100`, `step: 1` |
+| Multiline Text | `Clack.multiline_text` | `initial_value:`, `validate:` | Submit with **Ctrl+D** |
+| Spinner | `Clack.spinner` / `Clack.spin` | block form auto-handles success/error | — |
+| Tasks | `Clack.tasks` | `tasks:` (`{title:, task:, enabled:}`) | `enabled: true` |
+| Progress | `Clack.progress` | `total:`, `message:` | — |
+
+All prompts accept `message:`, `validate:`, `help:`, and return `Clack::CANCEL` on Escape/Ctrl+C.
+
+</details>
 
 ## Prompt Groups
 
