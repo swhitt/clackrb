@@ -324,7 +324,7 @@ colors = Clack.autocomplete_multiselect(
 )
 ```
 
-**Shortcuts:** `Space` toggle | `a` toggle all | `i` invert | `Enter` confirm
+**Shortcuts:** `Space` toggle | `Enter` confirm
 
 ### Path
 
@@ -672,6 +672,10 @@ bundle exec rake        # Lint + tests
 bundle exec rake spec   # Tests only
 COVERAGE=true bundle exec rake spec  # With coverage
 ```
+
+## Roadmap
+
+- **Wizard mode** - Multi-step flows with back navigation (`Clack.wizard`). The current `Clack.group` runs prompts as sequential Ruby code, so there's no way to "go back" and re-answer a previous question. A declarative wizard API would define steps as a graph with branching and let the engine handle forward/back navigation.
 
 ## Credits
 

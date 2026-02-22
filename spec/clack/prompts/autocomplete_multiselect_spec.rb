@@ -57,20 +57,6 @@ RSpec.describe Clack::Prompts::AutocompleteMultiselect do
       expect(result).to eq([])
     end
 
-    it "toggles all with a key" do
-      stub_keys("a", :enter)
-      result = subject.run
-
-      expect(result).to contain_exactly(*options)
-    end
-
-    it "inverts selection with i key" do
-      stub_keys(:space, "i", :enter)
-      result = subject.run
-
-      expect(result).to contain_exactly("banana", "cherry", "date", "elderberry")
-    end
-
     it "navigates with up/down" do
       stub_keys(:down, :down, :space, :enter)
       result = subject.run

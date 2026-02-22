@@ -1,5 +1,13 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+- `AutocompleteMultiselect` no longer intercepts `a`/`i` keys as shortcuts — they conflicted with typing in the search field
+
+### Added
+- `examples/showcase.rb` — full-featured demo with branching, autocomplete, date, range, group multiselect, tasks
+
 ## [0.4.4] - 2026-02-21
 
 ### Fixed

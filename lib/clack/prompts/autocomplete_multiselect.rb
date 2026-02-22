@@ -7,11 +7,6 @@ module Clack
     # Combines text input filtering with checkbox-style selection.
     # Type to filter, Space to toggle, Enter to confirm.
     #
-    # Shortcuts:
-    # - Space: toggle current option
-    # - 'a': toggle all options
-    # - 'i': invert selection
-    #
     # @example Basic usage
     #   colors = Clack.autocomplete_multiselect(
     #     message: "Pick colors",
@@ -82,18 +77,6 @@ module Clack
       end
 
       def handle_char(key)
-        # Shortcut keys only work when search field is empty
-        # to avoid interfering with typing filter text
-        if @search_text.empty?
-          case key&.downcase
-          when "a"
-            toggle_all
-            return
-          when "i"
-            invert_selection
-            return
-          end
-        end
         handle_text_input(key)
       end
 
@@ -105,24 +88,6 @@ module Clack
           @selected_values.delete(current_value)
         else
           @selected_values.add(current_value)
-        end
-      end
-
-      def toggle_all
-        if @selected_values.size == @all_options.size
-          @selected_values.clear
-        else
-          @all_options.each { |opt| @selected_values.add(opt[:value]) }
-        end
-      end
-
-      def invert_selection
-        @all_options.each do |opt|
-          if @selected_values.include?(opt[:value])
-            @selected_values.delete(opt[:value])
-          else
-            @selected_values.add(opt[:value])
-          end
         end
       end
 
@@ -203,8 +168,6 @@ module Clack
         Colors.dim([
           "up/down: navigate",
           "space: select",
-          "a: all",
-          "i: invert",
           "enter: confirm"
         ].join(" | "))
       end
