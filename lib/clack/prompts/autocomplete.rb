@@ -63,19 +63,21 @@ module Clack
       def handle_key(key)
         return if terminal_state?
 
+        # Printable characters always feed the search field.
+        # This prevents vim aliases (j/k/h/l) from hijacking text input.
+        if Core::Settings.printable?(key)
+          handle_text_input(key)
+          return
+        end
+
         action = Core::Settings.action?(key)
 
         case action
-        when :cancel
-          @state = :cancel
-        when :enter
-          submit_selection
-        when :up
-          move_selection(-1)
-        when :down
-          move_selection(1)
-        else
-          handle_text_input(key)
+        when :cancel then @state = :cancel
+        when :enter then submit_selection
+        when :up then move_selection(-1)
+        when :down then move_selection(1)
+        else handle_text_input(key)
         end
       end
 

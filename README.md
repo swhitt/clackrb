@@ -326,6 +326,8 @@ colors = Clack.autocomplete_multiselect(
 
 **Shortcuts:** `Space` toggle | `Enter` confirm
 
+> The `a` (select all) and `i` (invert) shortcuts from `Multiselect` are not available here — those keys feed into the search field instead.
+
 ### Path
 
 File/directory path selector with filesystem navigation.

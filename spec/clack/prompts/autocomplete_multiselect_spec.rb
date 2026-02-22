@@ -104,7 +104,7 @@ RSpec.describe Clack::Prompts::AutocompleteMultiselect do
       stub_keys("c", "h", :space, :enter) # Type 'ch' to filter to cherry
       subject.run
 
-      expect(output.string).to include("match")
+      expect(output.string).to include("1 match")
     end
 
     it "shows selected labels in final frame" do
@@ -112,6 +112,62 @@ RSpec.describe Clack::Prompts::AutocompleteMultiselect do
       subject.run
 
       expect(output.string).to include("apple, banana")
+    end
+
+    it "typing 'a' filters instead of toggling all" do
+      stub_keys("a", :space, :enter)
+      result = subject.run
+
+      expect(result).to eq(["apple"])
+      expect(result).not_to contain_exactly(*options)
+    end
+
+    it "typing 'i' filters instead of inverting" do
+      prompt = described_class.new(
+        message: "Select:",
+        options: options,
+        required: false,
+        output: output
+      )
+      stub_keys("i", :enter)
+      result = prompt.run
+
+      expect(result).to eq([])
+    end
+
+    it "typing 'j' filters instead of navigating down" do
+      prompt = described_class.new(
+        message: "Select:",
+        options: options,
+        required: false,
+        output: output
+      )
+      stub_keys("j", :space, :enter)
+      result = prompt.run
+
+      # 'j' matches no options; if it navigated down, banana would be selected
+      expect(result).to eq([])
+    end
+
+    it "typing 'k' filters instead of navigating up" do
+      prompt = described_class.new(
+        message: "Select:",
+        options: options,
+        required: false,
+        output: output
+      )
+      stub_keys("k", :space, :enter)
+      result = prompt.run
+
+      # 'k' matches no options; if it navigated up, elderberry would be selected
+      expect(result).to eq([])
+    end
+
+    it "retains selections made before filtering" do
+      stub_keys(:space, "b", :space, :enter)
+      result = subject.run
+
+      expect(result).to contain_exactly("apple", "banana")
     end
   end
 

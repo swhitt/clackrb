@@ -3,7 +3,9 @@
 ## [Unreleased]
 
 ### Fixed
+- `Autocomplete` and `AutocompleteMultiselect` now route all printable characters to the search field first, fixing vim aliases (`j`/`k`/`h`/`l`) hijacking text input
 - `AutocompleteMultiselect` no longer intercepts `a`/`i` keys as shortcuts — they conflicted with typing in the search field
+- `AutocompleteMultiselect#toggle_current` now respects `:disabled` options, matching `Multiselect` behavior
 
 ### Added
 - `examples/showcase.rb` — full-featured demo with branching, autocomplete, date, range, group multiselect, tasks

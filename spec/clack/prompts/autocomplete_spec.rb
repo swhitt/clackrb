@@ -123,6 +123,22 @@ RSpec.describe Clack::Prompts::Autocomplete do
 
       expect(result).to eq("cherry")
     end
+
+    it "typing 'j' filters instead of navigating down" do
+      # 'j' is a vim alias for :down — should be treated as text input in autocomplete
+      stub_keys("j", :backspace, :enter)
+      result = subject.run
+
+      expect(result).to eq("apple")
+    end
+
+    it "typing 'k' filters instead of navigating up" do
+      # 'k' is a vim alias for :up — should be treated as text input in autocomplete
+      stub_keys("k", :backspace, :enter)
+      result = subject.run
+
+      expect(result).to eq("apple")
+    end
   end
 
   describe "custom filter" do

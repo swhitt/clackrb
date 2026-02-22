@@ -7,6 +7,10 @@ module Clack
     # Combines text input filtering with checkbox-style selection.
     # Type to filter, Space to toggle, Enter to confirm.
     #
+    # Unlike {Multiselect}, the 'a' (select all) and 'i' (invert) shortcuts
+    # are not available because those characters are needed for the search field.
+    # Similarly, vim-style j/k navigation is disabled in favor of typing.
+    #
     # @example Basic usage
     #   colors = Clack.autocomplete_multiselect(
     #     message: "Pick colors",
@@ -58,36 +62,35 @@ module Clack
       def handle_key(key)
         return if terminal_state?
 
+        # Printable characters always feed the search field (except space, which toggles).
+        # This prevents vim aliases (j/k/h/l) from hijacking text input.
+        if Core::Settings.printable?(key) && key != " "
+          handle_text_input(key)
+          return
+        end
+
         action = Core::Settings.action?(key)
 
         case action
-        when :cancel
-          @state = :cancel
-        when :enter
-          submit_selection
-        when :up
-          move_selection(-1)
-        when :down
-          move_selection(1)
-        when :space
-          toggle_current
-        else
-          handle_char(key)
+        when :cancel then @state = :cancel
+        when :enter then submit_selection
+        when :up then move_selection(-1)
+        when :down then move_selection(1)
+        when :space then toggle_current
+        else handle_text_input(key)
         end
-      end
-
-      def handle_char(key)
-        handle_text_input(key)
       end
 
       def toggle_current
         return if @filtered.empty?
 
-        current_value = @filtered[@selected_index][:value]
-        if @selected_values.include?(current_value)
-          @selected_values.delete(current_value)
+        opt = @filtered[@selected_index]
+        return if opt[:disabled]
+
+        if @selected_values.include?(opt[:value])
+          @selected_values.delete(opt[:value])
         else
-          @selected_values.add(current_value)
+          @selected_values.add(opt[:value])
         end
       end
 
@@ -183,8 +186,8 @@ module Clack
       def scroll_items = @filtered
 
       def option_display(opt, active)
-        is_selected = @selected_values.include?(opt[:value])
-        checkbox = if is_selected
+        selected = @selected_values.include?(opt[:value])
+        checkbox = if selected
           Colors.green(Symbols::S_CHECKBOX_SELECTED)
         else
           Colors.dim(Symbols::S_CHECKBOX_INACTIVE)

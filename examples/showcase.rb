@@ -56,6 +56,9 @@ deploy_target = Clack.select(
 )
 exit 0 if Clack.cancel?(deploy_target)
 
+cloud = nil
+replicas = nil
+
 case deploy_target
 when "kubernetes"
   cloud = Clack.select(
