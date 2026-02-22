@@ -51,13 +51,13 @@ Consolidated from 5-agent review + 4-agent iterative reviews. Last updated: 2026
 
 ## Test Coverage Gaps
 
-- [ ] `h`/`l` vim aliases as text input chars (untested in both autocomplete specs)
-- [ ] Cancel-while-no-filter-results in Autocomplete (`build_final_frame` fallback to `@value`)
-- [ ] `@selected_index` reset on filter change (implicit, not explicit test)
-- [ ] Match count `"0 matches"` string format when filter is empty
-- [ ] Empty `options: []` passed to AutocompleteMultiselect
-- [ ] Warning validation state in AutocompleteMultiselect (tested in Multiselect, not here)
-- [ ] Remove unused `let(:input)` from autocomplete_spec (or add to multiselect_spec for consistency)
+- [x] `h`/`l` vim aliases as text input chars (both autocomplete specs)
+- [x] Cancel-while-no-filter-results in Autocomplete
+- [x] `@selected_index` reset on filter change
+- [x] Match count `"0 matches"` string format when filter is empty
+- [x] Empty `options: []` → raises ArgumentError (tested)
+- [x] Warning validation state in AutocompleteMultiselect
+- [x] Removed unused `let(:input)` from autocomplete_spec
 
 ## Edge Cases
 

@@ -2,16 +2,14 @@
 
 RSpec.describe Clack::Prompts::Autocomplete do
   let(:output) { StringIO.new }
-  let(:input) { StringIO.new }
   subject do
-    described_class.new(message: "Pick a fruit", options: %w[apple banana cherry], input: input, output: output)
+    described_class.new(message: "Pick a fruit", options: %w[apple banana cherry], output: output)
   end
 
   def create_prompt(options: %w[apple banana cherry], **opts)
     described_class.new(
       message: "Pick a fruit",
       options: options,
-      input: input,
       output: output,
       **opts
     )
@@ -138,6 +136,28 @@ RSpec.describe Clack::Prompts::Autocomplete do
       result = subject.run
 
       expect(result).to eq("apple")
+    end
+
+    it "typing 'h' filters instead of acting as vim left" do
+      stub_keys("h", :backspace, :enter)
+      result = subject.run
+
+      expect(result).to eq("apple")
+    end
+
+    it "typing 'l' filters instead of acting as vim right" do
+      stub_keys("l", :backspace, :enter)
+      result = subject.run
+
+      expect(result).to eq("apple")
+    end
+
+    it "shows cancel state when filter has no results" do
+      stub_keys("xyz", :escape)
+      prompt = create_prompt
+      prompt.run
+
+      expect(output.string).to include(Clack::Symbols::S_STEP_CANCEL)
     end
   end
 

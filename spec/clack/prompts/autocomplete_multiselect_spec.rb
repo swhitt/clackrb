@@ -169,6 +169,62 @@ RSpec.describe Clack::Prompts::AutocompleteMultiselect do
 
       expect(result).to contain_exactly("apple", "banana")
     end
+
+    it "typing 'h' filters instead of acting as vim left" do
+      stub_keys("h", :space, :enter)
+      result = subject.run
+
+      # 'h' fuzzy-matches 'cherry' — proves it went to search, not vim navigation
+      expect(result).to eq(["cherry"])
+    end
+
+    it "typing 'l' filters instead of acting as vim right" do
+      stub_keys("l", :space, :enter)
+      result = subject.run
+
+      # 'l' fuzzy-matches 'apple' and 'elderberry'
+      expect(result.length).to eq(1)
+    end
+
+    it "resets cursor to first match when filter changes" do
+      # Navigate down to cherry, then type 'b' to filter — cursor resets to top
+      stub_keys(:down, :down, "b", :space, :enter)
+      result = subject.run
+
+      expect(result).to eq(["banana"])
+    end
+
+    it "shows 0 matches count for empty filter results" do
+      stub_keys("xyz", :backspace, :backspace, :backspace, :space, :enter)
+      subject.run
+
+      expect(output.string).to include("0 matches")
+    end
+
+    it "raises ArgumentError for empty options list" do
+      expect {
+        described_class.new(
+          message: "Select:",
+          options: [],
+          output: output
+        )
+      }.to raise_error(ArgumentError, /options cannot be empty/)
+    end
+
+    it "supports warning validation" do
+      prompt = described_class.new(
+        message: "Select:",
+        options: options,
+        required: false,
+        validate: ->(_) { Clack::Warning.new("Are you sure?") },
+        output: output
+      )
+      stub_keys(:enter, :enter)
+      result = prompt.run
+
+      expect(output.string).to include("Are you sure?")
+      expect(result).to eq([])
+    end
   end
 
   describe "custom filter" do
