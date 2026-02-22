@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [0.4.5] - 2026-02-22
 
 ### Fixed
 - `Autocomplete` and `AutocompleteMultiselect` now route all printable characters to the search field first, fixing vim aliases (`j`/`k`/`h`/`l`) hijacking text input
