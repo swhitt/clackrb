@@ -26,8 +26,7 @@ module Clack
         # Explicit override
         return ENV["CLACK_UNICODE"] == "1" if ENV["CLACK_UNICODE"]
 
-        # Default: TTY and not dumb terminal
-        $stdout.tty? && ENV["TERM"] != "dumb" && !ENV["NO_COLOR"]
+        Environment.colors_supported?
       end
     end
 
@@ -36,7 +35,7 @@ module Clack
     # Unicode cancel step indicator, or ASCII fallback.
     S_STEP_CANCEL = unicode? ? "■" : "x"
     # Unicode error step indicator, or ASCII fallback.
-    S_STEP_ERROR = unicode? ? "▲" : "x"
+    S_STEP_ERROR = unicode? ? "▲" : "!"
     # Unicode submit step indicator, or ASCII fallback.
     S_STEP_SUBMIT = unicode? ? "◇" : "o"
 
