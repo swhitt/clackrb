@@ -91,9 +91,9 @@ module Clack
           aliases[key] if ACTIONS.include?(aliases[key])
         end
 
-        # Check if a key is a printable character
+        # Check if a key is a printable character (handles combining marks and multi-codepoint grapheme clusters)
         def printable?(key)
-          key && key.length == 1 && key.ord >= PRINTABLE_CHAR_MIN
+          key && key.grapheme_clusters.length == 1 && key.ord >= PRINTABLE_CHAR_MIN
         end
 
         # Check if a key is a backspace/delete

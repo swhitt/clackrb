@@ -8,12 +8,7 @@ module Clack
   # - FORCE_COLOR environment variable forces colors on
   module Colors
     class << self
-      def enabled?
-        return true if ENV["FORCE_COLOR"] && ENV["FORCE_COLOR"] != "0"
-        return false if ENV["NO_COLOR"]
-
-        $stdout.tty?
-      end
+      def enabled? = Environment.colors_supported?
 
       # @!group Foreground Colors (standard)
 

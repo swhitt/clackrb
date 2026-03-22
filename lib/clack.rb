@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
 require_relative "clack/version"
+require_relative "clack/environment"
 require_relative "clack/symbols"
 require_relative "clack/colors"
-require_relative "clack/environment"
 require_relative "clack/utils"
 require_relative "clack/core/cursor"
 require_relative "clack/core/settings"
@@ -508,15 +508,20 @@ module Clack
   end
 end
 
-# Terminal cleanup on exit - show cursor if it was hidden
+# Terminal cleanup on exit — show cursor if it was hidden.
+# Uses raw write(2) for async-signal safety in trap handlers.
+CURSOR_SHOW = "\e[?25h"
+
 at_exit do
-  print "\e[?25h"
+  $stdout.print Clack::Core::Cursor.show
+rescue IOError, SystemCallError
+  # Output unavailable
 end
 
-# Chain INT handler to restore cursor before passing to previous handler
+# Chain INT handler to restore cursor before passing to previous handler.
 previous_int_handler = trap("INT") do
   begin
-    print "\e[?25h"
+    $stdout.write_nonblock(CURSOR_SHOW)
   rescue IOError, SystemCallError
     # Output unavailable — nothing we can do
   end
@@ -532,10 +537,10 @@ previous_int_handler = trap("INT") do
   end
 end
 
-# Handle SIGTERM similarly to INT — restore cursor on graceful kill
+# Handle SIGTERM similarly to INT — restore cursor on graceful kill.
 trap("TERM") do
   begin
-    print "\e[?25h"
+    $stdout.write_nonblock(CURSOR_SHOW)
   rescue IOError, SystemCallError
     # Output unavailable
   end

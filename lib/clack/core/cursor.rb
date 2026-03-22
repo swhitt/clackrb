@@ -13,9 +13,7 @@ module Clack
         def enabled?
           return @enabled unless @enabled.nil?
 
-          # Default: check if output supports ANSI escape sequences
-          return true if ENV["FORCE_COLOR"] && ENV["FORCE_COLOR"] != "0"
-          $stdout.tty? && ENV["TERM"] != "dumb" && !ENV["NO_COLOR"]
+          Environment.colors_supported?
         end
 
         # Visibility
