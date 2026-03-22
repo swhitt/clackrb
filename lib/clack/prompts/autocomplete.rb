@@ -121,17 +121,7 @@ module Clack
         lines.join
       end
 
-      def build_final_frame
-        lines = []
-        lines << "#{bar}\n"
-        lines << "#{symbol_for_state}  #{@message}\n"
-
-        display_value = @filtered[@selected_index]&.[](:label) || @value
-        display = (@state == :cancel) ? Colors.strikethrough(Colors.dim(display_value)) : Colors.dim(display_value)
-        lines << "#{bar}  #{display}\n"
-
-        lines.join
-      end
+      def final_display = @filtered[@selected_index]&.[](:label) || @value
 
       private
 

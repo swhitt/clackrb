@@ -67,17 +67,7 @@ module Clack
         lines.join
       end
 
-      def build_final_frame
-        lines = []
-        lines << "#{bar}\n"
-        lines << "#{symbol_for_state}  #{@message}\n"
-
-        display = format_value(@value)
-        styled = (@state == :cancel) ? Colors.strikethrough(Colors.dim(display)) : Colors.dim(display)
-        lines << "#{bar}  #{styled}\n"
-
-        lines.join
-      end
+      def final_display = format_value(@value)
 
       private
 

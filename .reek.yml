@@ -68,7 +68,7 @@ detectors:
     max_ifs: 4
 
   TooManyMethods:
-    max_methods: 30  # Base prompt needs methods for state machine, rendering, validation, key dispatch, CI mode
+    max_methods: 32  # Base prompt needs methods for state machine, rendering, validation, key dispatch, final display
 
 exclude_paths:
   - spec

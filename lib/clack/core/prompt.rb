@@ -316,12 +316,22 @@ module Clack
       end
 
       # Build the final frame shown after interaction ends.
-      # Override to show a different view for completed prompts.
+      # Default renders a one-line summary: bar, symbol+message, styled final value.
+      # Override {#final_display} to customize what value is shown.
+      # Override this entirely for multi-line final output (e.g. MultilineText).
       #
       # @return [String] the final frame content
       def build_final_frame
-        build_frame
+        "#{bar}\n" \
+          "#{symbol_for_state}  #{@message}\n" \
+          "#{bar}  #{styled_final_display}\n"
       end
+
+      # The text to display in the final frame after submit/cancel.
+      # Override in subclasses to customize (e.g. masked password, formatted date).
+      #
+      # @return [String]
+      def final_display = @value.to_s
 
       # Check if prompt has reached a terminal state.
       #
@@ -337,12 +347,17 @@ module Clack
       def run_ci_mode
         submit
         if @state == :error
-          @output.print "#{Colors.yellow("!")}  #{Colors.yellow("CI mode: validation failed for")} \"#{@message}\": #{@error_message}\n"
+          $stderr.print "#{Colors.yellow("!")}  #{Colors.yellow("CI mode: validation failed for")} \"#{@message}\": #{@error_message}\n"
         end
         @value
       end
 
       private
+
+      def styled_final_display
+        text = final_display
+        (@state == :cancel) ? Colors.strikethrough(Colors.dim(text)) : Colors.dim(text)
+      end
 
       def warn_narrow_terminal
         return unless Environment.tty?(@output)

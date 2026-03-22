@@ -63,17 +63,7 @@ module Clack
         lines.join
       end
 
-      def build_final_frame
-        lines = []
-        lines << "#{bar}\n"
-        lines << "#{symbol_for_state}  #{@message}\n"
-
-        label = @options.find { |o| o[:value] == @value }&.dig(:label).to_s
-        display = (@state == :cancel) ? Colors.strikethrough(Colors.dim(label)) : Colors.dim(label)
-        lines << "#{bar}  #{display}\n"
-
-        lines.join
-      end
+      def final_display = @options.find { |o| o[:value] == @value }&.dig(:label).to_s
 
       private
 

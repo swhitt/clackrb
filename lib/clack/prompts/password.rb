@@ -51,17 +51,7 @@ module Clack
         lines.join
       end
 
-      def build_final_frame
-        lines = []
-        lines << "#{bar}\n"
-        lines << "#{symbol_for_state}  #{@message}\n"
-
-        masked = @mask * @value.grapheme_clusters.length
-        display = (@state == :cancel) ? Colors.strikethrough(Colors.dim(masked)) : Colors.dim(masked)
-        lines << "#{bar}  #{display}\n"
-
-        lines.join
-      end
+      def final_display = @mask * @value.grapheme_clusters.length
 
       private
 

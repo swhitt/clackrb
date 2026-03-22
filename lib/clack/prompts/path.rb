@@ -124,17 +124,6 @@ module Clack
         lines.join
       end
 
-      def build_final_frame
-        lines = []
-        lines << "#{bar}\n"
-        lines << "#{symbol_for_state}  #{@message}\n"
-
-        display = (@state == :cancel) ? Colors.strikethrough(Colors.dim(@value)) : Colors.dim(@value)
-        lines << "#{bar}  #{display}\n"
-
-        lines.join
-      end
-
       private
 
       def update_suggestions

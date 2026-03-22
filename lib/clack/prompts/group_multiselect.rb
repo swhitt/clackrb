@@ -126,18 +126,7 @@ module Clack
         lines.join
       end
 
-      def build_final_frame
-        lines = []
-        lines << "#{bar}\n"
-        lines << "#{symbol_for_state}  #{@message}\n"
-
-        labels = selected_options.map { |o| o[:label] }
-        display_text = labels.join(", ")
-        display = (@state == :cancel) ? Colors.strikethrough(Colors.dim(display_text)) : Colors.dim(display_text)
-        lines << "#{bar}  #{display}\n"
-
-        lines.join
-      end
+      def final_display = selected_options.map { |o| o[:label] }.join(", ")
 
       private
 

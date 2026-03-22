@@ -99,17 +99,7 @@ module Clack
         lines.join
       end
 
-      def build_final_frame
-        lines = []
-        lines << "#{bar}\n"
-        lines << "#{symbol_for_state}  #{@message}\n"
-
-        display_text = formatted_date
-        display = (@state == :cancel) ? Colors.strikethrough(Colors.dim(display_text)) : Colors.dim(display_text)
-        lines << "#{bar}  #{display}\n"
-
-        lines.join
-      end
+      def final_display = formatted_date
 
       private
 
@@ -164,28 +154,7 @@ module Clack
       def adjust_segment(delta)
         commit_input_buffer
         @input_buffer = ""
-
-        case current_segment_type
-        when :year
-          @year = (@year + delta).clamp(1, 9999)
-          clamp_day_to_month
-        when :month
-          @month += delta
-          @month = wrap_value(@month, 1, 12)
-          clamp_day_to_month
-        when :day
-          max_day = days_in_month(@year, @month)
-          @day = wrap_value(@day + delta, 1, max_day)
-        end
-
-        enforce_bounds
-      end
-
-      def wrap_value(val, min, max)
-        return min if val > max
-        return max if val < min
-
-        val
+        update_segment(segment_value + delta, wrap: true)
       end
 
       def handle_digit(digit)
@@ -201,21 +170,36 @@ module Clack
       def commit_input_buffer
         return if @input_buffer.empty?
 
-        value = @input_buffer.to_i
+        update_segment(@input_buffer.to_i)
         @input_buffer = ""
+      end
+
+      def segment_value
+        case current_segment_type
+        when :year then @year
+        when :month then @month
+        when :day then @day
+        end
+      end
+
+      def update_segment(value, wrap: false)
+        constrain = wrap ? method(:wrap_value) : :clamp.to_proc
 
         case current_segment_type
-        when :year
-          @year = value.clamp(1, 9999)
-          clamp_day_to_month
-        when :month
-          @month = value.clamp(1, 12)
-          clamp_day_to_month
-        when :day
-          @day = value.clamp(1, days_in_month(@year, @month))
+        when :year then @year = value.clamp(1, 9999)
+        when :month then @month = constrain.call(value, 1, 12)
+        when :day then @day = constrain.call(value, 1, days_in_month(@year, @month))
         end
 
+        clamp_day_to_month
         enforce_bounds
+      end
+
+      def wrap_value(val, min, max)
+        return min if val > max
+        return max if val < min
+
+        val
       end
 
       def current_segment_type = FORMATS[@format][:order][@segment]
