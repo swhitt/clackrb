@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.4.6] - 2026-03-22
+
+### Fixed
+- `Settings.printable?` now accepts combining characters and multi-codepoint grapheme clusters (accented letters, emoji)
+- Signal handlers use `write_nonblock` instead of `print` for async safety
+- `S_STEP_ERROR` ASCII fallback changed from `x` to `!` (was identical to `S_STEP_CANCEL`)
+- CI mode validation warnings now print to stderr instead of stdout
+
+### Changed
+- Colors, Cursor, and Symbols ANSI detection unified through `Environment.colors_supported?`
+- Extracted `build_final_frame` template into `Core::Prompt` with `final_display` hook (11 prompt classes simplified)
+- Date prompt: consolidated duplicated segment logic into `update_segment`
+
 ## [0.4.5] - 2026-02-22
 
 ### Fixed
