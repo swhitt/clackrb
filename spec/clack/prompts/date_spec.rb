@@ -304,6 +304,31 @@ RSpec.describe Clack::Prompts::Date do
       # Month 15 is clamped to 12
       expect(result.month).to eq(12)
     end
+
+    it "clamps digit input but wraps arrow keys" do
+      # Digit input: typing 00 for month clamps to 1
+      stub_keys(:tab, "0", "0", :enter)
+      prompt = described_class.new(
+        message: "Date?",
+        format: :iso,
+        initial_value: Date.new(2024, 6, 15),
+        output: output
+      )
+      result = prompt.run
+      expect(result.month).to eq(1)
+
+      # Arrow key: pressing down from month 1 wraps to 12
+      output2 = StringIO.new
+      stub_keys(:tab, :down, :enter)
+      prompt2 = described_class.new(
+        message: "Date?",
+        format: :iso,
+        initial_value: Date.new(2024, 1, 15),
+        output: output2
+      )
+      result2 = prompt2.run
+      expect(result2.month).to eq(12)
+    end
   end
 
   describe "day clamping" do

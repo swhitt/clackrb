@@ -1,6 +1,16 @@
 # frozen_string_literal: true
 
 RSpec.describe Clack::Colors do
+  describe ".enabled?" do
+    it "delegates to Environment.colors_supported?" do
+      allow(Clack::Environment).to receive(:colors_supported?).and_return(true)
+      expect(Clack::Colors.enabled?).to be true
+
+      allow(Clack::Environment).to receive(:colors_supported?).and_return(false)
+      expect(Clack::Colors.enabled?).to be false
+    end
+  end
+
   describe "color methods" do
     it "wraps text in ANSI codes when enabled" do
       allow(Clack::Colors).to receive(:enabled?).and_return(true)

@@ -354,6 +354,45 @@ RSpec.describe Clack::Core::Prompt do
     end
   end
 
+  describe "#build_final_frame" do
+    it "shows dimmed value on submit" do
+      stub_keys("hi", :enter)
+      prompt = test_class.new(message: "Input", output: output)
+      prompt.run
+
+      # Final frame uses the base class template
+      expect(output.string).to include("hi")
+    end
+
+    it "shows strikethrough value on cancel" do
+      stub_keys("hi", :escape)
+      prompt = test_class.new(message: "Input", output: output)
+      prompt.run
+
+      expect(prompt.state).to eq(:cancel)
+    end
+
+    it "delegates to final_display for the display text" do
+      custom_class = Class.new(test_class) do
+        def final_display = "CUSTOM_FINAL"
+      end
+
+      stub_keys(:enter)
+      prompt = custom_class.new(message: "Input", output: output)
+      prompt.run
+
+      expect(output.string).to include("CUSTOM_FINAL")
+    end
+
+    it "defaults final_display to @value.to_s" do
+      stub_keys("abc", :enter)
+      prompt = test_class.new(message: "Input", output: output)
+      prompt.run
+
+      expect(prompt.send(:final_display)).to eq("abc")
+    end
+  end
+
   describe "rendering" do
     it "clears previous frame before rendering" do
       stub_keys("a", "b", :enter)

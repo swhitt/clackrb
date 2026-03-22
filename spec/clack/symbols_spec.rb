@@ -8,6 +8,20 @@ RSpec.describe Clack::Symbols do
       expect(Clack::Symbols::S_STEP_ERROR).not_to be_empty
       expect(Clack::Symbols::S_STEP_SUBMIT).not_to be_empty
     end
+
+    it "uses distinct symbols for error and cancel states" do
+      expect(Clack::Symbols::S_STEP_ERROR).not_to eq(Clack::Symbols::S_STEP_CANCEL)
+    end
+
+    it "uses distinct symbols for all four states" do
+      symbols = [
+        Clack::Symbols::S_STEP_ACTIVE,
+        Clack::Symbols::S_STEP_SUBMIT,
+        Clack::Symbols::S_STEP_CANCEL,
+        Clack::Symbols::S_STEP_ERROR
+      ]
+      expect(symbols.uniq.length).to eq(4)
+    end
   end
 
   describe "radio buttons" do

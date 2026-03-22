@@ -113,6 +113,23 @@ RSpec.describe Clack::Core::Settings do
       expect(described_class.printable?(nil)).to be_falsey
       expect(described_class.printable?("ab")).to be_falsey
     end
+
+    it "accepts single-codepoint accented characters" do
+      expect(described_class.printable?("é")).to be true
+      expect(described_class.printable?("ñ")).to be true
+      expect(described_class.printable?("ü")).to be true
+    end
+
+    it "accepts combining character sequences as single grapheme clusters" do
+      # e + combining acute accent = one grapheme cluster
+      combining_e = "e\u0301"
+      expect(combining_e.length).to eq(2) # two codepoints
+      expect(described_class.printable?(combining_e)).to be true
+    end
+
+    it "rejects multi-grapheme sequences" do
+      expect(described_class.printable?("ab")).to be false
+    end
   end
 
   describe ".backspace?" do

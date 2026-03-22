@@ -102,6 +102,19 @@ RSpec.describe "CI mode integration" do
     expect(result).to contain_exactly("a", "c")
   end
 
+  it "prints validation warnings to stderr, not stdout" do
+    output = StringIO.new
+    expect {
+      Clack.text(
+        message: "Name?",
+        validate: ->(v) { "Required" if v.empty? },
+        output: output
+      )
+    }.to output(/CI mode: validation failed/).to_stderr
+
+    expect(output.string).not_to include("CI mode")
+  end
+
   it "applies transforms in CI mode" do
     output = StringIO.new
     result = Clack.text(
