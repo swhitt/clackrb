@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.5.0] - 2026-03-27
+
+### Breaking
+- Renamed `@cursor` to `@option_index` in all option-based prompts (affects subclasses)
+- Signal handlers and `at_exit` moved into `Clack.setup!` (called automatically on first prompt)
+
+### Changed
+- Extracted `SelectionManager` module shared by Multiselect, AutocompleteMultiselect, GroupMultiselect
+- SIGWINCH handler is now async-signal-safe (sets flag, flushed in render loop)
+- `OptionsHelper` navigation generalized via `navigable_items`
+- `Multiselect` raises `ArgumentError` on `initial_value:` (must use `initial_values:`)
+
+### Added
+- `Clack.setup!` / `Clack.setup?` for explicit signal handler installation
+- `KeyQueue` in `Clack::Testing` for deterministic key simulation in specs
+- New specs for SelectionManager, OptionsHelper, Prompt internals, CI mode
+
+### Docs
+- README rewritten with badges, before/after comparison, reorganized sections
+
 ## [0.4.6] - 2026-03-22
 
 ### Fixed
