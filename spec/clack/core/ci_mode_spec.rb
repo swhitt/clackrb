@@ -125,4 +125,25 @@ RSpec.describe "CI mode integration" do
     )
     expect(result).to eq("ALICE")
   end
+
+  it "returns CANCEL when validation fails" do
+    output = StringIO.new
+    result = Clack.text(
+      message: "Name?",
+      validate: ->(v) { "Required" if v.empty? },
+      output: output
+    )
+    expect(Clack.cancel?(result)).to be true
+  end
+
+  it "returns CANCEL for required multiselect with no initial values" do
+    output = StringIO.new
+    result = Clack.multiselect(
+      message: "Pick",
+      options: %w[a b c],
+      required: true,
+      output: output
+    )
+    expect(Clack.cancel?(result)).to be true
+  end
 end

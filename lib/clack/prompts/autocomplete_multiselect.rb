@@ -29,7 +29,7 @@ module Clack
     class AutocompleteMultiselect < Core::Prompt
       include Core::OptionsHelper
       include Core::TextInputHelper
-      include Core::ScrollHelper
+      include Core::SelectionManager
 
       # @param message [String] the prompt message
       # @param options [Array<Hash, String>] list of options to filter
@@ -42,6 +42,9 @@ module Clack
       #   across label, value, and hint is used.
       # @param opts [Hash] additional options passed to {Core::Prompt}
       def initialize(message:, options:, max_items: 5, placeholder: nil, required: true, initial_values: [], filter: nil, **opts)
+        if opts.key?(:initial_value)
+          raise ArgumentError, "AutocompleteMultiselect uses initial_values: (plural), not initial_value:"
+        end
         super(message:, **opts)
         @all_options = normalize_options(options)
         @max_items = max_items
@@ -50,7 +53,7 @@ module Clack
         @filter = filter
         @search_text = ""
         @cursor = 0
-        @selected_index = 0
+        @option_index = 0
         @scroll_offset = 0
         valid_values = Set.new(@all_options.map { |o| o[:value] })
         @selected = Set.new(initial_values) & valid_values
@@ -84,24 +87,16 @@ module Clack
       def toggle_current
         return if @filtered.empty?
 
-        opt = @filtered[@selected_index]
+        opt = @filtered[@option_index]
         return if opt[:disabled]
 
-        if @selected.include?(opt[:value])
-          @selected.delete(opt[:value])
-        else
-          @selected.add(opt[:value])
-        end
+        toggle_value(opt[:value])
       end
 
       def submit
-        if @required && @selected.empty?
-          @error_message = "Please select at least one option. Press #{Colors.cyan("space")} to select, #{Colors.cyan("enter")} to submit"
-          @state = :error
-          return
-        end
+        return unless validate_selection
 
-        @value = @selected.to_a
+        update_selection_value
         super
       end
 
@@ -112,9 +107,9 @@ module Clack
         lines << help_line
         lines << "#{active_bar}  #{Colors.dim("Search:")} #{input_display}#{match_count}\n"
 
-        visible_items.each_with_index do |opt, idx|
+        visible_options.each_with_index do |opt, idx|
           actual_idx = @scroll_offset + idx
-          lines << "#{active_bar}  #{option_display(opt, actual_idx == @selected_index)}\n"
+          lines << "#{active_bar}  #{option_display(opt, actual_idx == @option_index)}\n"
         end
 
         lines << "#{active_bar}  #{Colors.yellow("No matches found")}\n" if @filtered.empty? && !@search_text.empty?
@@ -130,9 +125,7 @@ module Clack
         lines.join
       end
 
-      def final_display
-        @all_options.select { |o| @selected.include?(o[:value]) }.map { |o| o[:label] }.join(", ")
-      end
+      def final_display = selected_labels(@all_options)
 
       private
 
@@ -146,7 +139,7 @@ module Clack
       def handle_text_input(key)
         return unless super
 
-        @selected_index = 0
+        @option_index = 0
         @scroll_offset = 0
         update_filtered
       end
@@ -173,7 +166,7 @@ module Clack
         end
       end
 
-      def scroll_items = @filtered
+      def navigable_items = @filtered
 
       def option_display(opt, active)
         selected = @selected.include?(opt[:value])

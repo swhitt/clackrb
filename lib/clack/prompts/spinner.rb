@@ -49,9 +49,7 @@ module Clack
         @frames = frames || Symbols::SPINNER_FRAMES
         @delay = delay || Symbols::SPINNER_DELAY
         @style_frame = style_frame || ->(frame) { Colors.magenta(frame) }
-        @running = false
-        @cancelled = false
-        @finished = false
+        @state = :idle
         @message = ""
         @thread = nil
         @frame_idx = 0
@@ -66,12 +64,10 @@ module Clack
       # @return [self] for method chaining
       def start(message = nil)
         @mutex.synchronize do
-          return if @running
+          return unless @state == :idle
 
           @message = remove_trailing_dots(message || "")
-          @running = true
-          @cancelled = false
-          @finished = false
+          @state = :running
           @prev_frame = nil
           @frame_idx = 0
           @start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
@@ -102,7 +98,7 @@ module Clack
       #
       # @param message [String, nil] cancellation message
       def cancel(message = nil)
-        finish(:cancel, message)
+        finish(:cancelled, message)
       end
 
       # Update the spinner message while running.
@@ -116,7 +112,7 @@ module Clack
       # Clear the spinner without showing a final message.
       def clear
         @mutex.synchronize do
-          @running = false
+          @state = :idle
         end
         @thread&.join
         restore_cursor
@@ -124,7 +120,7 @@ module Clack
         @output.print Core::Cursor.show
       end
 
-      def cancelled? = @mutex.synchronize { @cancelled }
+      def cancelled? = @mutex.synchronize { @state == :cancelled }
 
       private
 
@@ -139,7 +135,8 @@ module Clack
 
       def spin_loop
         frame_count = 0
-        while @mutex.synchronize { @running }
+        while @mutex.synchronize { @state == :running }
+          break if @output.closed?
           frame = @style_frame.call(@frames[@frame_idx])
           msg = @mutex.synchronize { @message }
           render_frame(frame, msg, frame_count)
@@ -171,28 +168,26 @@ module Clack
         end
       end
 
-      def finish(state, message)
+      def finish(end_state, message)
         thread_to_join = nil
         msg, timer_suffix = @mutex.synchronize do
-          return if @finished
+          return unless @state == :running
 
-          @finished = true
-          @running = false
+          @state = end_state
           thread_to_join = @thread
           suffix = (@indicator == :timer && @start_time) ? " #{format_timer}" : ""
           [message || @message, suffix]
         end
 
-        thread_to_join&.join
+        thread_to_join&.join(5)
+        thread_to_join&.kill if thread_to_join&.alive?
 
         @output.print "\r#{Core::Cursor.clear_to_end}"
 
-        symbol = case state
+        symbol = case end_state
         when :success then Colors.green(Symbols::S_STEP_SUBMIT)
         when :error then Colors.red(Symbols::S_STEP_ERROR)
-        when :cancel
-          @mutex.synchronize { @cancelled = true }
-          Colors.red(Symbols::S_STEP_CANCEL)
+        when :cancelled then Colors.red(Symbols::S_STEP_CANCEL)
         end
 
         @output.print "#{symbol}  #{msg}#{timer_suffix}\n"

@@ -375,5 +375,11 @@ RSpec.describe Clack::Prompts::Multiselect do
       # First submit triggers warning, :down clears it AND moves cursor, :space selects b
       expect(result).to contain_exactly("a", "b")
     end
+
+    it "raises ArgumentError when initial_value (singular) is passed" do
+      expect {
+        described_class.new(message: "Choose:", options: options, initial_value: "a", output: output)
+      }.to raise_error(ArgumentError, /initial_values.*plural/)
+    end
   end
 end

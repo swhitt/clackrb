@@ -33,42 +33,20 @@ module Clack
 
       protected
 
-      def handle_key(key)
-        return if terminal_state?
-
-        action = Core::Settings.action?(key)
-
+      def handle_input(key, action)
         case action
-        when :cancel
-          @state = :cancel
-        when :enter
-          submit
-        when :left, :up
-          @value = true
-        when :right, :down
-          @value = false
+        when :left, :up then @value = true
+        when :right, :down then @value = false
         else
-          handle_char(key)
-        end
-      end
-
-      def handle_char(key)
-        case key&.downcase
-        when "y"
-          @value = true
-        when "n"
-          @value = false
+          case key&.downcase
+          when "y" then @value = true
+          when "n" then @value = false
+          end
         end
       end
 
       def build_frame
-        lines = []
-        lines << "#{bar}\n"
-        lines << "#{symbol_for_state}  #{@message}\n"
-        lines << help_line
-        lines << "#{bar}  #{options_display}\n"
-        lines << "#{Colors.gray(Symbols::S_BAR_END)}\n"
-        lines.join
+        "#{frame_header}#{bar}  #{options_display}\n#{frame_footer}"
       end
 
       def final_display = @value ? @active_label : @inactive_label

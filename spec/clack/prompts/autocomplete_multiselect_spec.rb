@@ -211,6 +211,12 @@ RSpec.describe Clack::Prompts::AutocompleteMultiselect do
       }.to raise_error(ArgumentError, /options cannot be empty/)
     end
 
+    it "raises ArgumentError when initial_value (singular) is passed" do
+      expect {
+        described_class.new(message: "Select:", options: options, initial_value: "apple", output: output)
+      }.to raise_error(ArgumentError, /initial_values.*plural/)
+    end
+
     it "supports warning validation" do
       prompt = described_class.new(
         message: "Select:",

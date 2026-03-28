@@ -40,44 +40,30 @@ module Clack
       def initialize(message:, options:, initial_value: nil, max_items: nil, **opts)
         super(message:, **opts)
         @options = normalize_options(options)
-        @cursor = find_initial_cursor(initial_value)
         @max_items = max_items
         @scroll_offset = 0
+        @option_index = find_initial_cursor(initial_value)
         update_value
       end
 
       protected
 
-      def handle_key(key)
-        return if terminal_state?
-
-        action = Core::Settings.action?(key)
-
+      def handle_input(_key, action)
         case action
-        when :cancel
-          @state = :cancel
-        when :enter
-          submit unless current_option[:disabled]
-        when :up, :left
-          move_cursor(-1)
-        when :down, :right
-          move_cursor(1)
+        when :up, :left then move_cursor(-1)
+        when :down, :right then move_cursor(1)
         end
       end
 
+      def can_submit? = !current_option[:disabled]
+
       def build_frame
-        lines = []
-        lines << "#{bar}\n"
-        lines << "#{symbol_for_state}  #{@message}\n"
-        lines << help_line
-
-        visible_options.each_with_index do |opt, idx|
+        option_lines = visible_options.each_with_index.map do |opt, idx|
           actual_idx = @scroll_offset + idx
-          lines << "#{bar}  #{option_display(opt, actual_idx == @cursor)}\n"
-        end
+          "#{bar}  #{option_display(opt, actual_idx == @option_index)}\n"
+        end.join
 
-        lines << "#{Colors.gray(Symbols::S_BAR_END)}\n"
-        lines.join
+        "#{frame_header}#{option_lines}#{frame_footer}"
       end
 
       def final_display = current_option[:label]
@@ -91,7 +77,7 @@ module Clack
 
       def update_value = @value = current_option[:value]
 
-      def current_option = @options[@cursor]
+      def current_option = @options[@option_index]
 
       def option_display(opt, active)
         return disabled_option_display(opt) if opt[:disabled]

@@ -335,5 +335,11 @@ RSpec.describe Clack::Prompts::GroupMultiselect do
         expect(bar_count).to be > 6 # More than without spacing
       end
     end
+
+    it "raises ArgumentError when initial_value (singular) is passed" do
+      expect {
+        described_class.new(message: "Select:", options: options, initial_value: "react", output: output)
+      }.to raise_error(ArgumentError, /initial_values.*plural/)
+    end
   end
 end

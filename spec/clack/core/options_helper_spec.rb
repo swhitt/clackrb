@@ -6,12 +6,12 @@ RSpec.describe Clack::Core::OptionsHelper do
     Class.new do
       include Clack::Core::OptionsHelper
 
-      attr_accessor :options, :cursor, :max_items, :scroll_offset
+      attr_accessor :options, :option_index, :max_items, :scroll_offset
 
       def initialize(options: [], max_items: nil)
         @options = options
         @max_items = max_items
-        @cursor = 0
+        @option_index = 0
         @scroll_offset = 0
       end
     end
@@ -309,11 +309,11 @@ RSpec.describe Clack::Core::OptionsHelper do
         options: [{value: "a", disabled: false}, {value: "b", disabled: false}],
         max_items: nil
       )
-      subject.cursor = 0
+      subject.option_index = 0
 
       subject.move_cursor(1)
 
-      expect(subject.cursor).to eq(1)
+      expect(subject.option_index).to eq(1)
     end
 
     it "skips disabled options" do
@@ -322,11 +322,11 @@ RSpec.describe Clack::Core::OptionsHelper do
         {value: "b", disabled: true},
         {value: "c", disabled: false}
       ])
-      subject.cursor = 0
+      subject.option_index = 0
 
       subject.move_cursor(1)
 
-      expect(subject.cursor).to eq(2)
+      expect(subject.option_index).to eq(2)
     end
   end
 
@@ -363,7 +363,7 @@ RSpec.describe Clack::Core::OptionsHelper do
         options: (1..10).map { |i| {value: i} },
         max_items: nil
       )
-      subject.cursor = 5
+      subject.option_index = 5
       subject.scroll_offset = 0
 
       subject.update_scroll
@@ -376,7 +376,7 @@ RSpec.describe Clack::Core::OptionsHelper do
         options: [{value: 1}, {value: 2}],
         max_items: 5
       )
-      subject.cursor = 1
+      subject.option_index = 1
       subject.scroll_offset = 0
 
       subject.update_scroll
@@ -390,7 +390,7 @@ RSpec.describe Clack::Core::OptionsHelper do
         max_items: 3
       )
       subject.scroll_offset = 0
-      subject.cursor = 4 # Beyond visible window (0, 1, 2)
+      subject.option_index = 4 # Beyond visible window (0, 1, 2)
 
       subject.update_scroll
 
@@ -403,7 +403,7 @@ RSpec.describe Clack::Core::OptionsHelper do
         max_items: 3
       )
       subject.scroll_offset = 5
-      subject.cursor = 3 # Above visible window (5, 6, 7)
+      subject.option_index = 3 # Above visible window (5, 6, 7)
 
       subject.update_scroll
 
@@ -416,13 +416,153 @@ RSpec.describe Clack::Core::OptionsHelper do
         max_items: 3
       )
       subject.scroll_offset = 0
-      subject.cursor = 3
+      subject.option_index = 3
 
       subject.update_scroll
 
       # Cursor 3 should be at position 2 (bottom) of 3-item window
       # So scroll_offset should be 1 (showing items 1, 2, 3)
       expect(subject.scroll_offset).to eq(1)
+    end
+  end
+
+  describe ".normalize_option" do
+    it "converts a string to an option hash" do
+      result = Clack::Core::OptionsHelper.normalize_option("hello")
+
+      expect(result).to eq({value: "hello", label: "hello", hint: nil, disabled: false})
+    end
+
+    it "converts a symbol to an option hash" do
+      result = Clack::Core::OptionsHelper.normalize_option(:foo)
+
+      expect(result).to eq({value: :foo, label: "foo", hint: nil, disabled: false})
+    end
+
+    it "converts an integer to an option hash" do
+      result = Clack::Core::OptionsHelper.normalize_option(42)
+
+      expect(result).to eq({value: 42, label: "42", hint: nil, disabled: false})
+    end
+
+    it "normalizes a hash with all keys" do
+      result = Clack::Core::OptionsHelper.normalize_option(
+        {value: "v", label: "Label", hint: "Hint", disabled: true}
+      )
+
+      expect(result).to eq({value: "v", label: "Label", hint: "Hint", disabled: true})
+    end
+
+    it "defaults label to value.to_s when label is missing" do
+      result = Clack::Core::OptionsHelper.normalize_option({value: :my_val})
+
+      expect(result[:label]).to eq("my_val")
+    end
+
+    it "defaults hint to nil when missing" do
+      result = Clack::Core::OptionsHelper.normalize_option({value: "a", label: "A"})
+
+      expect(result[:hint]).to be_nil
+    end
+
+    it "defaults disabled to false when missing" do
+      result = Clack::Core::OptionsHelper.normalize_option({value: "a", label: "A"})
+
+      expect(result[:disabled]).to eq(false)
+    end
+  end
+
+  describe "#first_enabled_index" do
+    it "returns 0 when all options are enabled" do
+      subject = test_class.new(options: [
+        {value: "a", disabled: false},
+        {value: "b", disabled: false},
+        {value: "c", disabled: false}
+      ])
+
+      expect(subject.first_enabled_index).to eq(0)
+    end
+
+    it "skips disabled options at the start" do
+      subject = test_class.new(options: [
+        {value: "a", disabled: true},
+        {value: "b", disabled: true},
+        {value: "c", disabled: false}
+      ])
+
+      expect(subject.first_enabled_index).to eq(2)
+    end
+
+    it "returns first enabled when only one is enabled" do
+      subject = test_class.new(options: [
+        {value: "a", disabled: true},
+        {value: "b", disabled: false},
+        {value: "c", disabled: true}
+      ])
+
+      expect(subject.first_enabled_index).to eq(1)
+    end
+  end
+
+  describe "#move_selection" do
+    it "wraps forward past the end" do
+      subject = test_class.new(options: [
+        {value: "a", disabled: false},
+        {value: "b", disabled: false},
+        {value: "c", disabled: false}
+      ])
+      subject.option_index = 2
+
+      subject.move_selection(1)
+
+      expect(subject.option_index).to eq(0)
+    end
+
+    it "wraps backward past the beginning" do
+      subject = test_class.new(options: [
+        {value: "a", disabled: false},
+        {value: "b", disabled: false},
+        {value: "c", disabled: false}
+      ])
+      subject.option_index = 0
+
+      subject.move_selection(-1)
+
+      expect(subject.option_index).to eq(2)
+    end
+
+    it "does not skip disabled items" do
+      subject = test_class.new(options: [
+        {value: "a", disabled: false},
+        {value: "b", disabled: true},
+        {value: "c", disabled: false}
+      ])
+      subject.option_index = 0
+
+      subject.move_selection(1)
+
+      expect(subject.option_index).to eq(1)
+    end
+
+    it "does nothing for an empty list" do
+      subject = test_class.new(options: [])
+      subject.option_index = 0
+
+      subject.move_selection(1)
+
+      expect(subject.option_index).to eq(0)
+    end
+  end
+
+  describe "#navigable_items" do
+    it "returns @options by default" do
+      options = [
+        {value: "a", disabled: false},
+        {value: "b", disabled: false}
+      ]
+      subject = test_class.new(options: options)
+
+      expect(subject.navigable_items).to equal(subject.options)
     end
   end
 end

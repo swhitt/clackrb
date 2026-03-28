@@ -13,6 +13,7 @@ require_relative "clack/core/options_helper"
 require_relative "clack/core/text_input_helper"
 require_relative "clack/core/scroll_helper"
 require_relative "clack/core/fuzzy_matcher"
+require_relative "clack/core/selection_manager"
 require_relative "clack/core/ci_mode"
 require_relative "clack/prompts/text"
 require_relative "clack/prompts/multiline_text"
@@ -505,47 +506,80 @@ module Clack
       load demo_path
       run_demo
     end
-  end
-end
 
-# Terminal cleanup on exit — show cursor if it was hidden.
-# Uses raw write(2) for async-signal safety in trap handlers.
-CURSOR_SHOW = "\e[?25h"
+    # Install signal handlers for clean terminal cleanup.
+    # Call this once in your CLI entry point. Handles INT, TERM, and SIGWINCH.
+    # Without calling this, Ctrl+C may leave the cursor hidden.
+    #
+    # @return [void]
+    def setup!
+      return if @setup_done
 
-at_exit do
-  $stdout.print Clack::Core::Cursor.show
-rescue IOError, SystemCallError
-  # Output unavailable
-end
-
-# Chain INT handler to restore cursor before passing to previous handler.
-previous_int_handler = trap("INT") do
-  begin
-    $stdout.write_nonblock(CURSOR_SHOW)
-  rescue IOError, SystemCallError
-    # Output unavailable — nothing we can do
-  end
-  case previous_int_handler
-  when Proc
-    begin
-      previous_int_handler.call
-    rescue
-      exit(130)
+      @setup_done = true
+      install_signal_handlers
+      install_at_exit
+      Core::Prompt.setup_signal_handler
     end
-  when "DEFAULT", "SYSTEM_DEFAULT" then exit(130)
-  else exit(130)
+
+    # @return [Boolean] whether setup! has been called
+    def setup? = !!@setup_done
+
+    private
+
+    CURSOR_SHOW = "\e[?25h"
+    private_constant :CURSOR_SHOW
+
+    def install_at_exit
+      at_exit do
+        $stdout.print Core::Cursor.show
+      rescue IOError, SystemCallError
+        # Output unavailable
+      end
+    end
+
+    def install_signal_handlers
+      # Chain INT handler to restore cursor before passing to previous handler.
+      previous_int_handler = trap("INT") do
+        begin
+          $stdout.write_nonblock(CURSOR_SHOW)
+        rescue IOError, SystemCallError
+          # Output unavailable
+        end
+        case previous_int_handler
+        when Proc
+          begin
+            previous_int_handler.call
+          rescue
+            exit(130)
+          end
+        when "DEFAULT", "SYSTEM_DEFAULT" then exit(130)
+        else exit(130)
+        end
+      end
+
+      # Chain TERM handler to restore cursor, then delegate to previous handler.
+      previous_term_handler = trap("TERM") do
+        begin
+          $stdout.write_nonblock(CURSOR_SHOW)
+        rescue IOError, SystemCallError
+          # Output unavailable
+        end
+        case previous_term_handler
+        when Proc
+          begin
+            previous_term_handler.call
+          rescue
+            exit(143)
+          end
+        when "DEFAULT", "SYSTEM_DEFAULT" then exit(143)
+        else exit(143)
+        end
+      end
+    end
   end
 end
 
-# Handle SIGTERM similarly to INT — restore cursor on graceful kill.
-trap("TERM") do
-  begin
-    $stdout.write_nonblock(CURSOR_SHOW)
-  rescue IOError, SystemCallError
-    # Output unavailable
-  end
-  exit(143)
-end
-
-# Set up SIGWINCH handler for terminal resize
-Clack::Core::Prompt.setup_signal_handler
+# Auto-setup for backwards compatibility.
+# Libraries that require 'clack' get signal handlers installed automatically.
+# To opt out, set CLACK_NO_AUTO_SETUP=1 before requiring clack.
+Clack.setup! unless ENV["CLACK_NO_AUTO_SETUP"]

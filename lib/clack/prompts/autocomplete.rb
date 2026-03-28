@@ -35,7 +35,6 @@ module Clack
     class Autocomplete < Core::Prompt
       include Core::OptionsHelper
       include Core::TextInputHelper
-      include Core::ScrollHelper
 
       # @param message [String] the prompt message
       # @param options [Array<Hash, String>] list of options to filter
@@ -51,9 +50,9 @@ module Clack
         @max_items = max_items
         @placeholder = placeholder
         @filter = filter
-        @value = ""
+        @search_text = ""
         @cursor = 0
-        @selected_index = 0
+        @option_index = 0
         @scroll_offset = 0
         update_filtered
       end
@@ -81,10 +80,17 @@ module Clack
         end
       end
 
+      # Use @search_text as text input backing store
+      def text_value = @search_text
+
+      def text_value=(val)
+        @search_text = val
+      end
+
       def handle_text_input(key)
         return unless super
 
-        @selected_index = 0
+        @option_index = 0
         @scroll_offset = 0
         update_filtered
       end
@@ -96,7 +102,7 @@ module Clack
           return
         end
 
-        @value = @filtered[@selected_index][:value]
+        @value = @filtered[@option_index][:value]
         submit
       end
 
@@ -107,9 +113,9 @@ module Clack
         lines << help_line
         lines << "#{active_bar}  #{input_display}\n"
 
-        visible_items.each_with_index do |opt, idx|
+        visible_options.each_with_index do |opt, idx|
           actual_idx = @scroll_offset + idx
-          lines << "#{bar}  #{option_display(opt, actual_idx == @selected_index)}\n"
+          lines << "#{bar}  #{option_display(opt, actual_idx == @option_index)}\n"
         end
 
         if @state in :error | :warning
@@ -121,19 +127,19 @@ module Clack
         lines.join
       end
 
-      def final_display = @filtered[@selected_index]&.[](:label) || @value
+      def final_display = @filtered[@option_index]&.[](:label) || @value
 
       private
 
       def update_filtered
         @filtered = if @filter
-          @all_options.select { |opt| @filter.call(opt, @value) }
+          @all_options.select { |opt| @filter.call(opt, @search_text) }
         else
-          Core::FuzzyMatcher.filter(@all_options, @value)
+          Core::FuzzyMatcher.filter(@all_options, @search_text)
         end
       end
 
-      def scroll_items = @filtered
+      def navigable_items = @filtered
 
       def option_display(opt, active)
         hint = (opt[:hint] && active) ? Colors.dim(" (#{opt[:hint]})") : ""

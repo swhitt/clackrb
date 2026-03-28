@@ -33,9 +33,12 @@ module Clack
 
       # Track active prompts for SIGWINCH notification.
       @active_prompts = []
+      # Signal-safe flag set by SIGWINCH handler; checked in render loop.
+      @resize_pending = false
 
       class << self
         attr_reader :active_prompts
+        attr_accessor :resize_pending
 
         # Register a prompt instance for resize notifications
         def register(prompt)
@@ -47,14 +50,23 @@ module Clack
           @active_prompts.delete(prompt)
         end
 
+        # Notify all active prompts of a pending resize.
+        # Called from the render loop, not from the signal handler.
+        def flush_resize
+          return unless @resize_pending
+
+          @resize_pending = false
+          @active_prompts.each(&:request_redraw)
+        end
+
         # Set up SIGWINCH handler (called once on load).
-        # Signal handlers must avoid mutex/complex operations.
+        # Signal handler only sets a flag -- no allocation or iteration.
         def setup_signal_handler
           return if Clack::Environment.windows?
           return unless Signal.list.key?("WINCH")
 
           Signal.trap("WINCH") do
-            @active_prompts.dup.each(&:request_redraw)
+            @resize_pending = true
           end
         end
       end
@@ -87,7 +99,6 @@ module Clack
         @warning_message = nil
         @warning_confirmed = false
         @prev_frame = nil
-        @cursor = 0
         @needs_redraw = false
       end
 
@@ -117,7 +128,8 @@ module Clack
           @state = :active
 
           loop do
-            key = KeyReader.read
+            Prompt.flush_resize
+            key = KeyReader.read(@input)
             dispatch_key(key)
             render
 
@@ -175,14 +187,13 @@ module Clack
       # Process a keypress and update state accordingly.
       # Delegates to {#handle_input} for prompt-specific behavior.
       #
-      # Override this in subclasses that need custom key dispatch (e.g., Select,
-      # Confirm, Autocomplete). The warning state and error-clearing are handled
-      # by {#dispatch_key} before this method is called, so overrides do not need
-      # to manage those transitions.
+      # Extension points (simplest to most powerful):
+      # - Override {#handle_input} for navigation/printable input only
+      # - Override {#can_submit?} to guard enter (e.g., disabled options)
+      # - Override {#handle_key} for full custom key dispatch
       #
-      # For prompts that only need custom handling of printable/navigation input
-      # (not cancel/enter), override {#handle_input} instead. That is simpler and
-      # preserves the default cancel/enter behavior from this method.
+      # The warning state and error-clearing are handled by {#dispatch_key}
+      # before this method is called.
       #
       # @param key [String] the key code from {KeyReader}
       def handle_key(key)
@@ -194,11 +205,16 @@ module Clack
         when :cancel
           @state = :cancel
         when :enter
-          submit
+          submit if can_submit?
         else
           handle_input(key, action)
         end
       end
+
+      # Guard hook for submit. Override to prevent submission in certain states
+      # (e.g., when cursor is on a disabled option in Select).
+      # @return [Boolean] true if submit should proceed
+      def can_submit? = true
 
       # Handle prompt-specific input. Override in subclasses.
       #
@@ -348,6 +364,7 @@ module Clack
         submit
         if @state == :error
           $stderr.print "#{Colors.yellow("!")}  #{Colors.yellow("CI mode: validation failed for")} \"#{@message}\": #{@error_message}\n"
+          return CANCEL
         end
         @value
       end
@@ -416,6 +433,22 @@ module Clack
         when :cancel then Colors.red(Symbols::S_STEP_CANCEL)
         when :error, :warning then Colors.yellow(Symbols::S_STEP_ERROR)
         end
+      end
+
+      # Common frame header: bar + symbol/message + help line.
+      # @return [String] header lines
+      def frame_header
+        "#{bar}\n#{symbol_for_state}  #{@message}\n#{help_line}"
+      end
+
+      # Common frame footer: validation messages or bar_end.
+      # Replaces the repeated pattern of splicing validation lines.
+      # @return [String] footer lines
+      def frame_footer
+        vlns = validation_message_lines
+        return vlns.join if vlns.any?
+
+        "#{bar_end}\n"
       end
 
       # Build validation message lines for error or warning states.

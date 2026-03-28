@@ -29,6 +29,7 @@ module Clack
     #
     class Multiselect < Core::Prompt
       include Core::OptionsHelper
+      include Core::SelectionManager
 
       # @param message [String] the prompt message
       # @param options [Array<Hash, String>] list of options
@@ -38,6 +39,9 @@ module Clack
       # @param cursor_at [Object, nil] value to position cursor at initially
       # @param opts [Hash] additional options passed to {Core::Prompt}
       def initialize(message:, options:, initial_values: [], required: true, max_items: nil, cursor_at: nil, **opts)
+        if opts.key?(:initial_value)
+          raise ArgumentError, "Multiselect uses initial_values: (plural), not initial_value:"
+        end
         super(message:, **opts)
         @options = normalize_options(options)
         valid_values = Set.new(@options.map { |o| o[:value] })
@@ -45,8 +49,8 @@ module Clack
         @required = required
         @max_items = max_items
         @scroll_offset = 0
-        @cursor = find_initial_cursor(cursor_at)
-        update_value
+        @option_index = find_initial_cursor(cursor_at)
+        update_selection_value
       end
 
       protected
@@ -74,11 +78,8 @@ module Clack
       end
 
       def submit
-        if @required && @selected.empty?
-          @error_message = "Please select at least one option. Press #{Colors.cyan("space")} to select, #{Colors.cyan("enter")} to submit"
-          @state = :error
-          return
-        end
+        return unless validate_selection
+
         super
       end
 
@@ -103,22 +104,16 @@ module Clack
         lines.join
       end
 
-      def final_display
-        @options.select { |o| @selected.include?(o[:value]) }.map { |o| o[:label] }.join(", ")
-      end
+      def final_display = selected_labels(@options)
 
       private
 
       def toggle_current
-        opt = @options[@cursor]
+        opt = @options[@option_index]
         return if opt[:disabled]
 
-        if @selected.include?(opt[:value])
-          @selected.delete(opt[:value])
-        else
-          @selected.add(opt[:value])
-        end
-        update_value
+        toggle_value(opt[:value])
+        update_selection_value
       end
 
       def toggle_all
@@ -128,23 +123,17 @@ module Clack
         else
           @selected.merge(enabled)
         end
-        update_value
+        update_selection_value
       end
 
       def invert_selection
         @options.each do |opt|
           next if opt[:disabled]
 
-          if @selected.include?(opt[:value])
-            @selected.delete(opt[:value])
-          else
-            @selected.add(opt[:value])
-          end
+          toggle_value(opt[:value])
         end
-        update_value
+        update_selection_value
       end
-
-      def update_value = @value = @selected.to_a
 
       def keyboard_hints
         hints = [
@@ -156,7 +145,7 @@ module Clack
       end
 
       def option_display(opt, idx)
-        active = idx == @cursor
+        active = idx == @option_index
         selected = @selected.include?(opt[:value])
 
         symbol, label = option_parts(opt, active, selected)

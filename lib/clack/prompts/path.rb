@@ -25,8 +25,8 @@ module Clack
     #   )
     #
     class Path < Core::Prompt
+      include Core::OptionsHelper
       include Core::TextInputHelper
-      include Core::ScrollHelper
 
       # @param message [String] the prompt message
       # @param root [String] starting/base directory (default: ".")
@@ -41,7 +41,7 @@ module Clack
         @max_items = max_items
         @value = ""
         @cursor = 0
-        @selected_index = 0
+        @option_index = 0
         @scroll_offset = 0
         @suggestions = []
         @dir_cache = {}     # directory path => sorted entries array
@@ -69,7 +69,7 @@ module Clack
       def handle_text_input(key)
         return unless super
 
-        @selected_index = 0
+        @option_index = 0
         @scroll_offset = 0
         update_suggestions
       end
@@ -77,7 +77,7 @@ module Clack
       def autocomplete_selection
         return if @suggestions.empty?
 
-        @value = @suggestions[@selected_index]
+        @value = @suggestions[@option_index]
         @cursor = @value.length
         update_suggestions
       end
@@ -102,26 +102,12 @@ module Clack
       end
 
       def build_frame
-        lines = []
-        lines << "#{bar}\n"
-        lines << "#{symbol_for_state}  #{@message}\n"
-        lines << help_line
-        lines << "#{active_bar}  #{input_display}\n"
-
-        visible_items.each_with_index do |path, idx|
+        suggestion_lines = visible_options.each_with_index.map do |path, idx|
           actual_idx = @scroll_offset + idx
-          lines << "#{bar}  #{suggestion_display(path, actual_idx == @selected_index)}\n"
-        end
+          "#{bar}  #{suggestion_display(path, actual_idx == @option_index)}\n"
+        end.join
 
-        lines << "#{bar_end}\n"
-
-        validation_lines = validation_message_lines
-        if validation_lines.any?
-          lines[-1] = validation_lines.first
-          lines.concat(validation_lines[1..])
-        end
-
-        lines.join
+        "#{frame_header}#{active_bar}  #{input_display}\n#{suggestion_lines}#{frame_footer}"
       end
 
       private
@@ -202,7 +188,7 @@ module Clack
         expanded == @root || expanded.start_with?("#{@root}/")
       end
 
-      def scroll_items = @suggestions
+      def navigable_items = @suggestions
 
       # Override to use @root as placeholder
       def placeholder_display

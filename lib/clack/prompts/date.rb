@@ -83,20 +83,7 @@ module Clack
       end
 
       def build_frame
-        lines = []
-        lines << "#{bar}\n"
-        lines << "#{symbol_for_state}  #{@message}\n"
-        lines << help_line
-        lines << "#{active_bar}  #{date_display}\n"
-        lines << "#{bar_end}\n" if %i[active initial].include?(@state)
-
-        validation_lines = validation_message_lines
-        if validation_lines.any?
-          lines[-1] = validation_lines.first
-          lines.concat(validation_lines[1..])
-        end
-
-        lines.join
+        "#{frame_header}#{active_bar}  #{date_display}\n#{frame_footer}"
       end
 
       def final_display = formatted_date

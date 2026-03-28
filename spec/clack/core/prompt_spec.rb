@@ -719,4 +719,98 @@ RSpec.describe Clack::Core::Prompt do
       expect(output.string).to include("Short")
     end
   end
+
+  describe ".flush_resize" do
+    after do
+      Clack::Core::Prompt.active_prompts.clear
+      Clack::Core::Prompt.resize_pending = false
+    end
+
+    it "defaults resize_pending to false" do
+      Clack::Core::Prompt.resize_pending = false
+      expect(Clack::Core::Prompt.resize_pending).to be false
+    end
+
+    it "does nothing when not pending" do
+      prompt = test_class.new(message: "Input", output: output)
+      Clack::Core::Prompt.register(prompt)
+      Clack::Core::Prompt.resize_pending = false
+
+      Clack::Core::Prompt.flush_resize
+
+      expect(prompt.instance_variable_get(:@needs_redraw)).to be false
+    end
+
+    it "notifies all active prompts when pending" do
+      prompt = test_class.new(message: "Input", output: output)
+      Clack::Core::Prompt.register(prompt)
+      Clack::Core::Prompt.resize_pending = true
+
+      Clack::Core::Prompt.flush_resize
+
+      expect(prompt.instance_variable_get(:@needs_redraw)).to be true
+    end
+
+    it "clears the pending flag after flush" do
+      Clack::Core::Prompt.resize_pending = true
+
+      Clack::Core::Prompt.flush_resize
+
+      expect(Clack::Core::Prompt.resize_pending).to be false
+    end
+  end
+
+  describe "#can_submit?" do
+    it "returns true by default" do
+      prompt = test_class.new(message: "Input", output: output)
+      expect(prompt.send(:can_submit?)).to be true
+    end
+  end
+
+  describe "#frame_header" do
+    it "includes bar, symbol, and message" do
+      prompt = test_class.new(message: "Test message", output: output)
+      header = prompt.send(:frame_header)
+
+      stripped = strip_ansi(header)
+      expect(stripped).to include("Test message")
+      expect(header).to include(Clack::Symbols::S_BAR)
+    end
+
+    it "includes help line when help is set" do
+      prompt = test_class.new(message: "Test", help: "Help text", output: output)
+      header = prompt.send(:frame_header)
+
+      expect(strip_ansi(header)).to include("Help text")
+    end
+  end
+
+  describe "#frame_footer" do
+    it "returns bar_end when no validation error" do
+      prompt = test_class.new(message: "Test", output: output)
+      prompt.instance_variable_set(:@state, :active)
+      footer = prompt.send(:frame_footer)
+
+      expect(footer).to include(Clack::Symbols::S_BAR_END)
+    end
+
+    it "returns validation message on error" do
+      prompt = test_class.new(message: "Test", output: output)
+      prompt.instance_variable_set(:@state, :error)
+      prompt.instance_variable_set(:@error_message, "Bad input")
+      footer = prompt.send(:frame_footer)
+
+      expect(strip_ansi(footer)).to include("Bad input")
+    end
+
+    it "returns warning message and confirm hint on warning" do
+      prompt = test_class.new(message: "Test", output: output)
+      prompt.instance_variable_set(:@state, :warning)
+      prompt.instance_variable_set(:@warning_message, "Watch out")
+      footer = prompt.send(:frame_footer)
+
+      expect(strip_ansi(footer)).to include("Watch out")
+      expect(strip_ansi(footer)).to include("Press Enter to confirm")
+    end
+  end
 end

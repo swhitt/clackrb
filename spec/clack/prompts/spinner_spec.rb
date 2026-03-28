@@ -148,4 +148,40 @@ RSpec.describe Clack::Prompts::Spinner do
       expect(output.string.scan(/Loading\.{4,}/).length).to eq(0)
     end
   end
+
+  describe "state edge cases" do
+    it "stop called twice is safe" do
+      spinner.start("Working")
+      spinner.stop("Done")
+      spinner.stop("Again")
+      # Second stop is ignored; output only has first stop message
+      expect(output.string.scan("Done").length).to eq(1)
+      expect(output.string).not_to include("Again")
+    end
+
+    it "stop before start is safe" do
+      spinner.stop("Done")
+      # No output because spinner was never started
+      expect(output.string).not_to include("Done")
+    end
+
+    it "error before start is safe" do
+      spinner.error("Fail")
+      expect(output.string).not_to include("Fail")
+    end
+
+    it "cancel before start is safe" do
+      spinner.cancel("Abort")
+      expect(output.string).not_to include("Abort")
+      expect(spinner.cancelled?).to be false
+    end
+
+    it "start called twice is idempotent" do
+      spinner.start("First")
+      spinner.start("Second")
+      spinner.stop("Done")
+      # Second start ignored
+      expect(output.string).to include("Done")
+    end
+  end
 end

@@ -34,6 +34,8 @@ module Clack
     #   )
     #
     class GroupMultiselect < Core::Prompt
+      include Core::SelectionManager
+
       # @param message [String] the prompt message
       # @param options [Array<Hash>] groups, each with :label and :options (Array<Hash, String>)
       # @param initial_values [Array] values to pre-select
@@ -52,6 +54,9 @@ module Clack
         cursor_at: nil,
         **opts
       )
+        if opts.key?(:initial_value)
+          raise ArgumentError, "GroupMultiselect uses initial_values: (plural), not initial_value:"
+        end
         super(message:, **opts)
         @groups = normalize_groups(options)
         @flat_items = build_flat_items
@@ -60,37 +65,23 @@ module Clack
         @required = required
         @selectable_groups = selectable_groups
         @group_spacing = group_spacing
-        @cursor = find_initial_cursor(cursor_at)
+        @option_index = find_initial_cursor(cursor_at)
         update_value
       end
 
       protected
 
-      def handle_key(key)
-        return if terminal_state?
-
-        action = Core::Settings.action?(key)
-
+      def handle_input(_key, action)
         case action
-        when :cancel
-          @state = :cancel
-        when :enter
-          submit
-        when :up
-          move_cursor(-1)
-        when :down
-          move_cursor(1)
-        when :space
-          toggle_current
+        when :up then move_cursor(-1)
+        when :down then move_cursor(1)
+        when :space then toggle_current
         end
       end
 
       def submit
-        if @required && @selected.empty?
-          @error_message = "Please select at least one option. Press #{Colors.cyan("space")} to select, #{Colors.cyan("enter")} to submit"
-          @state = :error
-          return
-        end
+        return unless validate_selection
+
         super
       end
 
@@ -111,9 +102,9 @@ module Clack
           end
 
           lines << if is_group
-            group_display(item, idx == @cursor)
+            group_display(item, idx == @option_index)
           else
-            option_display(item, idx == @cursor, is_last_in_group)
+            option_display(item, idx == @option_index, is_last_in_group)
           end
 
           prev_was_group = is_group
@@ -140,12 +131,7 @@ module Clack
       end
 
       def normalize_option(opt)
-        case opt
-        when Hash
-          {value: opt[:value], label: opt[:label] || opt[:value].to_s, hint: opt[:hint], disabled: opt[:disabled] || false}
-        else
-          {value: opt, label: opt.to_s, hint: nil, disabled: false}
-        end
+        Core::OptionsHelper.normalize_option(opt)
       end
 
       def build_flat_items = @groups.flat_map { |group| flatten_group(group) }
@@ -189,7 +175,7 @@ module Clack
       end
 
       def move_cursor(delta)
-        new_cursor = @cursor
+        new_cursor = @option_index
         attempts = @flat_items.length
 
         loop do
@@ -198,11 +184,11 @@ module Clack
           break if can_select?(@flat_items[new_cursor]) || attempts <= 0
         end
 
-        @cursor = new_cursor
+        @option_index = new_cursor
       end
 
       def toggle_current
-        item = @flat_items[@cursor]
+        item = @flat_items[@option_index]
         return unless can_select?(item)
 
         if item[:type] == :group
@@ -225,14 +211,10 @@ module Clack
       end
 
       def toggle_option(item)
-        if @selected.include?(item[:value])
-          @selected.delete(item[:value])
-        else
-          @selected.add(item[:value])
-        end
+        toggle_value(item[:value])
       end
 
-      def update_value = @value = @selected.to_a
+      def update_value = update_selection_value
 
       def group_display(item, active)
         if @selectable_groups

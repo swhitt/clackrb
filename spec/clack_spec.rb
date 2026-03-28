@@ -334,4 +334,17 @@ RSpec.describe Clack do
       expect(Clack.rows(output)).to eq(24)
     end
   end
+
+  describe ".setup!" do
+    it "returns true after setup" do
+      # setup! was already called by auto-setup, so setup? should be true
+      expect(Clack.setup?).to be true
+    end
+
+    it "is idempotent" do
+      Clack.setup!
+      Clack.setup!
+      expect(Clack.setup?).to be true
+    end
+  end
 end

@@ -105,6 +105,25 @@ module Clack
       end
     end
 
+    # A StringIO-like object that feeds keys from a queue.
+    # Passed as the +input:+ parameter to prompts for testing.
+    class KeyQueue
+      def initialize(keys)
+        @keys = keys
+        @read_count = 0
+      end
+
+      def getc
+        @read_count += 1
+        raise "Too many reads (#{@read_count}) - possible infinite loop in test" if @read_count > 100
+
+        @keys.shift || KEYS[:enter]
+      end
+
+      # Not a real TTY
+      def tty? = false
+    end
+
     class << self
       # Simulate a prompt interaction by feeding a predefined key sequence.
       #
@@ -113,9 +132,13 @@ module Clack
       # @yield [PromptDriver] block to define the interaction
       # @return [Object] the prompt result
       def simulate(prompt_method, **kwargs, &block)
-        with_stubbed_input(block) do |output|
-          prompt_method.call(**kwargs, output: output)
-        end
+        driver = PromptDriver.new
+        block.call(driver)
+
+        input = KeyQueue.new(driver.keys.dup)
+        output = StringIO.new
+
+        prompt_method.call(**kwargs, input: input, output: output)
       end
 
       # Capture the rendered output of a prompt simulation.
@@ -126,43 +149,14 @@ module Clack
       # @yield [PromptDriver] block to define the interaction
       # @return [Array(Object, String)] [result, output_string]
       def simulate_with_output(prompt_method, **kwargs, &block)
-        output_io = nil
-        result = with_stubbed_input(block) do |output|
-          output_io = output
-          prompt_method.call(**kwargs, output: output)
-        end
-        [result, output_io.string]
-      end
-
-      private
-
-      def with_stubbed_input(driver_block)
         driver = PromptDriver.new
-        driver_block.call(driver)
+        block.call(driver)
 
-        queue = driver.keys.dup
+        input = KeyQueue.new(driver.keys.dup)
         output = StringIO.new
-        read_count = 0
 
-        verbose, $VERBOSE = $VERBOSE, nil
-        Core::KeyReader.singleton_class.alias_method(:_original_read, :read)
-
-        Core::KeyReader.define_singleton_method(:read) do
-          read_count += 1
-          raise "Too many reads (#{read_count}) - possible infinite loop in test" if read_count > 100
-
-          queue.shift || KEYS[:enter]
-        end
-        $VERBOSE = verbose
-
-        yield output
-      ensure
-        if Core::KeyReader.singleton_class.method_defined?(:_original_read)
-          verbose, $VERBOSE = $VERBOSE, nil
-          Core::KeyReader.singleton_class.alias_method(:read, :_original_read)
-          Core::KeyReader.singleton_class.remove_method(:_original_read)
-          $VERBOSE = verbose
-        end
+        result = prompt_method.call(**kwargs, input: input, output: output)
+        [result, output.string]
       end
     end
   end

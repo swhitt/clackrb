@@ -150,7 +150,7 @@ module TestHelpers
     queue = key_sequence(*keys)
     read_count = 0
 
-    allow(Clack::Core::KeyReader).to receive(:read) do
+    allow(Clack::Core::KeyReader).to receive(:read) do |_input|
       read_count += 1
       raise "Too many key reads (#{read_count}) - possible infinite loop" if read_count > MAX_READS
 

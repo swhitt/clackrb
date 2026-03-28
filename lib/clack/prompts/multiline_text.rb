@@ -21,6 +21,8 @@ module Clack
     #   )
     #
     class MultilineText < Core::Prompt
+      include Core::TextInputHelper
+
       # @param message [String] the prompt message
       # @param initial_value [String, nil] pre-filled editable text (can contain newlines)
       # @option opts [Proc, nil] :validate validation proc returning error string or nil
@@ -29,7 +31,7 @@ module Clack
         super(message:, **opts)
         @lines = parse_initial_value(initial_value)
         @line_index = @lines.length - 1
-        @column = current_line.grapheme_clusters.length
+        @cursor = current_line.grapheme_clusters.length
       end
 
       protected
@@ -64,24 +66,17 @@ module Clack
         super
       end
 
+      def frame_header
+        "#{bar}\n#{symbol_for_state}  #{@message} #{Colors.dim("(Ctrl+D to submit)")}\n#{help_line}"
+      end
+
       def build_frame
-        lines = []
-        lines << "#{bar}\n"
-        lines << "#{symbol_for_state}  #{@message} #{Colors.dim("(Ctrl+D to submit)")}\n"
-        lines << help_line
+        body = @lines.each_with_index.map do |line, idx|
+          display = (idx == @line_index) ? value_with_cursor : line
+          "#{active_bar}  #{display}\n"
+        end.join
 
-        @lines.each_with_index do |line, idx|
-          display = (idx == @line_index) ? line_with_cursor(line) : line
-          lines << "#{active_bar}  #{display}\n"
-        end
-
-        if @state in :error | :warning
-          lines.concat(validation_message_lines)
-        else
-          lines << "#{bar_end}\n"
-        end
-
-        lines.join
+        "#{frame_header}#{body}#{frame_footer}"
       end
 
       def build_final_frame
@@ -98,6 +93,13 @@ module Clack
         lines.join
       end
 
+      # TextInputHelper backing store: delegate to current line.
+      def text_value = current_line
+
+      def text_value=(val)
+        @lines[@line_index] = val
+      end
+
       private
 
       def parse_initial_value(value)
@@ -108,26 +110,15 @@ module Clack
 
       def current_line = @lines[@line_index] || ""
 
-      def line_with_cursor(line)
-        chars = line.grapheme_clusters
-        return cursor_block if chars.empty?
-        return "#{line}#{cursor_block}" if @column >= chars.length
-
-        before = chars[0...@column].join
-        current = Colors.inverse(chars[@column])
-        after = chars[(@column + 1)..].join
-        "#{before}#{current}#{after}"
-      end
-
       def insert_newline
         chars = current_line.grapheme_clusters
-        before = chars[0...@column].join
-        after = chars[@column..].join
+        before = chars[0...@cursor].join
+        after = chars[@cursor..].join
 
         @lines[@line_index] = before
         @lines.insert(@line_index + 1, after)
         @line_index += 1
-        @column = 0
+        @cursor = 0
       end
 
       def move_up
@@ -145,43 +136,32 @@ module Clack
       end
 
       def move_left
-        return if @column.zero?
+        return if @cursor.zero?
 
-        @column -= 1
+        @cursor -= 1
       end
 
       def move_right
         max = current_line.grapheme_clusters.length
-        return if @column >= max
+        return if @cursor >= max
 
-        @column += 1
+        @cursor += 1
       end
 
       def clamp_column
         max = current_line.grapheme_clusters.length
-        @column = [@column, max].min
+        @cursor = [@cursor, max].min
       end
 
-      def handle_text_input(key)
-        return handle_backspace if Core::Settings.backspace?(key)
-        return unless Core::Settings.printable?(key)
-
-        chars = current_line.grapheme_clusters
-        chars.insert(@column, key)
-        @lines[@line_index] = chars.join
-        @column += 1
-      end
-
+      # Override backspace to handle line merging at column 0
       def handle_backspace
-        if @column.zero?
-          return if @line_index.zero?
+        if @cursor.zero?
+          return false if @line_index.zero?
 
           merge_line_up
+          true
         else
-          chars = current_line.grapheme_clusters
-          chars.delete_at(@column - 1)
-          @lines[@line_index] = chars.join
-          @column -= 1
+          super
         end
       end
 
@@ -192,7 +172,7 @@ module Clack
         @line_index -= 1
         prev_length = current_line.grapheme_clusters.length
         @lines[@line_index] = current_line + current_content
-        @column = prev_length
+        @cursor = prev_length
       end
     end
   end
