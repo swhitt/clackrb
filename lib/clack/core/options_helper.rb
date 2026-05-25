@@ -2,6 +2,22 @@
 
 module Clack
   module Core
+    # Value object for normalized select-style options.
+    Option = Data.define(:value, :label, :hint, :disabled) do
+      def to_s = label.to_s
+    end
+
+    # Value object for select_key options (includes :key).
+    SelectKeyOption = Data.define(:value, :label, :key, :hint) do
+      def to_s = label.to_s
+    end
+
+    # Value objects for group_multiselect flat list (replaces :type discriminator hashes).
+    GroupHeader = Data.define(:label, :options)
+    GroupOption = Data.define(:value, :label, :hint, :disabled) do
+      def to_s = label.to_s
+    end
+
     # Shared functionality for option-based prompts (Select, Multiselect, Autocomplete, etc.).
     # Handles option normalization, cursor navigation, and scrolling.
     #
@@ -25,20 +41,20 @@ module Clack
         options.map { |opt| OptionsHelper.normalize_option(opt) }
       end
 
-      # Normalize a single option to a consistent hash format.
+      # Normalize a single option to an Option value object.
       # @param opt [Hash, String, Symbol] Raw option
-      # @return [Hash] Normalized option hash
+      # @return [Option] Normalized option
       def self.normalize_option(opt)
         case opt
         when Hash
-          {
+          Option.new(
             value: opt[:value],
             label: opt[:label] || opt[:value].to_s,
             hint: opt[:hint],
             disabled: opt[:disabled] || false
-          }
+          )
         else
-          {value: opt, label: opt.to_s, hint: nil, disabled: false}
+          Option.new(value: opt, label: opt.to_s, hint: nil, disabled: false)
         end
       end
 
@@ -54,7 +70,7 @@ module Clack
         idx = (from + delta) % max
 
         max.times do
-          return idx unless items[idx][:disabled]
+          return idx unless items[idx].disabled
 
           idx = (idx + delta) % max
         end
@@ -120,11 +136,11 @@ module Clack
 
         if initial_value.nil?
           # Start at first enabled option
-          return items[0][:disabled] ? first_enabled_index : 0
+          return items[0].disabled ? first_enabled_index : 0
         end
 
-        idx = items.find_index { |o| o[:value] == initial_value }
-        (idx && !items[idx][:disabled]) ? idx : first_enabled_index
+        idx = items.find_index { |o| o.value == initial_value }
+        (idx && !items[idx].disabled) ? idx : first_enabled_index
       end
 
       # The list of items to navigate. Override in subclasses that use
