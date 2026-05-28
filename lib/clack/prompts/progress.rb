@@ -36,6 +36,7 @@ module Clack
         @output = output
         @started = false
         @width = 40
+        @last_frame = nil
       end
 
       # Start displaying the progress bar.
@@ -105,8 +106,11 @@ module Clack
       def render
         return unless @started
 
-        @output.print "\r\e[2K"  # Return to start of line and clear it
-        @output.print "#{symbol}  #{progress_bar} #{percentage}#{message_text}"
+        frame = "#{symbol}  #{progress_bar} #{percentage}#{message_text}"
+        return if frame == @last_frame
+
+        @last_frame = frame
+        @output.print "\r\e[2K#{frame}"
         @output.flush
       end
 
