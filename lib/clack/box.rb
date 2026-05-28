@@ -39,10 +39,10 @@ module Clack
         format_border ||= ->(text) { Colors.gray(text) }
         symbols = corner_symbols(rounded).map(&format_border)
         lines = message.to_s.lines.map(&:chomp)
-        box_width = calculate_width(lines, title.length, title_padding, content_padding, width)
+        box_width = calculate_width(lines, Clack::Utils.visible_length(title), title_padding, content_padding, width)
         inner_width = box_width - 2
         max_title_len = inner_width - (title_padding * 2)
-        display_title = (title.length > max_title_len) ? "#{title[0, max_title_len - 3]}..." : title
+        display_title = Clack::Utils.truncate(title, max_title_len)
 
         {
           symbols: symbols,
@@ -56,7 +56,7 @@ module Clack
 
       def render_content_lines(output, ctx, content_align, content_padding)
         ctx[:lines].each do |line|
-          left_pad, right_pad = padding_for_line(line.length, ctx[:inner_width], content_padding, content_align)
+          left_pad, right_pad = padding_for_line(Clack::Utils.visible_length(line), ctx[:inner_width], content_padding, content_align)
           output.puts "#{ctx[:v_symbol]}#{" " * left_pad}#{line}#{" " * right_pad}#{ctx[:v_symbol]}"
         end
       end
@@ -82,8 +82,8 @@ module Clack
       def calculate_width(lines, title_len, title_padding, content_padding, width)
         return width + 2 if width.is_a?(Integer) # Add 2 for borders
 
-        # Auto width: fit to content
-        max_line = lines.map(&:length).max || 0
+        # Auto width: fit to content using display width
+        max_line = lines.map { |l| Clack::Utils.visible_length(l) }.max || 0
         title_with_padding = title_len + (title_padding * 2)
         content_with_padding = max_line + (content_padding * 2)
 
@@ -94,7 +94,7 @@ module Clack
         if title.empty?
           "#{symbols[0]}#{h_symbol * inner_width}#{symbols[1]}"
         else
-          left_pad, right_pad = padding_for_line(title.length, inner_width, title_padding, title_align)
+          left_pad, right_pad = padding_for_line(Clack::Utils.visible_length(title), inner_width, title_padding, title_align)
           "#{symbols[0]}#{h_symbol * left_pad}#{title}#{h_symbol * right_pad}#{symbols[1]}"
         end
       end
