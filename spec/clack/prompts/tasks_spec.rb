@@ -44,6 +44,16 @@ RSpec.describe Clack::Prompts::Tasks do
       expect(results.first.error).to eq("Oops!")
     end
 
+    it "restores cursor visibility even when a task raises uncaught" do
+      tasks = described_class.new(tasks: [], output: output)
+      tasks.instance_variable_set(:@tasks, [Clack::Prompts::Tasks::Task.new(title: "Boom", task: -> { raise "boom" }, enabled: true)])
+
+      def tasks.run_task(_task) = raise "uncaught"
+
+      expect { tasks.run }.to raise_error("uncaught")
+      expect(output.string).to include(Clack::Core::Cursor.show)
+    end
+
     it "continues after errors" do
       executed = []
       tasks = create_tasks([

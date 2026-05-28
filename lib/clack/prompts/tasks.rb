@@ -87,8 +87,13 @@ module Clack
 
           run_task(task)
         end
-        @output.print Core::Cursor.show
         @results
+      ensure
+        begin
+          @output.print Core::Cursor.show
+        rescue IOError, SystemCallError
+          # output stream already closed
+        end
       end
 
       private
