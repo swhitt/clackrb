@@ -597,6 +597,15 @@ RSpec.describe Clack::Core::OptionsHelper do
         o = described_class[value: "x", label: "X", hint: nil, disabled: false]
         expect { o.value = "y" }.to raise_error(NoMethodError)
       end
+
+      it "supports hash-style [] read access for backward compatibility" do
+        o = described_class[value: "x", label: "X Label", hint: "hinty", disabled: true]
+        expect(o[:value]).to eq("x")
+        expect(o[:label]).to eq("X Label")
+        expect(o[:hint]).to eq("hinty")
+        expect(o[:disabled]).to be true
+        expect(o[:missing]).to be_nil
+      end
     end
 
     describe Clack::Core::SelectKeyOption do

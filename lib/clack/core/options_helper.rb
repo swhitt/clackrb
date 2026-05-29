@@ -5,18 +5,26 @@ module Clack
     # Value object for normalized select-style options.
     Option = Data.define(:value, :label, :hint, :disabled) do
       def to_s = label.to_s
+
+      # Hash-style read access for backward compatibility with code (e.g.
+      # custom autocomplete filters) written against the old option hashes.
+      def [](key) = to_h[key]
     end
 
     # Value object for select_key options (includes :key).
     SelectKeyOption = Data.define(:value, :label, :key, :hint) do
       def to_s = label.to_s
+      def [](key) = to_h[key]
     end
 
     # Value objects for group_multiselect flat list (replaces :type discriminator hashes).
     # GroupOption carries extra fields only used within GroupMultiselect for layout.
-    GroupHeader = Data.define(:label, :options)
+    GroupHeader = Data.define(:label, :options) do
+      def [](key) = to_h[key]
+    end
     GroupOption = Data.define(:value, :label, :hint, :disabled, :group, :last_in_group) do
       def to_s = label.to_s
+      def [](key) = to_h[key]
     end
 
     # Shared functionality for option-based prompts (Select, Multiselect, Autocomplete, etc.).

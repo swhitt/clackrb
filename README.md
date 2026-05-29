@@ -238,7 +238,8 @@ color = Clack.autocomplete(
   max_items: 5  # Default; scrollable via up/down arrows
 )
 
-# Custom filter logic (receives option hash and query string)
+# Custom filter logic (receives the option and query string).
+# The option is a value object; opt.label and opt[:label] both work.
 cmd = Clack.autocomplete(
   message: "Select command",
   options: commands,
