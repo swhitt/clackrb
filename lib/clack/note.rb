@@ -14,14 +14,15 @@ module Clack
         lines = message.to_s.lines.map(&:chomp)
         # Add empty lines at start and end like original
         lines = ["", *lines, ""]
-        title_len = title&.length || 0
+        title_len = Clack::Utils.visible_length(title)
         width = calculate_width(lines, title_len)
 
         output.puts Colors.gray(Symbols::S_BAR)
         output.puts build_top_border(title, title_len, width)
 
         lines.each do |line|
-          padded = line.ljust(width)
+          pad = width - Clack::Utils.visible_length(line)
+          padded = pad.positive? ? line + (" " * pad) : line
           output.puts "#{Colors.gray(Symbols::S_BAR)}  #{Colors.dim(padded)}#{Colors.gray(Symbols::S_BAR)}"
         end
 
@@ -31,7 +32,7 @@ module Clack
       private
 
       def calculate_width(lines, title_len)
-        max_line = lines.map(&:length).max || 0
+        max_line = lines.map { |line| Clack::Utils.visible_length(line) }.max || 0
         [max_line, title_len].max + 2
       end
 
