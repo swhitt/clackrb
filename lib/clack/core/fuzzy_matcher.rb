@@ -109,10 +109,10 @@ module Clack
 
         def best_score(opt, query, q_down)
           scores = [
-            score(query, opt[:label], q_down: q_down),
-            score(query, opt[:value].to_s, q_down: q_down)
+            score(query, opt.label, q_down: q_down),
+            score(query, opt.value.to_s, q_down: q_down)
           ]
-          scores << score(query, opt[:hint], q_down: q_down) if opt[:hint]
+          scores << score(query, opt.hint, q_down: q_down) if opt.hint
           scores.max
         end
       end

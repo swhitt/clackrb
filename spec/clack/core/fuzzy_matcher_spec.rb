@@ -67,9 +67,9 @@ RSpec.describe Clack::Core::FuzzyMatcher do
   describe ".filter" do
     let(:options) do
       [
-        {value: "app", label: "Apple", hint: nil, disabled: false},
-        {value: "ban", label: "Banana", hint: "tropical", disabled: false},
-        {value: "chr", label: "Cherry", hint: nil, disabled: false}
+        Clack::Core::Option[value: "app", label: "Apple", hint: nil, disabled: false],
+        Clack::Core::Option[value: "ban", label: "Banana", hint: "tropical", disabled: false],
+        Clack::Core::Option[value: "chr", label: "Cherry", hint: nil, disabled: false]
       ]
     end
 
@@ -79,27 +79,27 @@ RSpec.describe Clack::Core::FuzzyMatcher do
 
     it "filters by label" do
       result = described_class.filter(options, "app")
-      expect(result.map { |o| o[:value] }).to eq(["app"])
+      expect(result.map(&:value)).to eq(["app"])
     end
 
     it "filters by value" do
       result = described_class.filter(options, "ban")
-      expect(result.map { |o| o[:value] }).to eq(["ban"])
+      expect(result.map(&:value)).to eq(["ban"])
     end
 
     it "filters by hint" do
       result = described_class.filter(options, "trop")
-      expect(result.map { |o| o[:value] }).to eq(["ban"])
+      expect(result.map(&:value)).to eq(["ban"])
     end
 
     it "sorts by relevance score" do
       opts = [
-        {value: "xbc", label: "xbcdef", hint: nil, disabled: false},
-        {value: "abc", label: "abcdef", hint: nil, disabled: false}
+        Clack::Core::Option[value: "xbc", label: "xbcdef", hint: nil, disabled: false],
+        Clack::Core::Option[value: "abc", label: "abcdef", hint: nil, disabled: false]
       ]
       result = described_class.filter(opts, "abc")
       # "abcdef" has consecutive match at start, should rank first
-      expect(result.first[:value]).to eq("abc")
+      expect(result.first.value).to eq("abc")
     end
 
     it "excludes non-matching options" do
@@ -110,7 +110,7 @@ RSpec.describe Clack::Core::FuzzyMatcher do
     it "handles fuzzy matches" do
       result = described_class.filter(options, "ae")
       # "Apple" matches a...e
-      expect(result.map { |o| o[:value] }).to include("app")
+      expect(result.map(&:value)).to include("app")
     end
   end
 end

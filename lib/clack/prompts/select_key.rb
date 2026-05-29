@@ -41,10 +41,10 @@ module Clack
         when :cancel
           @state = :cancel
         else
-          opt = @options.find { |o| o[:key]&.downcase == key&.downcase }
+          opt = @options.find { |o| o.key&.downcase == key&.downcase }
           return unless opt
 
-          @value = opt[:value]
+          @value = opt.value
           @state = :submit
         end
       end
@@ -63,25 +63,25 @@ module Clack
         lines.join
       end
 
-      def final_display = @options.find { |o| o[:value] == @value }&.dig(:label).to_s
+      def final_display = @options.find { |o| o.value == @value }&.label.to_s
 
       private
 
       def normalize_options(options)
         options.map do |opt|
-          {
+          SelectKeyOption.new(
             value: opt[:value],
             label: opt[:label] || opt[:value].to_s,
             key: opt[:key] || opt[:value].to_s[0],
             hint: opt[:hint]
-          }
+          )
         end
       end
 
       def option_display(opt)
-        key_display = Colors.cyan("[#{opt[:key]}]")
-        hint = opt[:hint] ? " #{Colors.dim("(#{opt[:hint]})")}" : ""
-        "#{key_display} #{opt[:label]}#{hint}"
+        key_display = Colors.cyan("[#{opt.key}]")
+        hint = opt.hint ? " #{Colors.dim("(#{opt.hint})")}" : ""
+        "#{key_display} #{opt.label}#{hint}"
       end
     end
   end

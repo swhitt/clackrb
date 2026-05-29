@@ -55,7 +55,7 @@ module Clack
         end
       end
 
-      def can_submit? = !current_option[:disabled]
+      def can_submit? = !current_option.disabled
 
       def build_frame
         option_lines = visible_options.each_with_index.map do |opt, idx|
@@ -66,7 +66,7 @@ module Clack
         "#{frame_header}#{option_lines}#{frame_footer}"
       end
 
-      def final_display = current_option[:label]
+      def final_display = current_option.label
 
       private
 
@@ -75,12 +75,12 @@ module Clack
         update_value
       end
 
-      def update_value = @value = current_option[:value]
+      def update_value = @value = current_option.value
 
       def current_option = @options[@option_index]
 
       def option_display(opt, active)
-        return disabled_option_display(opt) if opt[:disabled]
+        return disabled_option_display(opt) if opt.disabled
         return active_option_display(opt) if active
 
         inactive_option_display(opt)
@@ -88,19 +88,19 @@ module Clack
 
       def disabled_option_display(opt)
         symbol = Colors.dim(Symbols::S_RADIO_INACTIVE)
-        label = Colors.strikethrough(Colors.dim(opt[:label]))
+        label = Colors.strikethrough(Colors.dim(opt.label))
         "#{symbol} #{label}"
       end
 
       def active_option_display(opt)
         symbol = Colors.green(Symbols::S_RADIO_ACTIVE)
-        hint = opt[:hint] ? " #{Colors.dim("(#{opt[:hint]})")}" : ""
-        "#{symbol} #{opt[:label]}#{hint}"
+        hint = opt.hint ? " #{Colors.dim("(#{opt.hint})")}" : ""
+        "#{symbol} #{opt.label}#{hint}"
       end
 
       def inactive_option_display(opt)
         symbol = Colors.dim(Symbols::S_RADIO_INACTIVE)
-        "#{symbol} #{Colors.dim(opt[:label])}"
+        "#{symbol} #{Colors.dim(opt.label)}"
       end
     end
   end

@@ -571,4 +571,65 @@ RSpec.describe Clack::Core::OptionsHelper do
       expect(subject.navigable_items).to equal(subject.options)
     end
   end
+
+  describe "Option value objects" do
+    describe Clack::Core::Option do
+      it "constructs with all fields" do
+        o = described_class[value: "x", label: "X Label", hint: "hinty", disabled: true]
+        expect(o.value).to eq("x")
+        expect(o.label).to eq("X Label")
+        expect(o.hint).to eq("hinty")
+        expect(o.disabled).to be true
+      end
+
+      it "has a sensible #to_s that delegates to label" do
+        o = described_class[value: 42, label: "The Answer", hint: nil, disabled: false]
+        expect(o.to_s).to eq("The Answer")
+      end
+
+      it "supports equality based on values" do
+        o1 = described_class[value: "a", label: "A", hint: nil, disabled: false]
+        o2 = described_class[value: "a", label: "A", hint: nil, disabled: false]
+        expect(o1).to eq(o2)
+      end
+
+      it "is immutable (Data object)" do
+        o = described_class[value: "x", label: "X", hint: nil, disabled: false]
+        expect { o.value = "y" }.to raise_error(NoMethodError)
+      end
+    end
+
+    describe Clack::Core::SelectKeyOption do
+      it "includes the :key field" do
+        o = described_class[value: "quit", label: "Quit", key: "q", hint: "bye"]
+        expect(o.key).to eq("q")
+        expect(o.to_s).to eq("Quit")
+      end
+    end
+
+    describe Clack::Core::GroupHeader do
+      it "carries a label and list of child options" do
+        child = Clack::Core::Option[value: 1, label: "One", hint: nil, disabled: false]
+        header = described_class[label: "Numbers", options: [child]]
+        expect(header.label).to eq("Numbers")
+        expect(header.options.first.value).to eq(1)
+        expect(header.options.size).to eq(1)
+      end
+    end
+
+    describe Clack::Core::GroupOption do
+      it "supports the extra layout fields used by GroupMultiselect" do
+        o = described_class[
+          value: "a",
+          label: "A",
+          hint: nil,
+          disabled: false,
+          group: {label: "G"},
+          last_in_group: true
+        ]
+        expect(o.last_in_group).to be true
+        expect(o.group[:label]).to eq("G")
+      end
+    end
+  end
 end

@@ -60,7 +60,7 @@ module Clack
         super(message:, **opts)
         @groups = normalize_groups(options)
         @flat_items = build_flat_items
-        valid_values = Set.new(@flat_items.select { |item| item[:type] == :option }.map { |item| item[:value] })
+        valid_values = Set.new(@flat_items.select { |item| item.is_a?(Core::GroupOption) }.map(&:value))
         @selected = Set.new(initial_values) & valid_values
         @required = required
         @selectable_groups = selectable_groups
@@ -93,8 +93,8 @@ module Clack
 
         prev_was_group = false
         @flat_items.each_with_index do |item, idx|
-          is_group = item[:type] == :group
-          is_last_in_group = item[:last_in_group]
+          is_group = item.is_a?(Core::GroupHeader)
+          is_last_in_group = item.is_a?(Core::GroupOption) ? item.last_in_group : false
 
           # Add group spacing before groups (except first)
           if is_group && !prev_was_group && idx.positive? && @group_spacing.positive?
@@ -117,7 +117,7 @@ module Clack
         lines.join
       end
 
-      def final_display = selected_options.map { |o| o[:label] }.join(", ")
+      def final_display = selected_options.map(&:label).join(", ")
 
       private
 
@@ -137,30 +137,29 @@ module Clack
       def build_flat_items = @groups.flat_map { |group| flatten_group(group) }
 
       def flatten_group(group)
-        group_item = {type: :group, label: group[:label], options: group[:options]}
+        group_item = Core::GroupHeader.new(label: group[:label], options: group[:options])
         option_items = group[:options].each_with_index.map do |opt, idx|
-          {
-            type: :option,
-            value: opt[:value],
-            label: opt[:label],
-            hint: opt[:hint],
-            disabled: opt[:disabled],
+          Core::GroupOption.new(
+            value: opt.value,
+            label: opt.label,
+            hint: opt.hint,
+            disabled: opt.disabled,
             group: group,
             last_in_group: idx == group[:options].length - 1
-          }
+          )
         end
         [group_item, *option_items]
       end
 
       def selected_options
-        @flat_items.select { |item| item[:type] == :option && @selected.include?(item[:value]) }
+        @flat_items.select { |item| item.is_a?(Core::GroupOption) && @selected.include?(item.value) }
       end
 
       def find_initial_cursor(cursor_at)
         return 0 if @flat_items.empty?
 
         if cursor_at
-          idx = @flat_items.find_index { |item| item[:value] == cursor_at }
+          idx = @flat_items.find_index { |item| item.respond_to?(:value) && item.value == cursor_at }
           return idx if idx
         end
 
@@ -168,8 +167,8 @@ module Clack
       end
 
       def can_select?(item)
-        return false if item[:disabled]
-        return @selectable_groups if item[:type] == :group
+        return false if item.is_a?(Core::GroupOption) && item.disabled
+        return @selectable_groups if item.is_a?(Core::GroupHeader)
 
         true
       end
@@ -191,7 +190,7 @@ module Clack
         item = @flat_items[@option_index]
         return unless can_select?(item)
 
-        if item[:type] == :group
+        if item.is_a?(Core::GroupHeader)
           toggle_group(item)
         else
           toggle_option(item)
@@ -200,7 +199,7 @@ module Clack
       end
 
       def toggle_group(group_item)
-        group_values = group_item[:options].reject { |o| o[:disabled] }.map { |o| o[:value] }
+        group_values = group_item.options.reject { |o| o.disabled }.map(&:value)
         all_selected = group_values.all? { |v| @selected.include?(v) }
 
         if all_selected
@@ -211,41 +210,41 @@ module Clack
       end
 
       def toggle_option(item)
-        toggle_value(item[:value])
+        toggle_value(item.value)
       end
 
       def update_value = update_selection_value
 
       def group_display(item, active)
         if @selectable_groups
-          all_selected = item[:options].reject { |o| o[:disabled] }.all? { |o| @selected.include?(o[:value]) }
+          all_selected = item.options.reject { |o| o.disabled }.all? { |o| @selected.include?(o.value) }
           checkbox = all_selected ? Colors.green(Symbols::S_CHECKBOX_SELECTED) : Colors.dim(Symbols::S_CHECKBOX_INACTIVE)
-          label = active ? item[:label] : Colors.dim(item[:label])
+          label = active ? item.label : Colors.dim(item.label)
           "#{active_bar}  #{checkbox} #{label}\n"
         else
-          "#{active_bar}  #{Colors.dim(item[:label])}\n"
+          "#{active_bar}  #{Colors.dim(item.label)}\n"
         end
       end
 
       def option_display(item, active, is_last)
-        selected = @selected.include?(item[:value])
+        selected = @selected.include?(item.value)
         prefix = if @selectable_groups
           "#{is_last ? Symbols::S_BAR_END : Symbols::S_BAR} "
         else
           "  "
         end
-        hint = (item[:hint] && active) ? " #{Colors.dim("(#{item[:hint]})")}" : ""
+        hint = (item.hint && active) ? " #{Colors.dim("(#{item.hint})")}" : ""
 
-        if item[:disabled]
-          "#{active_bar}  #{Colors.dim(prefix)}#{Colors.dim(Symbols::S_CHECKBOX_INACTIVE)} #{Colors.strikethrough(Colors.dim(item[:label]))}\n"
+        if item.disabled
+          "#{active_bar}  #{Colors.dim(prefix)}#{Colors.dim(Symbols::S_CHECKBOX_INACTIVE)} #{Colors.strikethrough(Colors.dim(item.label))}\n"
         elsif active && selected
-          "#{active_bar}  #{Colors.dim(prefix)}#{Colors.green(Symbols::S_CHECKBOX_SELECTED)} #{item[:label]}#{hint}\n"
+          "#{active_bar}  #{Colors.dim(prefix)}#{Colors.green(Symbols::S_CHECKBOX_SELECTED)} #{item.label}#{hint}\n"
         elsif active
-          "#{active_bar}  #{Colors.dim(prefix)}#{Colors.cyan(Symbols::S_CHECKBOX_ACTIVE)} #{item[:label]}#{hint}\n"
+          "#{active_bar}  #{Colors.dim(prefix)}#{Colors.cyan(Symbols::S_CHECKBOX_ACTIVE)} #{item.label}#{hint}\n"
         elsif selected
-          "#{active_bar}  #{Colors.dim(prefix)}#{Colors.green(Symbols::S_CHECKBOX_SELECTED)} #{Colors.dim(item[:label])}\n"
+          "#{active_bar}  #{Colors.dim(prefix)}#{Colors.green(Symbols::S_CHECKBOX_SELECTED)} #{Colors.dim(item.label)}\n"
         else
-          "#{active_bar}  #{Colors.dim(prefix)}#{Colors.dim(Symbols::S_CHECKBOX_INACTIVE)} #{Colors.dim(item[:label])}\n"
+          "#{active_bar}  #{Colors.dim(prefix)}#{Colors.dim(Symbols::S_CHECKBOX_INACTIVE)} #{Colors.dim(item.label)}\n"
         end
       end
     end

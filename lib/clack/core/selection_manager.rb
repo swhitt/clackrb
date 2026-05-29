@@ -42,7 +42,7 @@ module Clack
       # @param all_options [Array<Hash>] the full options list to match against
       # @return [String] comma-separated labels
       def selected_labels(all_options)
-        all_options.select { |o| @selected.include?(o[:value]) }.map { |o| o[:label] }.join(", ")
+        all_options.select { |o| @selected.include?(o.value) }.map { |o| o.label }.join(", ")
       end
     end
   end

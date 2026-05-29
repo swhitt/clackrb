@@ -55,7 +55,7 @@ module Clack
         @cursor = 0
         @option_index = 0
         @scroll_offset = 0
-        valid_values = Set.new(@all_options.map { |o| o[:value] })
+        valid_values = Set.new(@all_options.map { |o| o.value })
         @selected = Set.new(initial_values) & valid_values
         update_filtered
       end
@@ -88,9 +88,9 @@ module Clack
         return if @filtered.empty?
 
         opt = @filtered[@option_index]
-        return if opt[:disabled]
+        return if opt.disabled
 
-        toggle_value(opt[:value])
+        toggle_value(opt.value)
       end
 
       def submit
@@ -169,15 +169,15 @@ module Clack
       def navigable_items = @filtered
 
       def option_display(opt, active)
-        selected = @selected.include?(opt[:value])
+        selected = @selected.include?(opt.value)
         checkbox = if selected
           Colors.green(Symbols::S_CHECKBOX_SELECTED)
         else
           Colors.dim(Symbols::S_CHECKBOX_INACTIVE)
         end
 
-        label = active ? opt[:label] : Colors.dim(opt[:label])
-        hint = (opt[:hint] && active) ? Colors.dim(" (#{opt[:hint]})") : ""
+        label = active ? opt.label : Colors.dim(opt.label)
+        hint = (opt.hint && active) ? Colors.dim(" (#{opt.hint})") : ""
 
         "#{checkbox} #{label}#{hint}"
       end

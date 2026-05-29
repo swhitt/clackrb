@@ -44,7 +44,7 @@ module Clack
         end
         super(message:, **opts)
         @options = normalize_options(options)
-        valid_values = Set.new(@options.map { |o| o[:value] })
+        valid_values = Set.new(@options.map { |o| o.value })
         @selected = Set.new(initial_values) & valid_values
         @required = required
         @max_items = max_items
@@ -110,14 +110,14 @@ module Clack
 
       def toggle_current
         opt = @options[@option_index]
-        return if opt[:disabled]
+        return if opt.disabled
 
-        toggle_value(opt[:value])
+        toggle_value(opt.value)
         update_selection_value
       end
 
       def toggle_all
-        enabled = @options.reject { |o| o[:disabled] }.map { |o| o[:value] }
+        enabled = @options.reject { |o| o.disabled }.map { |o| o.value }
         if enabled.all? { |v| @selected.include?(v) }
           @selected.clear
         else
@@ -128,9 +128,9 @@ module Clack
 
       def invert_selection
         @options.each do |opt|
-          next if opt[:disabled]
+          next if opt.disabled
 
-          toggle_value(opt[:value])
+          toggle_value(opt.value)
         end
         update_selection_value
       end
@@ -146,22 +146,22 @@ module Clack
 
       def option_display(opt, idx)
         active = idx == @option_index
-        selected = @selected.include?(opt[:value])
+        selected = @selected.include?(opt.value)
 
         symbol, label = option_parts(opt, active, selected)
         "#{symbol} #{label}"
       end
 
       def option_parts(opt, active, selected)
-        if opt[:disabled]
+        if opt.disabled
           return [Colors.dim(Symbols::S_CHECKBOX_INACTIVE),
-            Colors.strikethrough(Colors.dim(opt[:label]))]
+            Colors.strikethrough(Colors.dim(opt.label))]
         end
-        return [Colors.green(Symbols::S_CHECKBOX_SELECTED), opt[:label]] if active && selected
-        return [Colors.cyan(Symbols::S_CHECKBOX_ACTIVE), opt[:label]] if active
-        return [Colors.green(Symbols::S_CHECKBOX_SELECTED), Colors.dim(opt[:label])] if selected
+        return [Colors.green(Symbols::S_CHECKBOX_SELECTED), opt.label] if active && selected
+        return [Colors.cyan(Symbols::S_CHECKBOX_ACTIVE), opt.label] if active
+        return [Colors.green(Symbols::S_CHECKBOX_SELECTED), Colors.dim(opt.label)] if selected
 
-        [Colors.dim(Symbols::S_CHECKBOX_INACTIVE), Colors.dim(opt[:label])]
+        [Colors.dim(Symbols::S_CHECKBOX_INACTIVE), Colors.dim(opt.label)]
       end
     end
   end

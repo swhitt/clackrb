@@ -244,7 +244,7 @@ RSpec.describe Clack::Prompts::AutocompleteMultiselect do
     end
 
     it "uses the custom filter proc" do
-      starts_with = ->(opt, query) { opt[:label].start_with?(query) }
+      starts_with = ->(opt, query) { opt.label.start_with?(query) }
       stub_keys("b", :space, :enter)
       prompt = create_prompt(filter: starts_with)
       result = prompt.run
@@ -256,7 +256,7 @@ RSpec.describe Clack::Prompts::AutocompleteMultiselect do
       received_queries = []
       spy_filter = ->(opt, query) {
         received_queries << query
-        opt[:label].downcase.include?(query.downcase)
+        opt.label.downcase.include?(query.downcase)
       }
       stub_keys("Ban", :space, :enter)
       prompt = create_prompt(filter: spy_filter)

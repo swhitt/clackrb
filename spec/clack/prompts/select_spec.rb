@@ -2,6 +2,7 @@
 
 RSpec.describe Clack::Prompts::Select do
   let(:output) { StringIO.new }
+  # Input option hashes are normalized to Core::Option instances internally
   let(:options) do
     [
       {value: "a", label: "Option A"},

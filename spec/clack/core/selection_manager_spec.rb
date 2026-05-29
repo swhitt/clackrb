@@ -19,9 +19,9 @@ RSpec.describe Clack::Core::SelectionManager do
 
   let(:options) do
     [
-      {value: "a", label: "Apple"},
-      {value: "b", label: "Banana"},
-      {value: "c", label: "Cherry"}
+      Clack::Core::Option[value: "a", label: "Apple", hint: nil, disabled: false],
+      Clack::Core::Option[value: "b", label: "Banana", hint: nil, disabled: false],
+      Clack::Core::Option[value: "c", label: "Cherry", hint: nil, disabled: false]
     ]
   end
 

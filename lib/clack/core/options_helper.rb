@@ -13,8 +13,9 @@ module Clack
     end
 
     # Value objects for group_multiselect flat list (replaces :type discriminator hashes).
+    # GroupOption carries extra fields only used within GroupMultiselect for layout.
     GroupHeader = Data.define(:label, :options)
-    GroupOption = Data.define(:value, :label, :hint, :disabled) do
+    GroupOption = Data.define(:value, :label, :hint, :disabled, :group, :last_in_group) do
       def to_s = label.to_s
     end
 

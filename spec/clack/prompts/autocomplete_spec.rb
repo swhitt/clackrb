@@ -164,7 +164,7 @@ RSpec.describe Clack::Prompts::Autocomplete do
   describe "custom filter" do
     it "uses the custom filter proc instead of default matching" do
       # Only match options whose label starts with the query (case-sensitive)
-      starts_with_filter = ->(opt, query) { opt[:label].start_with?(query) }
+      starts_with_filter = ->(opt, query) { opt.label.start_with?(query) }
       stub_keys("app", :enter)
       prompt = create_prompt(filter: starts_with_filter)
       result = prompt.run
@@ -174,7 +174,7 @@ RSpec.describe Clack::Prompts::Autocomplete do
 
     it "excludes options that do not satisfy the custom filter" do
       # Only match labels starting with the query; "a" matches "apple" but not "banana"
-      starts_with_filter = ->(opt, query) { opt[:label].start_with?(query) }
+      starts_with_filter = ->(opt, query) { opt.label.start_with?(query) }
       stub_keys("b", :enter)
       prompt = create_prompt(filter: starts_with_filter)
       result = prompt.run
@@ -195,7 +195,7 @@ RSpec.describe Clack::Prompts::Autocomplete do
       received_queries = []
       spy_filter = ->(opt, query) {
         received_queries << query
-        opt[:label].downcase.include?(query.downcase)
+        opt.label.downcase.include?(query.downcase)
       }
       stub_keys("App", :enter)
       prompt = create_prompt(filter: spy_filter)
@@ -212,7 +212,7 @@ RSpec.describe Clack::Prompts::Autocomplete do
         {value: "c", label: "Carrot", hint: "vegetable"}
       ]
       # Filter by hint field
-      hint_filter = ->(opt, _query) { opt[:hint] == "vegetable" }
+      hint_filter = ->(opt, _query) { opt.hint == "vegetable" }
       stub_keys("x", :enter)
       prompt = create_prompt(options: opts_with_hints, filter: hint_filter)
       result = prompt.run

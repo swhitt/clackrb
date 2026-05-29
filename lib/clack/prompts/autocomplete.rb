@@ -29,7 +29,7 @@ module Clack
     #   Clack.autocomplete(
     #     message: "Select command",
     #     options: commands,
-    #     filter: ->(opt, query) { opt[:label].start_with?(query) }
+    #     filter: ->(opt, query) { opt.label.start_with?(query) }
     #   )
     #
     class Autocomplete < Core::Prompt
@@ -102,7 +102,7 @@ module Clack
           return
         end
 
-        @value = @filtered[@option_index][:value]
+        @value = @filtered[@option_index].value
         submit
       end
 
@@ -127,7 +127,7 @@ module Clack
         lines.join
       end
 
-      def final_display = @filtered[@option_index]&.[](:label) || @value
+      def final_display = @filtered[@option_index]&.label || @value
 
       private
 
@@ -142,11 +142,11 @@ module Clack
       def navigable_items = @filtered
 
       def option_display(opt, active)
-        hint = (opt[:hint] && active) ? Colors.dim(" (#{opt[:hint]})") : ""
+        hint = (opt.hint && active) ? Colors.dim(" (#{opt.hint})") : ""
         if active
-          "#{Colors.green(Symbols::S_RADIO_ACTIVE)} #{opt[:label]}#{hint}"
+          "#{Colors.green(Symbols::S_RADIO_ACTIVE)} #{opt.label}#{hint}"
         else
-          "#{Colors.dim(Symbols::S_RADIO_INACTIVE)} #{Colors.dim(opt[:label])}"
+          "#{Colors.dim(Symbols::S_RADIO_INACTIVE)} #{Colors.dim(opt.label)}"
         end
       end
     end
