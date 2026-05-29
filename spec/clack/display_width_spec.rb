@@ -82,4 +82,23 @@ RSpec.describe "Clack::Utils display width" do
       expect(Clack::Utils.visible_length(text)).to eq(7) # H(1) i(1) (1) 世(2) 界(2)
     end
   end
+
+  describe ".wrap with wide characters" do
+    it "flushes the current line before breaking an over-long word" do
+      # "hi" fits, then the unbreakable run forces a flush and a hard break
+      expect(Clack::Utils.wrap("hi wwwwwwwwww", 5)).to eq("hi\nwwwww\nwwwww")
+    end
+
+    it "breaks a run of wide graphemes that each exceed the width" do
+      # Each CJK char is width 2; at width 1 every grapheme lands on its own line
+      expect(Clack::Utils.wrap("中文中文", 1)).to eq("中\n文\n中\n文")
+    end
+  end
+
+  describe ".truncate with ANSI codes" do
+    it "preserves ANSI codes while truncating visible width" do
+      result = Clack::Utils.truncate("\e[32mhello world\e[0m", 8)
+      expect(result).to eq("\e[32mhello\e[0m...")
+    end
+  end
 end
