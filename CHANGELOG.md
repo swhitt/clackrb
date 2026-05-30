@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.6.0] - 2026-05-30
+
+### Added
+- `Option`, `SelectKeyOption`, `GroupHeader`, and `GroupOption` value objects for normalized prompt options
+- Hash-style `[]` access on option value objects for compatibility with existing custom autocomplete filters
+- Display-width coverage for CJK, fullwidth forms, Hangul, emoji, ZWJ emoji sequences, flag emoji, combining marks, and ANSI-colored text
+
+### Changed
+- Option-based prompts now normalize strings, symbols, and hashes into typed value objects instead of bare hashes
+- Autocomplete and multiselect filtering now operate on normalized option objects while preserving `opt[:key]` access patterns
+- Text wrapping, truncation, box titles, and note layout now measure terminal display columns instead of Ruby string length
+- Progress rendering skips duplicate intermediate frames during rapid updates
+
+### Fixed
+- CJK, emoji, combining characters, and ANSI sequences no longer throw off prompt alignment, wrapping, truncation, note padding, or box title width
+- `Tasks#run` restores cursor visibility even when task execution raises
+- `SelectKey` option normalization resolves the value object through the correct namespace
+
 ## [0.5.0] - 2026-03-27
 
 ### Breaking
