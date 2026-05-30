@@ -69,7 +69,7 @@ module Clack
 
       def normalize_options(options)
         options.map do |opt|
-          SelectKeyOption.new(
+          Clack::Core::SelectKeyOption.new(
             value: opt[:value],
             label: opt[:label] || opt[:value].to_s,
             key: opt[:key] || opt[:value].to_s[0],
