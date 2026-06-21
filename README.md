@@ -7,6 +7,9 @@
   <i>CLI prompts for Ruby. Zero dependencies.</i>
   <br>
   <br>
+  <sub>A faithful Ruby port of <a href="https://github.com/bombshell-dev/clack"><code>@clack/prompts</code></a>.</sub>
+  <br>
+  <br>
   <a href="https://rubygems.org/gems/clack"><img src="https://img.shields.io/gem/v/clack?style=flat-square&color=cc342d" alt="Gem Version"></a>
   <a href="https://github.com/swhitt/clackrb/actions"><img src="https://img.shields.io/github/actions/workflow/status/swhitt/clackrb/ci.yml?style=flat-square&label=tests" alt="Tests"></a>
   <a href="https://www.ruby-lang.org"><img src="https://img.shields.io/badge/ruby-3.2%2B-cc342d?style=flat-square" alt="Ruby 3.2+"></a>
@@ -782,7 +785,7 @@ COVERAGE=true bundle exec rake spec  # With coverage
 
 ## Credits
 
-This is a Ruby port of [Clack](https://github.com/bombshell-dev/clack), created by [Nate Moore](https://github.com/natemoo-re) and the [Astro](https://astro.build) team.
+This is a Ruby port of [`@clack/prompts`](https://github.com/bombshell-dev/clack), created by [Nate Moore](https://github.com/natemoo-re) and the [Astro](https://astro.build) team.
 
 ## License
 
