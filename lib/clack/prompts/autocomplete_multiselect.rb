@@ -56,7 +56,7 @@ module Clack
         @option_index = 0
         @scroll_offset = 0
         valid_values = Set.new(@all_options.map { |o| o.value })
-        @selected = Set.new(initial_values) & valid_values
+        @selected = resolve_initial_selection(initial_values, valid_values)
         update_filtered
       end
 

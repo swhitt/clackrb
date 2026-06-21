@@ -142,6 +142,34 @@ RSpec.describe Clack::Prompts::Multiselect do
       expect(result).to contain_exactly("b", "c")
     end
 
+    it "warns about unknown initial_values but keeps the valid ones" do
+      prompt = nil
+      warning = capture_stderr do
+        prompt = described_class.new(
+          message: "Choose:",
+          options: options,
+          initial_values: %w[b nope],
+          output: output
+        )
+      end
+      expect(warning).to match(/ignoring unknown initial_values.*nope/)
+
+      stub_keys(:enter)
+      expect(prompt.run).to contain_exactly("b")
+    end
+
+    it "does not warn when all initial_values are valid" do
+      warning = capture_stderr do
+        described_class.new(
+          message: "Choose:",
+          options: options,
+          initial_values: %w[a b],
+          output: output
+        )
+      end
+      expect(warning).not_to match(/ignoring unknown initial_values/)
+    end
+
     it "handles simple value options" do
       stub_keys(:space, :enter)
       prompt = described_class.new(

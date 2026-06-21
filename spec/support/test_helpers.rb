@@ -163,6 +163,18 @@ module TestHelpers
     StringIO.new
   end
 
+  # Capture everything written to $stderr while the block runs, returning it
+  # as a string. Avoids RSpec's `output(...).to_stderr` matcher, which is
+  # unreliable on Ruby 4.0 (it leaks global stream state across examples).
+  def capture_stderr
+    original = $stderr
+    $stderr = StringIO.new
+    yield
+    $stderr.string
+  ensure
+    $stderr = original
+  end
+
   # Strip ANSI codes for easier testing
   def strip_ansi(str)
     str.gsub(/\e\[[0-9;]*[mGKHJ]|\e\[\?25[hl]/, "")

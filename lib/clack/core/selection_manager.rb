@@ -11,6 +11,24 @@ module Clack
     module SelectionManager
       REQUIRED_ERROR = "Please select at least one option. Press %s to select, %s to submit"
 
+      # Resolve requested pre-selections against the selectable option values.
+      #
+      # Values that don't match any current option are dropped and reported on
+      # stderr, since they're almost always a typo in +initial_values+ rather
+      # than an intentional no-op.
+      #
+      # @param initial_values [Array] the requested pre-selections
+      # @param valid_values [Set] the set of selectable option values
+      # @return [Set] the subset of initial_values that map to real options
+      def resolve_initial_selection(initial_values, valid_values)
+        requested = Set.new(initial_values)
+        unknown = requested - valid_values
+        unless unknown.empty?
+          warn "[clack] ignoring unknown initial_values: #{unknown.to_a.inspect}"
+        end
+        requested & valid_values
+      end
+
       # Toggle a value in the selection set.
       # @param value [Object] the value to toggle
       def toggle_value(value)

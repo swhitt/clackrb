@@ -61,7 +61,7 @@ module Clack
         @groups = normalize_groups(options)
         @flat_items = build_flat_items
         valid_values = Set.new(@flat_items.select { |item| item.is_a?(Core::GroupOption) }.map(&:value))
-        @selected = Set.new(initial_values) & valid_values
+        @selected = resolve_initial_selection(initial_values, valid_values)
         @required = required
         @selectable_groups = selectable_groups
         @group_spacing = group_spacing

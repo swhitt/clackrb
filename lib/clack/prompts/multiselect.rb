@@ -45,7 +45,7 @@ module Clack
         super(message:, **opts)
         @options = normalize_options(options)
         valid_values = Set.new(@options.map { |o| o.value })
-        @selected = Set.new(initial_values) & valid_values
+        @selected = resolve_initial_selection(initial_values, valid_values)
         @required = required
         @max_items = max_items
         @scroll_offset = 0
