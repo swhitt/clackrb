@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.6.1] - 2026-06-21
+
+### Added
+- `CLACK_ESCAPE_TIMEOUT` env var to tune the Escape-sequence detection window (milliseconds) for high-latency links like slow SSH, where arrow keys could otherwise be misread as a standalone Escape
+
+### Changed
+- `multiselect`, `group_multiselect`, and `autocomplete_multiselect` now warn on stderr when `initial_values` contains values that don't match any option (still dropped, but no longer silently)
+
 ## [0.6.0] - 2026-05-30
 
 ### Added
