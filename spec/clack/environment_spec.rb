@@ -84,6 +84,46 @@ RSpec.describe Clack::Environment do
     end
   end
 
+  describe ".escape_timeout" do
+    around do |example|
+      original = ENV["CLACK_ESCAPE_TIMEOUT"]
+      example.run
+      if original.nil?
+        ENV.delete("CLACK_ESCAPE_TIMEOUT")
+      else
+        ENV["CLACK_ESCAPE_TIMEOUT"] = original
+      end
+    end
+
+    it "defaults to 50ms when unset" do
+      ENV.delete("CLACK_ESCAPE_TIMEOUT")
+      expect(described_class.escape_timeout).to eq(0.05)
+    end
+
+    it "reads the env var as milliseconds" do
+      ENV["CLACK_ESCAPE_TIMEOUT"] = "250"
+      expect(described_class.escape_timeout).to eq(0.25)
+    end
+
+    it "accepts fractional milliseconds" do
+      ENV["CLACK_ESCAPE_TIMEOUT"] = "12.5"
+      expect(described_class.escape_timeout).to eq(0.0125)
+    end
+
+    it "falls back to the default for non-numeric values" do
+      ENV["CLACK_ESCAPE_TIMEOUT"] = "slow"
+      expect(described_class.escape_timeout).to eq(0.05)
+    end
+
+    it "falls back to the default for non-positive values" do
+      ENV["CLACK_ESCAPE_TIMEOUT"] = "0"
+      expect(described_class.escape_timeout).to eq(0.05)
+
+      ENV["CLACK_ESCAPE_TIMEOUT"] = "-5"
+      expect(described_class.escape_timeout).to eq(0.05)
+    end
+  end
+
   describe ".columns" do
     it "returns columns from winsize" do
       output = double("output", tty?: true, winsize: [24, 120])

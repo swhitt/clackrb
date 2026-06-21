@@ -6,6 +6,9 @@ module Clack
   # Environment detection utilities for cross-platform compatibility
   # and CI/terminal environment awareness.
   module Environment
+    # Default Escape-sequence detection timeout, in seconds.
+    DEFAULT_ESCAPE_TIMEOUT = 0.05
+
     class << self
       # Check if running on Windows
       # @return [Boolean]
@@ -125,6 +128,29 @@ module Clack
         else
           true
         end
+      end
+
+      # Escape-sequence detection timeout, in seconds.
+      #
+      # After an Escape byte arrives, the key reader waits this long for a
+      # follow-up byte to decide whether it's a standalone Escape or the start
+      # of an arrow-key / CSI sequence. The 50ms default is fine locally but too
+      # tight over high-latency links (slow SSH, mosh), where the follow-up
+      # bytes lag and arrow keys get misread as a bare Escape (cancelling the
+      # prompt). Override with the +CLACK_ESCAPE_TIMEOUT+ env var, in
+      # milliseconds, e.g. +CLACK_ESCAPE_TIMEOUT=250+ for a slow connection.
+      #
+      # Invalid or non-positive values fall back to the default.
+      #
+      # @return [Float] timeout in seconds
+      def escape_timeout
+        raw = ENV["CLACK_ESCAPE_TIMEOUT"]
+        return DEFAULT_ESCAPE_TIMEOUT unless raw
+
+        ms = Float(raw, exception: false)
+        return DEFAULT_ESCAPE_TIMEOUT unless ms&.positive?
+
+        ms / 1000.0
       end
 
       # Reset cached environment checks (useful for testing)
