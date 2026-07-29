@@ -23,7 +23,7 @@ module Clack
         lines.each do |line|
           pad = width - Clack::Utils.visible_length(line)
           padded = pad.positive? ? line + (" " * pad) : line
-          output.puts "#{Colors.gray(Symbols::S_BAR)}  #{Colors.dim(padded)}#{Colors.gray(Symbols::S_BAR)}"
+          output.puts "#{Colors.gray(Symbols::S_BAR)}  #{padded}#{Colors.gray(Symbols::S_BAR)}"
         end
 
         output.puts build_bottom_border(width)

@@ -1,5 +1,10 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+- `note` no longer dims its content, matching upstream `@clack/prompts` (only the border/gutter stays dim)
+
 ## [0.6.1] - 2026-06-21
 
 ### Added
