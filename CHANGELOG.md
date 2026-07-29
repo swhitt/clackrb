@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+### Added
+- `group_multiselect` now shows a keyboard hints footer (`space select`), matching `multiselect` and `autocomplete_multiselect`
+
 ### Fixed
 - `note` no longer dims its content, matching upstream `@clack/prompts` (only the border/gutter stays dim)
 

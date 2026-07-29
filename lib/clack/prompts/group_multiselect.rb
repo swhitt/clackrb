@@ -110,9 +110,13 @@ module Clack
           prev_was_group = is_group
         end
 
-        lines << "#{bar_end}\n"
-
-        lines[-1] = "#{Colors.yellow(Symbols::S_BAR_END)}  #{Colors.yellow(@error_message)}\n" if @state == :error
+        if @state == :error
+          lines << "#{bar_end}\n"
+          lines[-1] = "#{Colors.yellow(Symbols::S_BAR_END)}  #{Colors.yellow(@error_message)}\n"
+        else
+          lines << "#{bar}  #{keyboard_hints}\n"
+          lines << "#{bar_end}\n"
+        end
 
         lines.join
       end
@@ -214,6 +218,10 @@ module Clack
       end
 
       def update_value = update_selection_value
+
+      def keyboard_hints
+        Colors.dim("#{Colors.dim("space")} select")
+      end
 
       def group_display(item, active)
         if @selectable_groups

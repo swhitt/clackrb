@@ -260,6 +260,15 @@ RSpec.describe Clack::Prompts::GroupMultiselect do
       expect(output.string).to include("Select features:")
     end
 
+    it "shows keyboard hints on initial render" do
+      stub_keys(:space, :enter)
+      prompt = described_class.new(message: "Select:", options: options, output: output)
+      prompt.run
+
+      expect(output.string).to include("space")
+      expect(output.string).to include("select")
+    end
+
     describe "cursor_at option" do
       it "starts cursor at specified value" do
         stub_keys(:space, :enter)
