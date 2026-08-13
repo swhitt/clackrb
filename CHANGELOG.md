@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [0.6.2] - 2026-08-13
 
 ### Added
 - `group_multiselect` now shows a keyboard hints footer (`space select`), matching `multiselect` and `autocomplete_multiselect`
